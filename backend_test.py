@@ -239,6 +239,276 @@ class AdmissionSystemAPITester:
                 print(f"   {rule.get('course')}: ₹{rule.get('amount')}")
         return success
 
+    # NEW ENHANCED FEATURES TESTS
+    
+    def test_signature_status_update(self, user_key, status):
+        """Test updating student status with signature data"""
+        if 'student_id' not in self.test_data:
+            print("❌ No student ID available for signature status update test")
+            return False
+            
+        # Mock base64 signature data
+        signature_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        data = {
+            'status': status,
+            'notes': f'Test {status} with signature',
+            'signature_data': signature_data,
+            'signature_type': 'draw'
+        }
+        
+        success, response = self.run_test(
+            f"Update student status to {status} with signature",
+            "PUT",
+            f"students/{self.test_data['student_id']}/status",
+            200,
+            data=data,
+            files={},  # This will trigger form data mode
+            token_user=user_key
+        )
+        return success
+
+    def test_course_management_apis(self, user_key):
+        """Test course management CRUD operations"""
+        course_name = f"Test Course {datetime.now().strftime('%H%M%S')}"
+        course_amount = 5000.0
+        
+        # Test create course
+        create_data = {
+            'course': course_name,
+            'amount': course_amount
+        }
+        
+        success, response = self.run_test(
+            "Create Course Rule",
+            "POST",
+            "admin/courses",
+            200,
+            data=create_data,
+            files={},
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        course_id = response.get('id')
+        if course_id:
+            self.test_data['course_id'] = course_id
+            print(f"   Course created with ID: {course_id}")
+        
+        # Test update course
+        update_data = {
+            'course': f"{course_name} Updated",
+            'amount': 6000.0
+        }
+        
+        success, response = self.run_test(
+            "Update Course Rule",
+            "PUT",
+            f"admin/courses/{course_id}",
+            200,
+            data=update_data,
+            files={},
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+        
+        # Test delete course (soft delete)
+        success, response = self.run_test(
+            "Delete Course Rule",
+            "DELETE",
+            f"admin/courses/{course_id}",
+            200,
+            token_user=user_key
+        )
+        
+        return success
+
+    def test_pdf_receipt_generation(self, user_key):
+        """Test PDF receipt generation"""
+        if 'student_id' not in self.test_data:
+            print("❌ No student ID available for PDF receipt test")
+            return False
+            
+        success, response = self.run_test(
+            "Generate PDF Receipt",
+            "GET",
+            f"students/{self.test_data['student_id']}/receipt",
+            200,
+            token_user=user_key
+        )
+        
+        if success:
+            print("   PDF receipt generated successfully")
+        return success
+
+    def test_filtered_excel_export(self, user_key):
+        """Test enhanced Excel export with filters"""
+        # Test with various filter combinations
+        filter_tests = [
+            # Test with no filters
+            {},
+            # Test with date filters
+            {
+                'start_date': '2024-01-01T00:00:00',
+                'end_date': '2024-12-31T23:59:59'
+            },
+            # Test with status filter
+            {
+                'status': 'approved'
+            },
+            # Test with course filter
+            {
+                'course': 'BSc'
+            }
+        ]
+        
+        all_passed = True
+        for i, filters in enumerate(filter_tests):
+            query_params = '&'.join([f"{k}={v}" for k, v in filters.items()])
+            endpoint = f"admin/export/excel?{query_params}" if query_params else "admin/export/excel"
+            
+            success, response = self.run_test(
+                f"Excel Export Test {i+1} ({len(filters)} filters)",
+                "GET",
+                endpoint,
+                200,
+                token_user=user_key
+            )
+            
+            if not success:
+                all_passed = False
+        
+        return all_passed
+
+    def test_admin_incentive_management(self, user_key):
+        """Test admin incentive management APIs"""
+        # First get all incentives
+        success, response = self.run_test(
+            "Get All Incentives (Admin)",
+            "GET",
+            "admin/incentives",
+            200,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        incentives = response if isinstance(response, list) else []
+        print(f"   Found {len(incentives)} incentives")
+        
+        # Test updating incentive status if we have incentives
+        if incentives:
+            incentive_id = incentives[0].get('id')
+            if incentive_id:
+                # Test marking as paid
+                paid_data = {'status': 'paid'}
+                success, response = self.run_test(
+                    "Mark Incentive as Paid",
+                    "PUT",
+                    f"admin/incentives/{incentive_id}/status",
+                    200,
+                    data=paid_data,
+                    files={},
+                    token_user=user_key
+                )
+                
+                if not success:
+                    return False
+                
+                # Test marking as unpaid
+                unpaid_data = {'status': 'unpaid'}
+                success, response = self.run_test(
+                    "Mark Incentive as Unpaid",
+                    "PUT",
+                    f"admin/incentives/{incentive_id}/status",
+                    200,
+                    data=unpaid_data,
+                    files={},
+                    token_user=user_key
+                )
+                
+                return success
+        
+        print("   No incentives found to test status updates")
+        return True
+
+    def test_create_student_with_new_course(self, user_key, course_name):
+        """Test creating a student with a specific course"""
+        student_data = {
+            "first_name": "Enhanced",
+            "last_name": "Student",
+            "email": f"enhanced.student.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "9876543210",
+            "course": course_name
+        }
+        
+        success, response = self.run_test(
+            f"Create Student with {course_name}",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user=user_key
+        )
+        
+        if success and 'id' in response:
+            self.test_data['enhanced_student_id'] = response['id']
+            print(f"   Enhanced student created with ID: {response['id']}")
+            return True
+        return False
+
+    def test_comprehensive_workflow(self):
+        """Test complete workflow with new features"""
+        print("\n🔄 Testing Complete Enhanced Workflow")
+        print("-" * 40)
+        
+        workflow_success = True
+        
+        # 1. Admin creates a new course
+        if 'admin' in self.tokens:
+            if not self.test_course_management_apis('admin'):
+                workflow_success = False
+        
+        # 2. Agent creates student with new course
+        if 'agent1' in self.tokens:
+            if not self.test_create_student_with_new_course('agent1', 'MBA'):
+                workflow_success = False
+        
+        # 3. Coordinator approves with signature
+        if 'coordinator' in self.tokens and 'enhanced_student_id' in self.test_data:
+            # Update test_data to use enhanced student for signature test
+            original_student_id = self.test_data.get('student_id')
+            self.test_data['student_id'] = self.test_data['enhanced_student_id']
+            
+            if not self.test_signature_status_update('coordinator', 'approved'):
+                workflow_success = False
+                
+            # Restore original student_id
+            if original_student_id:
+                self.test_data['student_id'] = original_student_id
+        
+        # 4. Agent downloads PDF receipt
+        if 'agent1' in self.tokens:
+            if not self.test_pdf_receipt_generation('agent1'):
+                workflow_success = False
+        
+        # 5. Admin manages incentives
+        if 'admin' in self.tokens:
+            if not self.test_admin_incentive_management('admin'):
+                workflow_success = False
+        
+        # 6. Admin exports filtered data
+        if 'admin' in self.tokens:
+            if not self.test_filtered_excel_export('admin'):
+                workflow_success = False
+        
+        return workflow_success
+
 def main():
     print("🚀 Starting Admission System API Tests")
     print("=" * 50)
