@@ -115,6 +115,19 @@ class Incentive(BaseModel):
     status: str = "unpaid"  # paid, unpaid
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+class PendingUser(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    username: str
+    email: str
+    role: str  # "agent", "coordinator", "admin"
+    agent_id: Optional[str] = None  # For agents only
+    hashed_password: str
+    status: str = "pending"  # pending, approved, rejected
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[str] = None  # admin user id who reviewed
+    rejection_reason: Optional[str] = None
+
 # Helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
