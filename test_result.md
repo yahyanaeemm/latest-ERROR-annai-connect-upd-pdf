@@ -283,6 +283,18 @@ frontend:
         agent: "main"
         comment: "✅ TESTED - Receipt download buttons are integrated in agent dashboard. Download functionality properly connected to backend PDF generation API."
 
+  - task: "Database-based registration UI with admin approval"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Updated registration flow to show pending approval message instead of direct login. Modified register function to handle new response format, added success message display, added Pending User Registrations section to admin dashboard with approve/reject functionality"
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
