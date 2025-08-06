@@ -885,6 +885,15 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchPendingUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/pending-users`);
+      setPendingUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching pending users:', error);
+    }
+  };
+
   const handleCourseSubmit = async (e) => {
     e.preventDefault();
     try {
