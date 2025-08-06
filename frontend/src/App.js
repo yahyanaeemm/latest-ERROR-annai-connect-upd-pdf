@@ -835,7 +835,7 @@ const AdminDashboard = () => {
     end_date: '',
     agent_id: '',
     course: '',
-    status: ''
+    status: 'all'
   });
 
   useEffect(() => {
