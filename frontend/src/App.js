@@ -223,6 +223,12 @@ const LoginForm = () => {
               <div className="text-red-600 text-sm text-center">{error}</div>
             )}
 
+            {success && (
+              <div className="text-green-600 text-sm text-center bg-green-50 p-3 rounded border border-green-200">
+                {success}
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
             </Button>
