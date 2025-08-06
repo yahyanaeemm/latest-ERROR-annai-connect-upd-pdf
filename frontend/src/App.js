@@ -474,13 +474,16 @@ const AgentDashboard = () => {
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => downloadReceipt(student.id, student.token_number)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      {student.status === 'approved' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => downloadReceipt(student.id, student.token_number)}
+                          title="Download Receipt (Available for approved students only)"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
