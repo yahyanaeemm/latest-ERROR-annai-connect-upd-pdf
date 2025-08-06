@@ -97,7 +97,9 @@ class IncentiveRule(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     course: str
     amount: float
+    active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Incentive(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
