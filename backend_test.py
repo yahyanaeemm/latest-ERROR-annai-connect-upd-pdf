@@ -49,6 +49,8 @@ class AdmissionSystemAPITester:
                     response = requests.put(url, data=data, headers=test_headers)
                 else:
                     response = requests.put(url, json=data, headers=test_headers)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=test_headers)
 
             success = response.status_code == expected_status
             if success:
