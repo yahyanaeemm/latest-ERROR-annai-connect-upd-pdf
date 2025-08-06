@@ -920,7 +920,7 @@ const AdminDashboard = () => {
     try {
       const params = new URLSearchParams();
       Object.entries(exportFilters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
+        if (value && value !== 'all') params.append(key, value);
       });
 
       const response = await axios.get(`${API}/admin/export/excel?${params}`, {
