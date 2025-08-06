@@ -525,6 +525,80 @@ async def get_all_incentives(current_user: User = Depends(get_current_user)):
     
     return enriched_incentives
 
+# Pending User Management APIs
+@api_router.get("/admin/pending-users")
+async def get_pending_users(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    pending_users = await db.pending_users.find({"status": "pending"}).to_list(1000)
+    return [PendingUser(**user) for user in pending_users]
+
+@api_router.post("/admin/pending-users/{user_id}/approve")
+async def approve_pending_user(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get pending user
+    pending_user_doc = await db.pending_users.find_one({"id": user_id, "status": "pending"})
+    if not pending_user_doc:
+        raise HTTPException(status_code=404, detail="Pending user not found")
+    
+    # Create active user
+    user = User(
+        id=pending_user_doc["id"],  # Keep same ID
+        username=pending_user_doc["username"],
+        email=pending_user_doc["email"],
+        role=pending_user_doc["role"],
+        agent_id=pending_user_doc.get("agent_id"),
+        hashed_password=pending_user_doc["hashed_password"],
+        created_at=pending_user_doc["created_at"]
+    )
+    
+    await db.users.insert_one(user.dict())
+    
+    # Update pending user status
+    await db.pending_users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "status": "approved",
+            "reviewed_at": datetime.utcnow(),
+            "reviewed_by": current_user.id
+        }}
+    )
+    
+    return {"message": "User approved successfully"}
+
+@api_router.post("/admin/pending-users/{user_id}/reject")
+async def reject_pending_user(
+    user_id: str,
+    reason: str = Form("No reason provided"),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get pending user
+    pending_user_doc = await db.pending_users.find_one({"id": user_id, "status": "pending"})
+    if not pending_user_doc:
+        raise HTTPException(status_code=404, detail="Pending user not found")
+    
+    # Update pending user status
+    await db.pending_users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "status": "rejected",
+            "reviewed_at": datetime.utcnow(),
+            "reviewed_by": current_user.id,
+            "rejection_reason": reason
+        }}
+    )
+    
+    return {"message": "User rejected successfully"}
+
 # Enhanced Export APIs
 @api_router.get("/admin/export/excel")
 async def export_excel(
