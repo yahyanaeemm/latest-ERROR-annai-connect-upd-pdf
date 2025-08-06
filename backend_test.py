@@ -285,7 +285,7 @@ class AdmissionSystemAPITester:
             "admin/courses",
             200,
             data=create_data,
-            files=None,  # Use None to trigger form data mode
+            files={},  # This triggers form data mode
             token_user=user_key
         )
         
