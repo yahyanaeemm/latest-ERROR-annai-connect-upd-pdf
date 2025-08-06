@@ -263,14 +263,19 @@ async def update_student_status(
     student_id: str,
     status: str = Form(...),
     notes: Optional[str] = Form(None),
+    signature_data: Optional[str] = Form(None),
+    signature_type: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user)
 ):
     if current_user.role not in ["coordinator", "admin"]:
         raise HTTPException(status_code=403, detail="Only coordinators and admins can update status")
     
-    update_data = {"status": status}
+    update_data = {"status": status, "updated_at": datetime.utcnow()}
     if notes:
         update_data["coordinator_notes"] = notes
+    if signature_data:
+        update_data["signature_data"] = signature_data
+        update_data["signature_type"] = signature_type or "draw"
     
     result = await db.students.update_one(
         {"id": student_id},
@@ -285,7 +290,7 @@ async def update_student_status(
         student_doc = await db.students.find_one({"id": student_id})
         if student_doc:
             # Get incentive rule for course
-            incentive_rule = await db.incentive_rules.find_one({"course": student_doc["course"]})
+            incentive_rule = await db.incentive_rules.find_one({"course": student_doc["course"], "active": True})
             if incentive_rule:
                 incentive = Incentive(
                     agent_id=student_doc["agent_id"],
