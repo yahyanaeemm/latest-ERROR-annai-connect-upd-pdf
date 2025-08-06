@@ -110,13 +110,24 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
       if (isLogin) {
         await login(formData.username, formData.password);
       } else {
-        await register(formData);
+        const result = await register(formData);
+        if (result.status === 'pending') {
+          setSuccess(result.message);
+          setFormData({
+            username: '',
+            password: '',
+            email: '',
+            role: 'agent',
+            agent_id: ''
+          });
+        }
       }
     } catch (err) {
       setError(err.message);
