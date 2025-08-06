@@ -195,6 +195,18 @@ backend:
         agent: "testing"
         comment: "✅ PASSED - React Select component fix verified successfully. Admin login works without runtime errors, export functionality with status='all' filter works perfectly, admin dashboard loads successfully. All 51 backend tests passed including specific verification of the 'all' status filter fix."
 
+  - task: "Database-based manual user registration system"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented database-based manual verification system. Added PendingUser model, modified /api/register to store pending users instead of direct registration, added admin endpoints for viewing/approving/rejecting pending users: GET /api/admin/pending-users, POST /api/admin/pending-users/{id}/approve, POST /api/admin/pending-users/{id}/reject"
+
 frontend:
   - task: "E-Signature component with digital pad"
     implemented: true
