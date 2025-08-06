@@ -510,8 +510,8 @@ class AdmissionSystemAPITester:
         return workflow_success
 
 def main():
-    print("🚀 Starting Admission System API Tests")
-    print("=" * 50)
+    print("🚀 Starting Enhanced Admission System API Tests")
+    print("=" * 60)
     
     tester = AdmissionSystemAPITester()
     
@@ -541,25 +541,53 @@ def main():
     for user_key in tester.tokens.keys():
         tester.test_user_info(user_key)
     
-    print("\n📋 Phase 2: Agent Workflow Tests")
+    print("\n📋 Phase 2: Basic Agent Workflow Tests")
     print("-" * 30)
     
-    # Test agent workflow
+    # Test basic agent workflow
     if 'agent1' in tester.tokens:
         tester.test_create_student('agent1')
         tester.test_get_students('agent1')
         tester.test_file_upload('agent1')
         tester.test_get_incentives('agent1')
     
-    print("\n📋 Phase 3: Coordinator Workflow Tests")
+    print("\n📋 Phase 3: Enhanced E-Signature Tests (HIGH PRIORITY)")
     print("-" * 30)
     
-    # Test coordinator workflow
+    # Test enhanced coordinator workflow with signature
     if 'coordinator' in tester.tokens:
         tester.test_get_students('coordinator')
-        tester.test_update_student_status('coordinator', 'approved')
+        tester.test_signature_status_update('coordinator', 'approved')
         
-    print("\n📋 Phase 4: Admin Dashboard Tests")
+    print("\n📋 Phase 4: Course Management Tests (HIGH PRIORITY)")
+    print("-" * 30)
+    
+    # Test course management APIs
+    if 'admin' in tester.tokens:
+        tester.test_course_management_apis('admin')
+        
+    print("\n📋 Phase 5: PDF Receipt Generation Tests (HIGH PRIORITY)")
+    print("-" * 30)
+    
+    # Test PDF receipt generation
+    if 'agent1' in tester.tokens:
+        tester.test_pdf_receipt_generation('agent1')
+    
+    print("\n📋 Phase 6: Enhanced Export Tests (MEDIUM PRIORITY)")
+    print("-" * 30)
+    
+    # Test filtered Excel export
+    if 'admin' in tester.tokens:
+        tester.test_filtered_excel_export('admin')
+    
+    print("\n📋 Phase 7: Incentive Management Tests (MEDIUM PRIORITY)")
+    print("-" * 30)
+    
+    # Test admin incentive management
+    if 'admin' in tester.tokens:
+        tester.test_admin_incentive_management('admin')
+    
+    print("\n📋 Phase 8: Admin Dashboard Tests")
     print("-" * 30)
     
     # Test admin functionality
@@ -568,7 +596,7 @@ def main():
         tester.test_get_students('admin')
         tester.test_get_incentives('admin')
     
-    print("\n📋 Phase 5: General API Tests")
+    print("\n📋 Phase 9: General API Tests")
     print("-" * 30)
     
     # Test incentive rules (public endpoint)
@@ -578,11 +606,17 @@ def main():
     if 'agent1' in tester.tokens:
         tester.test_get_incentives('agent1')
     
-    print("\n" + "=" * 50)
+    print("\n📋 Phase 10: Comprehensive Workflow Test")
+    print("-" * 30)
+    
+    # Test complete enhanced workflow
+    tester.test_comprehensive_workflow()
+    
+    print("\n" + "=" * 60)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed!")
+        print("🎉 All enhanced tests passed!")
         return 0
     else:
         print(f"⚠️  {tester.tests_run - tester.tests_passed} tests failed")
