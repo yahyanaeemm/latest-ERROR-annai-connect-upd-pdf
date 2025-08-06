@@ -825,9 +825,23 @@ const CoordinatorDashboard = () => {
 
 const AdminDashboard = () => {
   const [dashboard, setDashboard] = useState(null);
+  const [courseRules, setCourseRules] = useState([]);
+  const [allIncentives, setAllIncentives] = useState([]);
+  const [showCourseForm, setShowCourseForm] = useState(false);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [courseForm, setCourseForm] = useState({ course: '', amount: '' });
+  const [exportFilters, setExportFilters] = useState({
+    start_date: '',
+    end_date: '',
+    agent_id: '',
+    course: '',
+    status: ''
+  });
 
   useEffect(() => {
     fetchDashboard();
+    fetchCourseRules();
+    fetchAllIncentives();
   }, []);
 
   const fetchDashboard = async () => {
@@ -839,88 +853,368 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchCourseRules = async () => {
+    try {
+      const response = await axios.get(`${API}/incentive-rules`);
+      setCourseRules(response.data);
+    } catch (error) {
+      console.error('Error fetching course rules:', error);
+    }
+  };
+
+  const fetchAllIncentives = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/incentives`);
+      setAllIncentives(response.data);
+    } catch (error) {
+      console.error('Error fetching incentives:', error);
+    }
+  };
+
+  const handleCourseSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData();
+      formData.append('course', courseForm.course);
+      formData.append('amount', parseFloat(courseForm.amount));
+
+      if (editingCourse) {
+        await axios.put(`${API}/admin/courses/${editingCourse.id}`, formData);
+      } else {
+        await axios.post(`${API}/admin/courses`, formData);
+      }
+      
+      setShowCourseForm(false);
+      setEditingCourse(null);
+      setCourseForm({ course: '', amount: '' });
+      fetchCourseRules();
+    } catch (error) {
+      console.error('Error saving course:', error);
+      alert('Error saving course. Please try again.');
+    }
+  };
+
+  const deleteCourse = async (courseId) => {
+    if (confirm('Are you sure you want to delete this course?')) {
+      try {
+        await axios.delete(`${API}/admin/courses/${courseId}`);
+        fetchCourseRules();
+      } catch (error) {
+        console.error('Error deleting course:', error);
+      }
+    }
+  };
+
+  const updateIncentiveStatus = async (incentiveId, status) => {
+    try {
+      const formData = new FormData();
+      formData.append('status', status);
+      await axios.put(`${API}/admin/incentives/${incentiveId}/status`, formData);
+      fetchAllIncentives();
+    } catch (error) {
+      console.error('Error updating incentive status:', error);
+    }
+  };
+
+  const exportExcel = async () => {
+    try {
+      const params = new URLSearchParams();
+      Object.entries(exportFilters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+
+      const response = await axios.get(`${API}/admin/export/excel?${params}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'admissions_report.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+    }
+  };
+
+  const editCourse = (course) => {
+    setEditingCourse(course);
+    setCourseForm({ course: course.course, amount: course.amount.toString() });
+    setShowCourseForm(true);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold text-slate-800">Admin Dashboard</h2>
       
+      {/* Dashboard Stats */}
       {dashboard && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
+          <Card className="border-l-4 border-blue-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Admissions</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Total Admissions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dashboard.total_admissions}</div>
+              <div className="text-3xl font-bold text-blue-600">{dashboard.total_admissions}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-green-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Active Agents</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Active Agents</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dashboard.active_agents}</div>
+              <div className="text-3xl font-bold text-green-600">{dashboard.active_agents}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-yellow-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Incentives Paid</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Incentives Paid</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{dashboard.incentives_paid}</div>
+              <div className="text-3xl font-bold text-yellow-600">₹{dashboard.incentives_paid}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-l-4 border-red-500">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Pending Incentives</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Pending Incentives</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{dashboard.incentives_unpaid}</div>
+              <div className="text-3xl font-bold text-red-600">₹{dashboard.incentives_unpaid}</div>
             </CardContent>
           </Card>
         </div>
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Status Overview */}
         <Card>
           <CardHeader>
-            <CardTitle>Status Overview</CardTitle>
+            <CardTitle>Admission Status Overview</CardTitle>
           </CardHeader>
           <CardContent>
             {dashboard && (
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Pending:</span>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <span className="font-medium text-yellow-800">Pending</span>
                   <Badge className="bg-yellow-100 text-yellow-800">{dashboard.status_breakdown.pending}</Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span>Approved:</span>
+                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                  <span className="font-medium text-green-800">Approved</span>
                   <Badge className="bg-green-100 text-green-800">{dashboard.status_breakdown.approved}</Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span>Rejected:</span>
+                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-200">
+                  <span className="font-medium text-red-800">Rejected</span>
                   <Badge className="bg-red-100 text-red-800">{dashboard.status_breakdown.rejected}</Badge>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
-        
+
+        {/* Export Controls */}
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>Data Export</CardTitle>
+            <CardDescription>Generate reports with filters</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Button className="w-full" variant="outline">
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="start_date">Start Date</Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  value={exportFilters.start_date}
+                  onChange={(e) => setExportFilters({...exportFilters, start_date: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label htmlFor="end_date">End Date</Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  value={exportFilters.end_date}
+                  onChange={(e) => setExportFilters({...exportFilters, end_date: e.target.value})}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="filter_status">Status</Label>
+              <Select value={exportFilters.status} onValueChange={(value) => setExportFilters({...exportFilters, status: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={exportExcel} className="w-full">
               <FileText className="h-4 w-4 mr-2" />
               Export Excel Report
-            </Button>
-            <Button className="w-full" variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              Generate PDF Receipts
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* Course Management */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Course Management</CardTitle>
+              <CardDescription>Manage courses and incentive amounts</CardDescription>
+            </div>
+            <Button onClick={() => setShowCourseForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Course
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Course Name</TableHead>
+                <TableHead>Incentive Amount</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {courseRules.map((rule) => (
+                <TableRow key={rule.id}>
+                  <TableCell className="font-medium">{rule.course}</TableCell>
+                  <TableCell className="text-green-600 font-medium">₹{rule.amount}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button size="sm" variant="outline" onClick={() => editCourse(rule)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => deleteCourse(rule.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Incentive Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Incentive Management</CardTitle>
+          <CardDescription>Manage agent incentive payments</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Agent</TableHead>
+                <TableHead>Student</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {allIncentives.map((incentive) => (
+                <TableRow key={incentive.id}>
+                  <TableCell>{incentive.agent?.username || 'N/A'}</TableCell>
+                  <TableCell>{incentive.student ? `${incentive.student.first_name} ${incentive.student.last_name}` : 'N/A'}</TableCell>
+                  <TableCell>{incentive.course}</TableCell>
+                  <TableCell className="font-medium">₹{incentive.amount}</TableCell>
+                  <TableCell>
+                    <Badge className={incentive.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                      {incentive.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      {incentive.status === 'unpaid' && (
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => updateIncentiveStatus(incentive.id, 'paid')}
+                        >
+                          Mark Paid
+                        </Button>
+                      )}
+                      {incentive.status === 'paid' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateIncentiveStatus(incentive.id, 'unpaid')}
+                        >
+                          Mark Unpaid
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Course Form Dialog */}
+      <Dialog open={showCourseForm} onOpenChange={setShowCourseForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCourse ? 'Edit Course' : 'Add New Course'}</DialogTitle>
+            <DialogDescription>
+              {editingCourse ? 'Update course details' : 'Create a new course with incentive amount'}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCourseSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="course_name">Course Name</Label>
+              <Input
+                id="course_name"
+                value={courseForm.course}
+                onChange={(e) => setCourseForm({...courseForm, course: e.target.value})}
+                placeholder="e.g., BSc Computer Science"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="incentive_amount">Incentive Amount (₹)</Label>
+              <Input
+                id="incentive_amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={courseForm.amount}
+                onChange={(e) => setCourseForm({...courseForm, amount: e.target.value})}
+                placeholder="e.g., 5000"
+                required
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => {
+                setShowCourseForm(false);
+                setEditingCourse(null);
+                setCourseForm({ course: '', amount: '' });
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editingCourse ? 'Update Course' : 'Create Course'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
