@@ -472,51 +472,38 @@ async def get_all_incentives(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    # Get incentives with student and agent details
-    pipeline = [
-        {
-            "$lookup": {
-                "from": "students",
-                "localField": "student_id",
-                "foreignField": "id",
-                "as": "student"
-            }
-        },
-        {
-            "$lookup": {
-                "from": "users",
-                "localField": "agent_id",
-                "foreignField": "id",
-                "as": "agent"
-            }
-        },
-        {
-            "$unwind": {"path": "$student", "preserveNullAndEmptyArrays": True}
-        },
-        {
-            "$unwind": {"path": "$agent", "preserveNullAndEmptyArrays": True}
-        },
-        {
-            "$project": {
-                "_id": 0,  # Exclude MongoDB ObjectId
-                "id": 1,
-                "agent_id": 1,
-                "student_id": 1,
-                "course": 1,
-                "amount": 1,
-                "status": 1,
-                "created_at": 1,
-                "student.first_name": 1,
-                "student.last_name": 1,
-                "student.token_number": 1,
-                "agent.username": 1,
-                "agent.email": 1
-            }
-        }
-    ]
+    # Get all incentives
+    incentives = await db.incentives.find().to_list(1000)
     
-    incentives = await db.incentives.aggregate(pipeline).to_list(1000)
-    return incentives
+    # Enrich with student and agent details
+    enriched_incentives = []
+    for incentive in incentives:
+        # Get student details
+        student = await db.students.find_one({"id": incentive["student_id"]})
+        # Get agent details  
+        agent = await db.users.find_one({"id": incentive["agent_id"]})
+        
+        enriched_incentive = {
+            "id": incentive["id"],
+            "agent_id": incentive["agent_id"],
+            "student_id": incentive["student_id"],
+            "course": incentive["course"],
+            "amount": incentive["amount"],
+            "status": incentive["status"],
+            "created_at": incentive["created_at"],
+            "student": {
+                "first_name": student["first_name"] if student else None,
+                "last_name": student["last_name"] if student else None,
+                "token_number": student["token_number"] if student else None,
+            } if student else None,
+            "agent": {
+                "username": agent["username"] if agent else None,
+                "email": agent["email"] if agent else None,
+            } if agent else None
+        }
+        enriched_incentives.append(enriched_incentive)
+    
+    return enriched_incentives
 
 # Enhanced Export APIs
 @api_router.get("/admin/export/excel")
