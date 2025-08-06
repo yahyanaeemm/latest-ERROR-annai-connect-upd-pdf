@@ -372,8 +372,249 @@ async def create_incentive_rule(
 
 @api_router.get("/incentive-rules")
 async def get_incentive_rules():
-    rules = await db.incentive_rules.find().to_list(1000)
+    rules = await db.incentive_rules.find({"active": True}).to_list(1000)
     return [IncentiveRule(**rule) for rule in rules]
+
+# Course Management APIs
+@api_router.post("/admin/courses")
+async def create_course_rule(
+    course: str = Form(...),
+    amount: float = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if course already exists
+    existing_rule = await db.incentive_rules.find_one({"course": course})
+    if existing_rule:
+        raise HTTPException(status_code=400, detail="Course already exists")
+    
+    rule = IncentiveRule(course=course, amount=amount)
+    await db.incentive_rules.insert_one(rule.dict())
+    return rule
+
+@api_router.put("/admin/courses/{rule_id}")
+async def update_course_rule(
+    rule_id: str,
+    course: str = Form(...),
+    amount: float = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    update_data = {
+        "course": course,
+        "amount": amount,
+        "updated_at": datetime.utcnow()
+    }
+    
+    result = await db.incentive_rules.update_one(
+        {"id": rule_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Course rule not found")
+    
+    return {"message": "Course rule updated successfully"}
+
+@api_router.delete("/admin/courses/{rule_id}")
+async def delete_course_rule(
+    rule_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Soft delete by setting active to False
+    result = await db.incentive_rules.update_one(
+        {"id": rule_id},
+        {"$set": {"active": False, "updated_at": datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Course rule not found")
+    
+    return {"message": "Course rule deleted successfully"}
+
+# Incentive Management APIs
+@api_router.put("/admin/incentives/{incentive_id}/status")
+async def update_incentive_status(
+    incentive_id: str,
+    status: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if status not in ["paid", "unpaid"]:
+        raise HTTPException(status_code=400, detail="Status must be 'paid' or 'unpaid'")
+    
+    result = await db.incentives.update_one(
+        {"id": incentive_id},
+        {"$set": {"status": status}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Incentive not found")
+    
+    return {"message": "Incentive status updated successfully"}
+
+@api_router.get("/admin/incentives")
+async def get_all_incentives(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get incentives with student and agent details
+    pipeline = [
+        {
+            "$lookup": {
+                "from": "students",
+                "localField": "student_id",
+                "foreignField": "id",
+                "as": "student"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "agent_id",
+                "foreignField": "id",
+                "as": "agent"
+            }
+        },
+        {
+            "$unwind": {"path": "$student", "preserveNullAndEmptyArrays": True}
+        },
+        {
+            "$unwind": {"path": "$agent", "preserveNullAndEmptyArrays": True}
+        }
+    ]
+    
+    incentives = await db.incentives.aggregate(pipeline).to_list(1000)
+    return incentives
+
+# Enhanced Export APIs
+@api_router.get("/admin/export/excel")
+async def export_excel(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    course: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Build query filter
+    query = {}
+    if start_date:
+        query["created_at"] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        if "created_at" not in query:
+            query["created_at"] = {}
+        query["created_at"]["$lte"] = datetime.fromisoformat(end_date)
+    if agent_id:
+        query["agent_id"] = agent_id
+    if course:
+        query["course"] = course
+    if status:
+        query["status"] = status
+    
+    students = await db.students.find(query).to_list(1000)
+    
+    # Create Excel file
+    import pandas as pd
+    from io import BytesIO
+    
+    df = pd.DataFrame([{
+        "Token": student["token_number"],
+        "Student Name": f"{student['first_name']} {student['last_name']}",
+        "Email": student["email"],
+        "Phone": student["phone"],
+        "Course": student["course"],
+        "Status": student["status"],
+        "Agent ID": student["agent_id"],
+        "Created Date": student["created_at"].strftime("%Y-%m-%d %H:%M:%S"),
+        "Coordinator Notes": student.get("coordinator_notes", "")
+    } for student in students])
+    
+    # Create Excel buffer
+    excel_buffer = BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Students', index=False)
+    
+    excel_buffer.seek(0)
+    
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        BytesIO(excel_buffer.getvalue()),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=admissions_report.xlsx"}
+    )
+
+@api_router.get("/students/{student_id}/receipt")
+async def generate_student_receipt(
+    student_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    student_doc = await db.students.find_one({"id": student_id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Check permissions
+    if current_user.role == "agent" and student_doc["agent_id"] != (current_user.agent_id or current_user.id):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Generate PDF receipt
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    from io import BytesIO
+    
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Header
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 50, "Educational Institution")
+    p.setFont("Helvetica", 12)
+    p.drawString(50, height - 70, "Admission Receipt")
+    
+    # Student details
+    y = height - 120
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(50, y, f"Token Number: {student_doc['token_number']}")
+    y -= 25
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Student Name: {student_doc['first_name']} {student_doc['last_name']}")
+    y -= 20
+    p.drawString(50, y, f"Email: {student_doc['email']}")
+    y -= 20
+    p.drawString(50, y, f"Phone: {student_doc['phone']}")
+    y -= 20
+    p.drawString(50, y, f"Course: {student_doc['course']}")
+    y -= 20
+    p.drawString(50, y, f"Status: {student_doc['status'].upper()}")
+    y -= 20
+    p.drawString(50, y, f"Submission Date: {student_doc['created_at'].strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Footer
+    p.drawString(50, 50, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        BytesIO(buffer.getvalue()),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=receipt_{student_doc['token_number']}.pdf"}
+    )
 
 # Include the router in the main app
 app.include_router(api_router)
