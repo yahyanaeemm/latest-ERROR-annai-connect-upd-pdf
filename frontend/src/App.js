@@ -855,6 +855,7 @@ const AdminDashboard = () => {
     fetchDashboard();
     fetchCourseRules();
     fetchAllIncentives();
+    fetchPendingUsers();
   }, []);
 
   const fetchDashboard = async () => {
