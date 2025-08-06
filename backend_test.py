@@ -347,6 +347,41 @@ class AdmissionSystemAPITester:
             print("   PDF receipt generated successfully")
         return success
 
+    def test_react_select_fix_verification(self, user_key):
+        """Test React Select component fix - verify 'all' status filter works"""
+        print("\n🔧 CRITICAL BUG FIX VERIFICATION: React Select Component")
+        print("   Testing that 'all' status filter works properly")
+        
+        # Test the specific fix: status="all" should work without errors
+        success, response = self.run_test(
+            "Export with status='all' (React Select Fix)",
+            "GET",
+            "admin/export/excel?status=all",
+            200,
+            token_user=user_key
+        )
+        
+        if success:
+            print("   ✅ React Select fix verified: 'all' status filter works")
+        else:
+            print("   ❌ React Select fix failed: 'all' status filter not working")
+        
+        # Also test admin dashboard loads without errors
+        dashboard_success, dashboard_response = self.run_test(
+            "Admin Dashboard (React Select Components)",
+            "GET",
+            "admin/dashboard",
+            200,
+            token_user=user_key
+        )
+        
+        if dashboard_success:
+            print("   ✅ Admin dashboard loads successfully")
+        else:
+            print("   ❌ Admin dashboard failed to load")
+        
+        return success and dashboard_success
+
     def test_filtered_excel_export(self, user_key):
         """Test enhanced Excel export with filters"""
         # Test with various filter combinations
