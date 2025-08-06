@@ -1058,7 +1058,16 @@ def main():
     if 'agent1' in tester.tokens:
         tester.test_get_incentives('agent1')
     
-    print("\n📋 Phase 11: Comprehensive Workflow Test")
+    print("\n📋 Phase 11: DATABASE-BASED MANUAL USER REGISTRATION TESTS (PHASE 3 - HIGH PRIORITY)")
+    print("-" * 30)
+    
+    # Test new database-based manual user registration system
+    if 'admin' in tester.tokens:
+        tester.test_complete_registration_workflow('admin')
+    else:
+        print("❌ Admin token not available for registration workflow tests")
+    
+    print("\n📋 Phase 12: Comprehensive Workflow Test")
     print("-" * 30)
     
     # Test complete enhanced workflow
