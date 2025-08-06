@@ -1219,6 +1219,78 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Pending User Registrations */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Pending User Registrations</span>
+            <Badge variant="outline">{pendingUsers.length} pending</Badge>
+          </CardTitle>
+          <CardDescription>
+            Review and approve/reject new user registrations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingUsers.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              No pending user registrations
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Agent ID</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{user.agent_id || 'N/A'}</TableCell>
+                    <TableCell>
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => approveUser(user.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:bg-red-50"
+                          onClick={() => rejectUser(user.id)}
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Course Form Dialog */}
       <Dialog open={showCourseForm} onOpenChange={setShowCourseForm}>
         <DialogContent>
