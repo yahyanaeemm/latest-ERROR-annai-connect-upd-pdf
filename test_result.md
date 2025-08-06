@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Enhance the existing admission and agent incentive platform with 7 key functionalities: 1) E-Signature functionality for Admission Coordinator (digital pad + image upload), 2) Visual approval indicators with color-coding, 3) Receipt upload functionality fixes, 4) More course options with dynamic incentive management, 5) Admin incentive management UI, 6) Report export fixes with filters, 7) OTP-based login creation. Focusing on Phase 1 & 2 (features 1-6) first."
+user_problem_statement: "Enhance the existing admission and agent incentive platform with 7 key functionalities: 1) E-Signature functionality for Admission Coordinator (digital pad + image upload), 2) Visual approval indicators with color-coding, 3) Receipt upload functionality fixes, 4) More course options with dynamic incentive management, 5) Admin incentive management UI, 6) Report export fixes with filters, 7) OTP-based login creation. Focusing on Phase 1 & 2 (features 1-6) first. Phase 3: Database-based manual verification system for new user registration instead of OTP emails - admin approval required for new agents/coordinators."
 
 backend:
   - task: "E-Signature API endpoints"
