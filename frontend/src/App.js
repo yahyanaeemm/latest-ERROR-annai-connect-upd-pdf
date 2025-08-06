@@ -969,6 +969,35 @@ const AdminDashboard = () => {
     setShowCourseForm(true);
   };
 
+  const approveUser = async (userId) => {
+    if (confirm('Are you sure you want to approve this user?')) {
+      try {
+        await axios.post(`${API}/admin/pending-users/${userId}/approve`);
+        fetchPendingUsers();
+        alert('User approved successfully');
+      } catch (error) {
+        console.error('Error approving user:', error);
+        alert('Error approving user. Please try again.');
+      }
+    }
+  };
+
+  const rejectUser = async (userId) => {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (reason !== null) {
+      try {
+        const formData = new FormData();
+        formData.append('reason', reason);
+        await axios.post(`${API}/admin/pending-users/${userId}/reject`, formData);
+        fetchPendingUsers();
+        alert('User rejected successfully');
+      } catch (error) {
+        console.error('Error rejecting user:', error);
+        alert('Error rejecting user. Please try again.');
+      }
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold text-slate-800">Admin Dashboard</h2>
