@@ -309,7 +309,7 @@ class AdmissionSystemAPITester:
             f"admin/courses/{course_id}",
             200,
             data=update_data,
-            files={},  # This triggers form data mode
+            files=None,  # Use None to trigger form data mode
             token_user=user_key
         )
         
