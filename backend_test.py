@@ -810,8 +810,8 @@ class AdmissionSystemAPITester:
             data={"username": reject_user_data['username'], "password": reject_user_data['password']}
         )
         
-        if success:
-            print("❌ Rejected user should not be able to login")
+        if not success:
+            print("❌ Test failed - expected 401 status for rejected user login")
             return False
             
         print("   ✅ Rejected user correctly cannot login")
