@@ -358,9 +358,19 @@ class AdmissionSystemAPITester:
                 'start_date': '2024-01-01T00:00:00',
                 'end_date': '2024-12-31T23:59:59'
             },
-            # Test with status filter
+            # Test with status filter - CRITICAL: Test "all" value fix
+            {
+                'status': 'all'
+            },
+            # Test with other status values
             {
                 'status': 'approved'
+            },
+            {
+                'status': 'pending'
+            },
+            {
+                'status': 'rejected'
             },
             # Test with course filter
             {
