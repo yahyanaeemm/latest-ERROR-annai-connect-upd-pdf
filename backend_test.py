@@ -300,7 +300,7 @@ class AdmissionSystemAPITester:
         # Test update course - using form data
         update_data = {
             'course': f"{course_name} Updated",
-            'amount': '6000.0'  # Convert to string for form data
+            'amount': 6000.0  # Keep as float, requests will handle conversion
         }
         
         success, response = self.run_test(
