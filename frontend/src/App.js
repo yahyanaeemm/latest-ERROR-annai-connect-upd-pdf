@@ -265,6 +265,7 @@ const AgentDashboard = () => {
   const [students, setStudents] = useState([]);
   const [incentives, setIncentives] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [courseRules, setCourseRules] = useState([]);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -273,11 +274,10 @@ const AgentDashboard = () => {
     course: ''
   });
 
-  const courses = ['BSc', 'BNYS', 'BCA', 'BA', 'BCom'];
-
   useEffect(() => {
     fetchStudents();
     fetchIncentives();
+    fetchCourseRules();
   }, []);
 
   const fetchStudents = async () => {
@@ -295,6 +295,15 @@ const AgentDashboard = () => {
       setIncentives(response.data);
     } catch (error) {
       console.error('Error fetching incentives:', error);
+    }
+  };
+
+  const fetchCourseRules = async () => {
+    try {
+      const response = await axios.get(`${API}/incentive-rules`);
+      setCourseRules(response.data);
+    } catch (error) {
+      console.error('Error fetching course rules:', error);
     }
   };
 
@@ -325,20 +334,42 @@ const AgentDashboard = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'approved': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'rejected': return <XCircle className="h-4 w-4 text-red-600" />;
-      default: return <Clock className="h-4 w-4 text-yellow-600" />;
+  const downloadReceipt = async (studentId, tokenNumber) => {
+    try {
+      const response = await axios.get(`${API}/students/${studentId}/receipt`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `receipt_${tokenNumber}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-yellow-100 text-yellow-800';
-    }
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      pending: { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Clock },
+      verified: { color: 'bg-blue-100 text-blue-800 border-blue-300', icon: Eye },
+      approved: { color: 'bg-green-100 text-green-800 border-green-300', icon: CheckCircle },
+      rejected: { color: 'bg-red-100 text-red-800 border-red-300', icon: XCircle }
+    };
+
+    const config = statusConfig[status] || statusConfig.pending;
+    const IconComponent = config.icon;
+
+    return (
+      <Badge className={`${config.color} border flex items-center gap-1`}>
+        <IconComponent className="h-3 w-3" />
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
   };
 
   return (
@@ -366,7 +397,7 @@ const AgentDashboard = () => {
             <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{incentives?.total_earned || 0}</div>
+            <div className="text-2xl font-bold text-green-600">₹{incentives?.total_earned || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -374,7 +405,7 @@ const AgentDashboard = () => {
             <CardTitle className="text-sm font-medium">Pending Incentives</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{incentives?.total_pending || 0}</div>
+            <div className="text-2xl font-bold text-yellow-600">₹{incentives?.total_pending || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -383,6 +414,7 @@ const AgentDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Student Submissions</CardTitle>
+          <CardDescription>Track your student submissions and their status</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -398,16 +430,15 @@ const AgentDashboard = () => {
             </TableHeader>
             <TableBody>
               {students.map((student) => (
-                <TableRow key={student.id}>
+                <TableRow key={student.id} className={
+                  student.status === 'approved' ? 'bg-green-50 border-l-4 border-green-400' :
+                  student.status === 'rejected' ? 'bg-red-50 border-l-4 border-red-400' :
+                  student.status === 'pending' ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''
+                }>
                   <TableCell className="font-mono text-sm">{student.token_number}</TableCell>
                   <TableCell>{student.first_name} {student.last_name}</TableCell>
                   <TableCell>{student.course}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(student.status)}>
-                      {getStatusIcon(student.status)}
-                      <span className="ml-1">{student.status}</span>
-                    </Badge>
-                  </TableCell>
+                  <TableCell>{getStatusBadge(student.status)}</TableCell>
                   <TableCell>
                     <div className="flex space-x-1">
                       {['tc', 'id_proof', 'marksheet'].map((docType) => (
@@ -418,7 +449,7 @@ const AgentDashboard = () => {
                             accept=".jpg,.jpeg,.pdf,.png"
                             onChange={(e) => e.target.files[0] && handleFileUpload(student.id, docType, e.target.files[0])}
                           />
-                          <Badge variant={student.documents[docType] ? "default" : "outline"} className="text-xs">
+                          <Badge variant={student.documents[docType] ? "default" : "outline"} className="text-xs hover:bg-blue-100">
                             {docType.replace('_', ' ').toUpperCase()}
                             {!student.documents[docType] && <Upload className="h-3 w-3 ml-1" />}
                           </Badge>
@@ -427,9 +458,18 @@ const AgentDashboard = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex space-x-1">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => downloadReceipt(student.id, student.token_number)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -494,8 +534,10 @@ const AgentDashboard = () => {
                   <SelectValue placeholder="Select a course" />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course} value={course}>{course}</SelectItem>
+                  {courseRules.map((rule) => (
+                    <SelectItem key={rule.course} value={rule.course}>
+                      {rule.course} (₹{rule.amount} incentive)
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
