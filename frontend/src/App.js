@@ -694,6 +694,26 @@ const CoordinatorDashboard = () => {
     }
   };
 
+  const downloadReceipt = async (studentId, tokenNumber) => {
+    try {
+      const response = await axios.get(`${API}/students/${studentId}/receipt`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `receipt_${tokenNumber}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      alert('Error downloading receipt. Make sure the student is approved.');
+    }
+  };
+
   const updateStatus = async (studentId, status, notes = '', signatureData = '', signatureType = '') => {
     try {
       const formData = new FormData();
