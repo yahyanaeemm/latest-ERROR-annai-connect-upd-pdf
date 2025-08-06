@@ -145,14 +145,15 @@ class AdmissionSystemAPITester:
             print("❌ No student ID available for file upload test")
             return False
             
-        # Create a temporary test file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
-            f.write("This is a test document for TC")
+        # Create a temporary test PDF file
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.pdf', delete=False) as f:
+            # Write minimal PDF content
+            f.write(b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000173 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n301\n%%EOF')
             temp_file_path = f.name
         
         try:
             with open(temp_file_path, 'rb') as f:
-                files = {'file': ('test_tc.txt', f, 'text/plain')}
+                files = {'file': ('test_tc.pdf', f, 'application/pdf')}
                 data = {'document_type': 'tc'}
                 
                 success, response = self.run_test(
