@@ -297,10 +297,10 @@ class AdmissionSystemAPITester:
             self.test_data['course_id'] = course_id
             print(f"   Course created with ID: {course_id}")
         
-        # Test update course
+        # Test update course - using form data
         update_data = {
             'course': f"{course_name} Updated",
-            'amount': 6000.0
+            'amount': '6000.0'  # Convert to string for form data
         }
         
         success, response = self.run_test(
@@ -309,7 +309,7 @@ class AdmissionSystemAPITester:
             f"admin/courses/{course_id}",
             200,
             data=update_data,
-            files={},
+            files={},  # This triggers form data mode
             token_user=user_key
         )
         
