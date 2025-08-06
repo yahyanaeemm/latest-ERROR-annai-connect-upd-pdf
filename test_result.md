@@ -167,15 +167,18 @@ backend:
 
   - task: "Incentive status update API"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added admin endpoint to mark incentives as paid/unpaid, and get all incentives with student/agent details"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - Incentive management APIs working correctly. GET /api/admin/incentives returns enriched data with student and agent details. PUT /api/admin/incentives/{id}/status successfully updates incentive status to paid/unpaid. Proper validation and access control implemented."
 
 frontend:
   - task: "E-Signature component with digital pad"
