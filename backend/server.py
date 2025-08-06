@@ -672,41 +672,161 @@ async def generate_student_receipt(
     if current_user.role == "agent" and student_doc["agent_id"] != (current_user.agent_id or current_user.id):
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Only generate receipts for approved students
+    if student_doc["status"] != "approved":
+        raise HTTPException(status_code=400, detail="Receipts can only be generated for approved students")
+    
+    # Get agent details
+    agent_doc = await db.users.find_one({"id": student_doc["agent_id"]})
+    agent_name = agent_doc["username"] if agent_doc else "Unknown Agent"
+    
     # Generate PDF receipt
     from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.units import inch
     from io import BytesIO
+    import base64
+    from PIL import Image
+    import io
     
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
     
-    # Header
-    p.setFont("Helvetica-Bold", 16)
+    # Header with institution branding
+    p.setFont("Helvetica-Bold", 20)
     p.drawString(50, height - 50, "Educational Institution")
-    p.setFont("Helvetica", 12)
-    p.drawString(50, height - 70, "Admission Receipt")
+    p.setFont("Helvetica", 14)
+    p.drawString(50, height - 75, "Student Admission Receipt")
     
-    # Student details
+    # Draw a line under header
+    p.line(50, height - 85, width - 50, height - 85)
+    
+    # Receipt details in a professional format
     y = height - 120
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(50, y, f"Token Number: {student_doc['token_number']}")
-    y -= 25
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Student Name: {student_doc['first_name']} {student_doc['last_name']}")
-    y -= 20
-    p.drawString(50, y, f"Email: {student_doc['email']}")
-    y -= 20
-    p.drawString(50, y, f"Phone: {student_doc['phone']}")
-    y -= 20
-    p.drawString(50, y, f"Course: {student_doc['course']}")
-    y -= 20
-    p.drawString(50, y, f"Status: {student_doc['status'].upper()}")
-    y -= 20
-    p.drawString(50, y, f"Submission Date: {student_doc['created_at'].strftime('%Y-%m-%d %H:%M:%S')}")
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "ADMISSION CONFIRMED")
+    y -= 40
     
-    # Footer
-    p.drawString(50, 50, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # Left column - Student Details
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, y, "STUDENT DETAILS")
+    p.line(50, y - 5, 250, y - 5)
+    y -= 25
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Token Number:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(150, y, f"{student_doc['token_number']}")
+    y -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Student Name:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(150, y, f"{student_doc['first_name']} {student_doc['last_name']}")
+    y -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Email:")
+    p.drawString(150, y, f"{student_doc['email']}")
+    y -= 18
+    
+    p.drawString(50, y, f"Phone:")
+    p.drawString(150, y, f"{student_doc['phone']}")
+    y -= 18
+    
+    p.drawString(50, y, f"Course:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(150, y, f"{student_doc['course']}")
+    y -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Status:")
+    p.setFont("Helvetica-Bold", 10)
+    p.setFillColorRGB(0, 0.5, 0)  # Green color for approved
+    p.drawString(150, y, f"{student_doc['status'].upper()}")
+    p.setFillColorRGB(0, 0, 0)  # Back to black
+    y -= 30
+    
+    # Right column - Process Details
+    y_right = height - 185
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(300, y_right, "PROCESS DETAILS")
+    p.line(300, y_right - 5, 500, y_right - 5)
+    y_right -= 25
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(300, y_right, f"Processed by Agent:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(420, y_right, f"{agent_name}")
+    y_right -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(300, y_right, f"Submission Date:")
+    p.drawString(420, y_right, f"{student_doc['created_at'].strftime('%d/%m/%Y %H:%M')}")
+    y_right -= 18
+    
+    if student_doc.get('updated_at'):
+        p.drawString(300, y_right, f"Approval Date:")
+        p.drawString(420, y_right, f"{student_doc['updated_at'].strftime('%d/%m/%Y %H:%M')}")
+        y_right -= 18
+    
+    # Digital Signature Section
+    signature_y = y - 40
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, signature_y, "DIGITAL SIGNATURE")
+    p.line(50, signature_y - 5, 500, signature_y - 5)
+    signature_y -= 20
+    
+    # Display digital signature if available
+    if student_doc.get('signature_data'):
+        try:
+            # Decode base64 signature data
+            signature_data = student_doc['signature_data']
+            if signature_data.startswith('data:image'):
+                # Remove data URL prefix if present
+                signature_data = signature_data.split(',')[1]
+            
+            # Create signature image
+            signature_bytes = base64.b64decode(signature_data)
+            signature_img = Image.open(io.BytesIO(signature_bytes))
+            
+            # Save temporarily for ReportLab
+            temp_signature = io.BytesIO()
+            signature_img.save(temp_signature, format='PNG')
+            temp_signature.seek(0)
+            
+            # Add signature to PDF
+            p.drawString(50, signature_y, "Admission Coordinator Digital Signature:")
+            signature_y -= 10
+            
+            # Draw signature image (scaled)
+            signature_width = 200
+            signature_height = 80
+            p.drawInlineImage(temp_signature, 50, signature_y - signature_height, 
+                            signature_width, signature_height)
+            signature_y -= signature_height + 10
+            
+        except Exception as e:
+            print(f"Error processing signature: {e}")
+            p.setFont("Helvetica-Oblique", 9)
+            p.drawString(50, signature_y, "Digital Signature: [Signature processing error]")
+            signature_y -= 20
+    else:
+        p.setFont("Helvetica-Oblique", 9)
+        p.drawString(50, signature_y, "Digital Signature: [No signature available]")
+        signature_y -= 20
+    
+    # Footer with important note
+    p.line(50, 100, width - 50, 100)
+    p.setFont("Helvetica-Oblique", 8)
+    p.drawString(50, 85, "This is a computer-generated receipt and does not require a physical signature.")
+    p.setFont("Helvetica", 8)
+    p.drawString(50, 70, f"Generated on: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    p.drawString(300, 70, f"Receipt ID: RCP-{student_doc['token_number']}")
+    
+    # Add a border around the receipt
+    p.rect(30, 30, width - 60, height - 60, stroke=1, fill=0)
     
     p.showPage()
     p.save()
