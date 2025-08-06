@@ -495,6 +495,23 @@ async def get_all_incentives(current_user: User = Depends(get_current_user)):
         },
         {
             "$unwind": {"path": "$agent", "preserveNullAndEmptyArrays": True}
+        },
+        {
+            "$project": {
+                "_id": 0,  # Exclude MongoDB ObjectId
+                "id": 1,
+                "agent_id": 1,
+                "student_id": 1,
+                "course": 1,
+                "amount": 1,
+                "status": 1,
+                "created_at": 1,
+                "student.first_name": 1,
+                "student.last_name": 1,
+                "student.token_number": 1,
+                "agent.username": 1,
+                "agent.email": 1
+            }
         }
     ]
     
