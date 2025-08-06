@@ -276,7 +276,7 @@ class AdmissionSystemAPITester:
         # Test create course - using form data as expected by the API
         create_data = {
             'course': course_name,
-            'amount': str(course_amount)  # Convert to string for form data
+            'amount': course_amount  # Keep as float, requests will handle conversion
         }
         
         success, response = self.run_test(
