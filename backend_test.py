@@ -177,6 +177,7 @@ class AdmissionSystemAPITester:
             print("❌ No student ID available for status update test")
             return False
             
+        # Use form data instead of JSON for this endpoint
         data = {
             'status': status,
             'notes': f'Test {status} by coordinator'
@@ -188,6 +189,7 @@ class AdmissionSystemAPITester:
             f"students/{self.test_data['student_id']}/status",
             200,
             data=data,
+            files={},  # This will trigger form data mode
             token_user=user_key
         )
         return success
