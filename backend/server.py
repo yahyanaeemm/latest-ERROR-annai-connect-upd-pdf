@@ -82,7 +82,9 @@ class Student(BaseModel):
     status: str = "pending"  # pending, verified, approved, rejected
     created_at: datetime = Field(default_factory=datetime.utcnow)
     coordinator_notes: Optional[str] = None
-    signature_path: Optional[str] = None
+    signature_data: Optional[str] = None  # base64 encoded signature
+    signature_type: Optional[str] = None  # "draw" or "upload"
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class StudentCreate(BaseModel):
     first_name: str
