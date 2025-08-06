@@ -73,13 +73,7 @@ const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await axios.post(`${API}/register`, userData);
-      const { access_token } = response.data;
-      
-      localStorage.setItem('token', access_token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      
-      await fetchCurrentUser();
-      return true;
+      return response.data; // Return the whole response with message and status
     } catch (error) {
       throw new Error(error.response?.data?.detail || 'Registration failed');
     }
