@@ -624,8 +624,8 @@ class AdmissionSystemAPITester:
             data={"username": test_user_data['username'], "password": test_user_data['password']}
         )
         
-        if success:
-            print("❌ Pending user should not be able to login")
+        if not success:
+            print("❌ Test failed - expected 401 status for pending user login")
             return False
             
         print("   ✅ Pending user correctly cannot login")
