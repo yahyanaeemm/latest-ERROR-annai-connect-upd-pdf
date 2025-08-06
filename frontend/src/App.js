@@ -513,8 +513,116 @@ const AgentDashboard = () => {
   );
 };
 
+// Signature Component
+const SignatureModal = ({ isOpen, onClose, onSave }) => {
+  const sigCanvas = useRef({});
+  const [signatureType, setSignatureType] = useState('draw');
+  const [uploadedImage, setUploadedImage] = useState(null);
+
+  const clearSignature = () => {
+    sigCanvas.current.clear();
+  };
+
+  const saveSignature = () => {
+    let signatureData = '';
+    if (signatureType === 'draw') {
+      if (sigCanvas.current.isEmpty()) {
+        alert('Please provide a signature');
+        return;
+      }
+      signatureData = sigCanvas.current.toDataURL();
+    } else {
+      if (!uploadedImage) {
+        alert('Please upload a signature image');
+        return;
+      }
+      signatureData = uploadedImage;
+    }
+    
+    onSave(signatureData, signatureType);
+    onClose();
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.match(/image\/(png|jpg|jpeg)/)) {
+        alert('Please upload a PNG or JPG image');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add E-Signature</DialogTitle>
+          <DialogDescription>
+            Draw your signature or upload an image
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Tabs value={signatureType} onValueChange={setSignatureType}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="draw">Draw</TabsTrigger>
+            <TabsTrigger value="upload">Upload</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="draw" className="space-y-4">
+            <div className="border rounded-lg bg-white">
+              <SignatureCanvas
+                ref={sigCanvas}
+                canvasProps={{
+                  width: 400,
+                  height: 200,
+                  className: 'sigCanvas'
+                }}
+              />
+            </div>
+            <Button variant="outline" onClick={clearSignature} className="w-full">
+              Clear
+            </Button>
+          </TabsContent>
+          
+          <TabsContent value="upload" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="signature-upload">Upload Signature Image</Label>
+              <Input
+                id="signature-upload"
+                type="file"
+                accept=".png,.jpg,.jpeg"
+                onChange={handleImageUpload}
+              />
+            </div>
+            {uploadedImage && (
+              <div className="border rounded p-4">
+                <img src={uploadedImage} alt="Uploaded signature" className="max-h-32 mx-auto" />
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+        
+        <div className="flex justify-end space-x-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={saveSignature}>Save Signature</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const CoordinatorDashboard = () => {
   const [students, setStudents] = useState([]);
+  const [showSignature, setShowSignature] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [actionType, setActionType] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     fetchStudents();
@@ -529,11 +637,13 @@ const CoordinatorDashboard = () => {
     }
   };
 
-  const updateStatus = async (studentId, status, notes = '') => {
+  const updateStatus = async (studentId, status, notes = '', signatureData = '', signatureType = '') => {
     try {
       const formData = new FormData();
       formData.append('status', status);
       if (notes) formData.append('notes', notes);
+      if (signatureData) formData.append('signature_data', signatureData);
+      if (signatureType) formData.append('signature_type', signatureType);
       
       await axios.put(`${API}/students/${studentId}/status`, formData);
       fetchStudents();
@@ -542,13 +652,51 @@ const CoordinatorDashboard = () => {
     }
   };
 
+  const handleStatusAction = (student, action) => {
+    setSelectedStudent(student);
+    setActionType(action);
+    if (action === 'approved') {
+      setShowSignature(true);
+    } else {
+      updateStatus(student.id, action);
+    }
+  };
+
+  const handleSignatureSave = (signatureData, signatureType) => {
+    if (selectedStudent) {
+      updateStatus(selectedStudent.id, actionType, notes, signatureData, signatureType);
+      setNotes('');
+      setSelectedStudent(null);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      pending: { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Clock },
+      verified: { color: 'bg-blue-100 text-blue-800 border-blue-300', icon: Eye },
+      approved: { color: 'bg-green-100 text-green-800 border-green-300', icon: CheckCircle },
+      rejected: { color: 'bg-red-100 text-red-800 border-red-300', icon: XCircle }
+    };
+
+    const config = statusConfig[status] || statusConfig.pending;
+    const IconComponent = config.icon;
+
+    return (
+      <Badge className={`${config.color} border flex items-center gap-1`}>
+        <IconComponent className="h-3 w-3" />
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-slate-800 mb-6">Coordinator Dashboard</h2>
       
       <Card>
         <CardHeader>
-          <CardTitle>Pending Reviews</CardTitle>
+          <CardTitle>Student Reviews</CardTitle>
+          <CardDescription>Review and approve student admissions</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -557,39 +705,64 @@ const CoordinatorDashboard = () => {
                 <TableHead>Token</TableHead>
                 <TableHead>Student</TableHead>
                 <TableHead>Course</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Documents</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {students.map((student) => (
-                <TableRow key={student.id}>
+                <TableRow key={student.id} className={
+                  student.status === 'approved' ? 'bg-green-50' :
+                  student.status === 'rejected' ? 'bg-red-50' :
+                  student.status === 'pending' ? 'bg-yellow-50' : ''
+                }>
                   <TableCell className="font-mono">{student.token_number}</TableCell>
                   <TableCell>{student.first_name} {student.last_name}</TableCell>
                   <TableCell>{student.course}</TableCell>
+                  <TableCell>{getStatusBadge(student.status)}</TableCell>
                   <TableCell>
                     <div className="flex space-x-1">
                       {Object.entries(student.documents).map(([type, path]) => (
-                        <Badge key={type} variant="secondary">{type}</Badge>
+                        <Badge key={type} variant="secondary" className="text-xs">
+                          {type.replace('_', ' ').toUpperCase()}
+                        </Badge>
                       ))}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button 
-                        size="sm" 
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={() => updateStatus(student.id, 'approved')}
-                      >
-                        Approve
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => updateStatus(student.id, 'rejected')}
-                      >
-                        Reject
-                      </Button>
+                      {student.status === 'pending' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleStatusAction(student, 'approved')}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => handleStatusAction(student, 'rejected')}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {student.status !== 'pending' && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          {student.status === 'approved' && student.signature_data && (
+                            <Badge variant="outline" className="text-green-600">
+                              <Pen className="h-3 w-3 mr-1" />
+                              Signed
+                            </Badge>
+                          )}
+                          {student.status === 'approved' ? 'Approved' : 'Processed'}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -598,6 +771,12 @@ const CoordinatorDashboard = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <SignatureModal
+        isOpen={showSignature}
+        onClose={() => setShowSignature(false)}
+        onSave={handleSignatureSave}
+      />
     </div>
   );
 };
