@@ -839,6 +839,7 @@ const AdminDashboard = () => {
   const [dashboard, setDashboard] = useState(null);
   const [courseRules, setCourseRules] = useState([]);
   const [allIncentives, setAllIncentives] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
   const [showCourseForm, setShowCourseForm] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseForm, setCourseForm] = useState({ course: '', amount: '' });
