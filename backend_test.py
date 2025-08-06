@@ -620,21 +620,28 @@ def main():
     if 'agent1' in tester.tokens:
         tester.test_pdf_receipt_generation('agent1')
     
-    print("\n📋 Phase 6: Enhanced Export Tests (MEDIUM PRIORITY)")
+    print("\n📋 Phase 6: REACT SELECT COMPONENT FIX VERIFICATION (CRITICAL)")
+    print("-" * 30)
+    
+    # Test React Select component fix
+    if 'admin' in tester.tokens:
+        tester.test_react_select_fix_verification('admin')
+    
+    print("\n📋 Phase 7: Enhanced Export Tests (MEDIUM PRIORITY)")
     print("-" * 30)
     
     # Test filtered Excel export
     if 'admin' in tester.tokens:
         tester.test_filtered_excel_export('admin')
     
-    print("\n📋 Phase 7: Incentive Management Tests (MEDIUM PRIORITY)")
+    print("\n📋 Phase 8: Incentive Management Tests (MEDIUM PRIORITY)")
     print("-" * 30)
     
     # Test admin incentive management
     if 'admin' in tester.tokens:
         tester.test_admin_incentive_management('admin')
     
-    print("\n📋 Phase 8: Admin Dashboard Tests")
+    print("\n📋 Phase 9: Admin Dashboard Tests")
     print("-" * 30)
     
     # Test admin functionality
@@ -643,7 +650,7 @@ def main():
         tester.test_get_students('admin')
         tester.test_get_incentives('admin')
     
-    print("\n📋 Phase 9: General API Tests")
+    print("\n📋 Phase 10: General API Tests")
     print("-" * 30)
     
     # Test incentive rules (public endpoint)
