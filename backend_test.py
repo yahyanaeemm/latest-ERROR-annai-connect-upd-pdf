@@ -556,6 +556,404 @@ class AdmissionSystemAPITester:
         
         return workflow_success
 
+    # DATABASE-BASED MANUAL USER REGISTRATION SYSTEM TESTS (PHASE 3)
+    
+    def test_database_registration_flow(self):
+        """Test new database-based manual user registration system"""
+        print("\n🔐 Testing Database-Based Manual User Registration System")
+        print("-" * 50)
+        
+        # Test 1: Register new user - should create pending user
+        timestamp = datetime.now().strftime('%H%M%S')
+        test_user_data = {
+            "username": f"testuser_{timestamp}",
+            "email": f"testuser_{timestamp}@example.com",
+            "password": "testpass123",
+            "role": "agent",
+            "agent_id": f"AGT{timestamp}"
+        }
+        
+        success, response = self.run_test(
+            "Register New User (Should Create Pending User)",
+            "POST",
+            "register",
+            200,
+            data=test_user_data
+        )
+        
+        if not success:
+            return False
+            
+        # Verify response format
+        if response.get('status') != 'pending':
+            print(f"❌ Expected status 'pending', got '{response.get('status')}'")
+            return False
+            
+        if 'pending admin approval' not in response.get('message', '').lower():
+            print(f"❌ Expected pending approval message, got: {response.get('message')}")
+            return False
+            
+        self.test_data['pending_username'] = test_user_data['username']
+        self.test_data['pending_user_data'] = test_user_data
+        print(f"   ✅ User registered as pending: {test_user_data['username']}")
+        
+        # Test 2: Try to register same user again - should fail
+        success, response = self.run_test(
+            "Register Duplicate User (Should Fail)",
+            "POST",
+            "register",
+            400,
+            data=test_user_data
+        )
+        
+        if not success:
+            return False
+            
+        if 'already pending' not in response.get('detail', '').lower():
+            print(f"❌ Expected 'already pending' error, got: {response.get('detail')}")
+            return False
+            
+        print("   ✅ Duplicate registration properly rejected")
+        
+        # Test 3: Try to login with pending user - should fail
+        success, response = self.run_test(
+            "Login with Pending User (Should Fail)",
+            "POST",
+            "login",
+            401,
+            data={"username": test_user_data['username'], "password": test_user_data['password']}
+        )
+        
+        if success:
+            print("❌ Pending user should not be able to login")
+            return False
+            
+        print("   ✅ Pending user correctly cannot login")
+        
+        return True
+    
+    def test_admin_pending_user_management(self, admin_user_key):
+        """Test admin pending user management APIs"""
+        print("\n👥 Testing Admin Pending User Management")
+        print("-" * 40)
+        
+        # Test 1: Get pending users list
+        success, response = self.run_test(
+            "Get Pending Users List",
+            "GET",
+            "admin/pending-users",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        pending_users = response if isinstance(response, list) else []
+        print(f"   Found {len(pending_users)} pending users")
+        
+        # Find our test user
+        test_pending_user = None
+        if 'pending_username' in self.test_data:
+            for user in pending_users:
+                if user.get('username') == self.test_data['pending_username']:
+                    test_pending_user = user
+                    self.test_data['pending_user_id'] = user.get('id')
+                    break
+        
+        if not test_pending_user:
+            print("❌ Test pending user not found in list")
+            return False
+            
+        print(f"   ✅ Found test pending user: {test_pending_user.get('username')}")
+        
+        # Verify pending user data
+        expected_data = self.test_data.get('pending_user_data', {})
+        if (test_pending_user.get('email') != expected_data.get('email') or
+            test_pending_user.get('role') != expected_data.get('role')):
+            print("❌ Pending user data doesn't match registration data")
+            return False
+            
+        print("   ✅ Pending user data matches registration")
+        
+        return True
+    
+    def test_admin_approve_user(self, admin_user_key):
+        """Test admin user approval functionality"""
+        print("\n✅ Testing Admin User Approval")
+        print("-" * 30)
+        
+        if 'pending_user_id' not in self.test_data:
+            print("❌ No pending user ID available for approval test")
+            return False
+            
+        user_id = self.test_data['pending_user_id']
+        
+        # Test approve user
+        success, response = self.run_test(
+            "Approve Pending User",
+            "POST",
+            f"admin/pending-users/{user_id}/approve",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if 'approved successfully' not in response.get('message', '').lower():
+            print(f"❌ Expected approval success message, got: {response.get('message')}")
+            return False
+            
+        print("   ✅ User approved successfully")
+        
+        # Test that approved user can now login
+        if 'pending_user_data' in self.test_data:
+            user_data = self.test_data['pending_user_data']
+            success, response = self.run_test(
+                "Login with Approved User",
+                "POST",
+                "login",
+                200,
+                data={"username": user_data['username'], "password": user_data['password']}
+            )
+            
+            if not success:
+                print("❌ Approved user should be able to login")
+                return False
+                
+            if 'access_token' not in response:
+                print("❌ Login should return access token")
+                return False
+                
+            print("   ✅ Approved user can successfully login")
+            self.test_data['approved_user_token'] = response['access_token']
+        
+        return True
+    
+    def test_admin_reject_user(self, admin_user_key):
+        """Test admin user rejection functionality"""
+        print("\n❌ Testing Admin User Rejection")
+        print("-" * 30)
+        
+        # Create another test user for rejection
+        timestamp = datetime.now().strftime('%H%M%S')
+        reject_user_data = {
+            "username": f"rejectuser_{timestamp}",
+            "email": f"rejectuser_{timestamp}@example.com",
+            "password": "rejectpass123",
+            "role": "coordinator"
+        }
+        
+        # Register user for rejection
+        success, response = self.run_test(
+            "Register User for Rejection Test",
+            "POST",
+            "register",
+            200,
+            data=reject_user_data
+        )
+        
+        if not success:
+            return False
+            
+        # Get pending users to find the new user
+        success, response = self.run_test(
+            "Get Pending Users for Rejection Test",
+            "GET",
+            "admin/pending-users",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Find the user to reject
+        reject_user_id = None
+        for user in response:
+            if user.get('username') == reject_user_data['username']:
+                reject_user_id = user.get('id')
+                break
+        
+        if not reject_user_id:
+            print("❌ User for rejection test not found")
+            return False
+            
+        # Test reject user with reason
+        reject_data = {'reason': 'Test rejection for automated testing'}
+        success, response = self.run_test(
+            "Reject Pending User",
+            "POST",
+            f"admin/pending-users/{reject_user_id}/reject",
+            200,
+            data=reject_data,
+            files={},  # Form data mode
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if 'rejected successfully' not in response.get('message', '').lower():
+            print(f"❌ Expected rejection success message, got: {response.get('message')}")
+            return False
+            
+        print("   ✅ User rejected successfully")
+        
+        # Test that rejected user still cannot login
+        success, response = self.run_test(
+            "Login with Rejected User (Should Fail)",
+            "POST",
+            "login",
+            401,
+            data={"username": reject_user_data['username'], "password": reject_user_data['password']}
+        )
+        
+        if success:
+            print("❌ Rejected user should not be able to login")
+            return False
+            
+        print("   ✅ Rejected user correctly cannot login")
+        
+        return True
+    
+    def test_edge_cases_pending_users(self, admin_user_key):
+        """Test edge cases for pending user management"""
+        print("\n🔍 Testing Edge Cases for Pending User Management")
+        print("-" * 45)
+        
+        # Test 1: Approve non-existent user
+        fake_user_id = "fake-user-id-12345"
+        success, response = self.run_test(
+            "Approve Non-existent User (Should Fail)",
+            "POST",
+            f"admin/pending-users/{fake_user_id}/approve",
+            404,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Non-existent user approval properly rejected")
+        
+        # Test 2: Reject non-existent user
+        success, response = self.run_test(
+            "Reject Non-existent User (Should Fail)",
+            "POST",
+            f"admin/pending-users/{fake_user_id}/reject",
+            404,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Non-existent user rejection properly rejected")
+        
+        # Test 3: Try to approve already approved user
+        if 'pending_user_id' in self.test_data:
+            success, response = self.run_test(
+                "Approve Already Approved User (Should Fail)",
+                "POST",
+                f"admin/pending-users/{self.test_data['pending_user_id']}/approve",
+                404,
+                token_user=admin_user_key
+            )
+            
+            if not success:
+                return False
+                
+            print("   ✅ Already approved user re-approval properly rejected")
+        
+        return True
+    
+    def test_access_control_pending_users(self):
+        """Test access control for pending user management"""
+        print("\n🔒 Testing Access Control for Pending User Management")
+        print("-" * 50)
+        
+        # Test non-admin access to pending users endpoints
+        non_admin_users = ['agent1', 'coordinator']
+        
+        for user_key in non_admin_users:
+            if user_key not in self.tokens:
+                continue
+                
+            # Test GET pending users - should fail for non-admin
+            success, response = self.run_test(
+                f"Get Pending Users as {user_key} (Should Fail)",
+                "GET",
+                "admin/pending-users",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            # Test approve user - should fail for non-admin
+            success, response = self.run_test(
+                f"Approve User as {user_key} (Should Fail)",
+                "POST",
+                "admin/pending-users/fake-id/approve",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            # Test reject user - should fail for non-admin
+            success, response = self.run_test(
+                f"Reject User as {user_key} (Should Fail)",
+                "POST",
+                "admin/pending-users/fake-id/reject",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ {user_key} properly denied access to admin endpoints")
+        
+        return True
+    
+    def test_complete_registration_workflow(self, admin_user_key):
+        """Test complete registration workflow from start to finish"""
+        print("\n🔄 Testing Complete Registration Workflow")
+        print("-" * 40)
+        
+        workflow_success = True
+        
+        # Step 1: Test registration flow
+        if not self.test_database_registration_flow():
+            workflow_success = False
+            
+        # Step 2: Test admin pending user management
+        if not self.test_admin_pending_user_management(admin_user_key):
+            workflow_success = False
+            
+        # Step 3: Test user approval
+        if not self.test_admin_approve_user(admin_user_key):
+            workflow_success = False
+            
+        # Step 4: Test user rejection
+        if not self.test_admin_reject_user(admin_user_key):
+            workflow_success = False
+            
+        # Step 5: Test edge cases
+        if not self.test_edge_cases_pending_users(admin_user_key):
+            workflow_success = False
+            
+        # Step 6: Test access control
+        if not self.test_access_control_pending_users():
+            workflow_success = False
+        
+        return workflow_success
+
 def main():
     print("🚀 Starting Enhanced Admission System API Tests")
     print("=" * 60)
