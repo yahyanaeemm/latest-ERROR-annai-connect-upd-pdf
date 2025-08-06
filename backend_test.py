@@ -273,10 +273,10 @@ class AdmissionSystemAPITester:
         course_name = f"Test Course {datetime.now().strftime('%H%M%S')}"
         course_amount = 5000.0
         
-        # Test create course
+        # Test create course - using form data as expected by the API
         create_data = {
             'course': course_name,
-            'amount': course_amount
+            'amount': str(course_amount)  # Convert to string for form data
         }
         
         success, response = self.run_test(
@@ -285,7 +285,7 @@ class AdmissionSystemAPITester:
             "admin/courses",
             200,
             data=create_data,
-            files={},
+            files={},  # This triggers form data mode
             token_user=user_key
         )
         
