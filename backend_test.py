@@ -43,10 +43,10 @@ class AdmissionSystemAPITester:
                 else:
                     response = requests.post(url, json=data, headers=test_headers)
             elif method == 'PUT':
-                if files:
+                if files is not None:  # Check for None specifically, not just falsy
                     if 'Content-Type' in test_headers:
                         del test_headers['Content-Type']
-                    response = requests.put(url, data=data, files=files, headers=test_headers)
+                    response = requests.put(url, data=data, headers=test_headers)
                 else:
                     response = requests.put(url, json=data, headers=test_headers)
 
