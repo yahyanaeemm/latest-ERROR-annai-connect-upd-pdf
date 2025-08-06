@@ -303,7 +303,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "React Select component fix verification"
+    - "Database-based manual user registration system"
+    - "Database-based registration UI with admin approval"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
