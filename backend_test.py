@@ -660,7 +660,7 @@ def main():
     if 'agent1' in tester.tokens:
         tester.test_get_incentives('agent1')
     
-    print("\n📋 Phase 10: Comprehensive Workflow Test")
+    print("\n📋 Phase 11: Comprehensive Workflow Test")
     print("-" * 30)
     
     # Test complete enhanced workflow
