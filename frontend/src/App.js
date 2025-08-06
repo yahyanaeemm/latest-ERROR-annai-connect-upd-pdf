@@ -830,14 +830,26 @@ const CoordinatorDashboard = () => {
                         </>
                       )}
                       {student.status !== 'pending' && (
-                        <div className="flex items-center text-sm text-gray-500">
-                          {student.status === 'approved' && student.signature_data && (
-                            <Badge variant="outline" className="text-green-600">
-                              <Pen className="h-3 w-3 mr-1" />
-                              Signed
-                            </Badge>
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center text-sm text-gray-500">
+                            {student.status === 'approved' && student.signature_data && (
+                              <Badge variant="outline" className="text-green-600">
+                                <Pen className="h-3 w-3 mr-1" />
+                                Signed
+                              </Badge>
+                            )}
+                            <span className="ml-2">{student.status === 'approved' ? 'Approved' : 'Processed'}</span>
+                          </div>
+                          {student.status === 'approved' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => downloadReceipt(student.id, student.token_number)}
+                              title="Download Receipt"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
                           )}
-                          {student.status === 'approved' ? 'Approved' : 'Processed'}
                         </div>
                       )}
                     </div>
