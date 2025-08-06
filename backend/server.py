@@ -162,16 +162,21 @@ def generate_token_number():
     return f"TOK{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
 
 # Authentication routes
-@api_router.post("/register", response_model=Token)
+@api_router.post("/register")
 async def register(user_data: UserCreate):
-    # Check if user exists
+    # Check if user exists in active users
     existing_user = await db.users.find_one({"username": user_data.username})
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     
-    # Create user
+    # Check if user exists in pending users
+    pending_user = await db.pending_users.find_one({"username": user_data.username})
+    if pending_user:
+        raise HTTPException(status_code=400, detail="Registration already pending approval")
+    
+    # Create pending user
     hashed_password = get_password_hash(user_data.password)
-    user = User(
+    pending_user = PendingUser(
         username=user_data.username,
         email=user_data.email,
         role=user_data.role,
@@ -179,11 +184,13 @@ async def register(user_data: UserCreate):
         hashed_password=hashed_password
     )
     
-    await db.users.insert_one(user.dict())
+    await db.pending_users.insert_one(pending_user.dict())
     
-    # Create token
-    access_token = create_access_token(data={"sub": user.id})
-    return Token(access_token=access_token, token_type="bearer", role=user.role, user_id=user.id)
+    return {
+        "message": "Registration submitted successfully. Your account is pending admin approval.",
+        "status": "pending",
+        "username": user_data.username
+    }
 
 @api_router.post("/login", response_model=Token)
 async def login(user_data: UserLogin):
