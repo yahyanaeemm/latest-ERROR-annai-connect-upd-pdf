@@ -122,15 +122,18 @@ backend:
 
   - task: "Course management API endpoints"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Added CRUD endpoints for course management - create/update/delete course rules with incentive amounts, enhanced IncentiveRule model with active flag"
+      - working: true
+        agent: "testing"
+        comment: "✅ PASSED - All course management APIs working correctly. POST /api/admin/courses creates courses with incentives, PUT /api/admin/courses/{id} updates courses, DELETE /api/admin/courses/{id} performs soft delete. GET /api/incentive-rules shows only active courses. Fixed test framework to handle form data properly."
 
   - task: "PDF receipt generation API"
     implemented: true
