@@ -279,11 +279,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "E-Signature API endpoints"
-    - "E-Signature component with digital pad"
-    - "Visual status indicators with color coding"
-    - "Course management API endpoints"
-    - "Admin course management UI"
+    - "React Select component fix verification"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
