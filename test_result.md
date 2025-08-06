@@ -305,9 +305,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Database-based manual user registration system"
-    - "Database-based registration UI with admin approval"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
