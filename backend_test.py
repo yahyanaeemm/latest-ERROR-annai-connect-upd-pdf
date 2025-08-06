@@ -35,7 +35,7 @@ class AdmissionSystemAPITester:
             if method == 'GET':
                 response = requests.get(url, headers=test_headers)
             elif method == 'POST':
-                if files:
+                if files is not None:  # Check for None specifically, not just falsy
                     # Remove Content-Type for multipart/form-data
                     if 'Content-Type' in test_headers:
                         del test_headers['Content-Type']
