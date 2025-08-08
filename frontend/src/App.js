@@ -346,7 +346,7 @@ const ModernLeaderboard = () => {
       case 1: return "bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 shadow-lg ring-2 ring-yellow-300";
       case 2: return "bg-gradient-to-r from-gray-300 to-gray-500 text-gray-900 shadow-lg ring-2 ring-gray-200";
       case 3: return "bg-gradient-to-r from-amber-400 to-amber-600 text-amber-900 shadow-lg ring-2 ring-amber-300";
-      default: return theme === 'dark' ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-700";
+      default: return "bg-slate-700 text-slate-300";
     }
   };
 
