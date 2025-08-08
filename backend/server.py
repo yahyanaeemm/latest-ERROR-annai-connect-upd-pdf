@@ -305,6 +305,12 @@ async def update_student_status(
         update_data["signature_data"] = signature_data
         update_data["signature_type"] = signature_type or "draw"
     
+    # Handle coordinator approval - changes status to coordinator_approved (awaiting admin)
+    if status == "approved" and current_user.role == "coordinator":
+        update_data["status"] = "coordinator_approved"
+        update_data["coordinator_approved_at"] = datetime.utcnow()
+        update_data["coordinator_approved_by"] = current_user.id
+    
     result = await db.students.update_one(
         {"id": student_id},
         {"$set": update_data}
@@ -313,20 +319,8 @@ async def update_student_status(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Student not found")
     
-    # Create incentive if approved
-    if status == "approved":
-        student_doc = await db.students.find_one({"id": student_id})
-        if student_doc:
-            # Get incentive rule for course
-            incentive_rule = await db.incentive_rules.find_one({"course": student_doc["course"], "active": True})
-            if incentive_rule:
-                incentive = Incentive(
-                    agent_id=student_doc["agent_id"],
-                    student_id=student_id,
-                    course=student_doc["course"],
-                    amount=incentive_rule["amount"]
-                )
-                await db.incentives.insert_one(incentive.dict())
+    # Note: Incentives are now created only after admin approval
+    # (handled in admin_approve_student endpoint)
     
     return {"message": "Status updated successfully"}
 
