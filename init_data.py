@@ -42,6 +42,8 @@ async def init_data():
             "email": "admin@college.edu",
             "role": "admin",
             "agent_id": None,
+            "first_name": "Admin",
+            "last_name": "User",
             "hashed_password": get_password_hash("admin123"),
         },
         {
@@ -50,6 +52,8 @@ async def init_data():
             "email": "coordinator@college.edu",
             "role": "coordinator",
             "agent_id": None,
+            "first_name": "Admission",
+            "last_name": "Coordinator",
             "hashed_password": get_password_hash("coord123"),
         },
         {
@@ -58,6 +62,8 @@ async def init_data():
             "email": "agent1@college.edu", 
             "role": "agent",
             "agent_id": "AGT001",
+            "first_name": "Rajesh",
+            "last_name": "Kumar",
             "hashed_password": get_password_hash("agent123"),
         },
         {
@@ -66,6 +72,8 @@ async def init_data():
             "email": "agent2@college.edu",
             "role": "agent", 
             "agent_id": "AGT002",
+            "first_name": "Priya",
+            "last_name": "Sharma",
             "hashed_password": get_password_hash("agent123"),
         }
     ]
