@@ -575,22 +575,22 @@ const ModernLeaderboard = () => {
 
                 {/* Summary Statistics */}
                 {leaderboardData.summary && (
-                  <Card className="shadow-lg border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700">
+                  <Card className="shadow-lg border border-slate-200 bg-gradient-to-r from-blue-50 to-purple-50">
                     <CardContent className="pt-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="text-center">
-                          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                          <div className="text-3xl font-bold text-blue-600 mb-1">
                             {leaderboardData.summary.total_period_admissions || 0}
                           </div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">
+                          <div className="text-sm text-slate-600">
                             Total Period Admissions
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
+                          <div className="text-3xl font-bold text-green-600 mb-1">
                             ₹{(leaderboardData.summary.total_period_incentives || 0).toLocaleString('en-IN')}
                           </div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">
+                          <div className="text-sm text-slate-600">
                             Total Period Incentives
                           </div>
                         </div>
