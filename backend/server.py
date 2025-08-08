@@ -1066,6 +1066,258 @@ async def generate_student_receipt(
         headers={"Content-Disposition": f"attachment; filename=receipt_{student_doc['token_number']}.pdf"}
     )
 
+# LEADERBOARD SYSTEM APIs
+@api_router.get("/leaderboard/overall")
+async def get_overall_leaderboard(current_user: User = Depends(get_current_user)):
+    """Get overall agent leaderboard with all-time performance"""
+    
+    # Get all agents
+    agents_cursor = db.users.find({"role": "agent"})
+    agents = await agents_cursor.to_list(length=None)
+    
+    leaderboard = []
+    for agent in agents:
+        agent_id = agent.get("agent_id", agent["id"])
+        
+        # Count total approved admissions for this agent
+        total_admissions = await db.students.count_documents({
+            "agent_id": agent_id,
+            "status": "approved"
+        })
+        
+        # Calculate total incentive earned
+        incentives_cursor = db.incentives.find({"agent_id": agent_id})
+        incentives = await incentives_cursor.to_list(length=None)
+        total_incentive = sum(incentive.get("amount", 0) for incentive in incentives)
+        
+        # Get full name or fallback to username
+        full_name = f"{agent.get('first_name', '')} {agent.get('last_name', '')}".strip()
+        if not full_name:
+            full_name = agent.get("username", "Unknown Agent")
+        
+        leaderboard.append({
+            "agent_id": agent_id,
+            "username": agent.get("username"),
+            "full_name": full_name,
+            "total_admissions": total_admissions,
+            "total_incentive": total_incentive,
+            "agent_data": {
+                "email": agent.get("email"),
+                "created_at": agent.get("created_at"),
+            }
+        })
+    
+    # Sort by total admissions (descending), then by total incentive
+    leaderboard.sort(key=lambda x: (x["total_admissions"], x["total_incentive"]), reverse=True)
+    
+    # Add rankings
+    for idx, agent in enumerate(leaderboard):
+        agent["rank"] = idx + 1
+        agent["is_top_3"] = idx < 3
+    
+    return {
+        "leaderboard": leaderboard,
+        "total_agents": len(leaderboard),
+        "type": "overall"
+    }
+
+@api_router.get("/leaderboard/weekly")
+async def get_weekly_leaderboard(current_user: User = Depends(get_current_user)):
+    """Get weekly agent leaderboard (Monday to Sunday)"""
+    
+    # Calculate current week start (Monday) and end (Sunday)
+    today = datetime.now()
+    days_since_monday = today.weekday()  # Monday is 0
+    week_start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days_since_monday)
+    week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
+    
+    return await get_date_range_leaderboard(week_start, week_end, "weekly")
+
+@api_router.get("/leaderboard/monthly")
+async def get_monthly_leaderboard(current_user: User = Depends(get_current_user)):
+    """Get monthly agent leaderboard (1st to last day of current month)"""
+    
+    # Calculate current month start and end
+    today = datetime.now()
+    month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Calculate last day of current month
+    if today.month == 12:
+        next_month_start = today.replace(year=today.year + 1, month=1, day=1)
+    else:
+        next_month_start = today.replace(month=today.month + 1, day=1)
+    
+    month_end = next_month_start - timedelta(seconds=1)
+    
+    return await get_date_range_leaderboard(month_start, month_end, "monthly")
+
+@api_router.get("/leaderboard/date-range")
+async def get_custom_leaderboard(
+    start_date: str,
+    end_date: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get custom date range leaderboard"""
+    
+    try:
+        # Parse dates
+        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        
+        # Ensure end date includes the full day
+        end_dt = end_dt.replace(hour=23, minute=59, second=59)
+        
+        return await get_date_range_leaderboard(start_dt, end_dt, "custom")
+        
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use ISO format (YYYY-MM-DD)")
+
+async def get_date_range_leaderboard(start_date: datetime, end_date: datetime, leaderboard_type: str):
+    """Helper function to get leaderboard for a specific date range"""
+    
+    # Get all agents
+    agents_cursor = db.users.find({"role": "agent"})
+    agents = await agents_cursor.to_list(length=None)
+    
+    leaderboard = []
+    for agent in agents:
+        agent_id = agent.get("agent_id", agent["id"])
+        
+        # Count approved admissions in date range
+        admissions_count = await db.students.count_documents({
+            "agent_id": agent_id,
+            "status": "approved",
+            "updated_at": {"$gte": start_date, "$lte": end_date}
+        })
+        
+        # Calculate incentive earned in date range
+        incentives_cursor = db.incentives.find({
+            "agent_id": agent_id,
+            "created_at": {"$gte": start_date, "$lte": end_date}
+        })
+        incentives = await incentives_cursor.to_list(length=None)
+        period_incentive = sum(incentive.get("amount", 0) for incentive in incentives)
+        
+        # Get total stats for comparison
+        total_admissions = await db.students.count_documents({
+            "agent_id": agent_id,
+            "status": "approved"
+        })
+        
+        total_incentives_cursor = db.incentives.find({"agent_id": agent_id})
+        total_incentives = await total_incentives_cursor.to_list(length=None)
+        total_incentive = sum(incentive.get("amount", 0) for incentive in total_incentives)
+        
+        # Get full name
+        full_name = f"{agent.get('first_name', '')} {agent.get('last_name', '')}".strip()
+        if not full_name:
+            full_name = agent.get("username", "Unknown Agent")
+        
+        leaderboard.append({
+            "agent_id": agent_id,
+            "username": agent.get("username"),
+            "full_name": full_name,
+            "period_admissions": admissions_count,
+            "period_incentive": period_incentive,
+            "total_admissions": total_admissions,
+            "total_incentive": total_incentive,
+            "agent_data": {
+                "email": agent.get("email"),
+                "created_at": agent.get("created_at"),
+            }
+        })
+    
+    # Sort by period performance
+    leaderboard.sort(key=lambda x: (x["period_admissions"], x["period_incentive"]), reverse=True)
+    
+    # Add rankings and top 3 indicators
+    for idx, agent in enumerate(leaderboard):
+        agent["rank"] = idx + 1
+        agent["is_top_3"] = idx < 3
+        # Add badge type for top 3
+        if idx == 0:
+            agent["badge"] = "gold"
+        elif idx == 1:
+            agent["badge"] = "silver"
+        elif idx == 2:
+            agent["badge"] = "bronze"
+    
+    return {
+        "leaderboard": leaderboard,
+        "total_agents": len(leaderboard),
+        "period": {
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "type": leaderboard_type
+        },
+        "summary": {
+            "total_period_admissions": sum(agent["period_admissions"] for agent in leaderboard),
+            "total_period_incentives": sum(agent["period_incentive"] for agent in leaderboard),
+        }
+    }
+
+# Enhanced Admin Dashboard with Fixed Admission Overview
+@api_router.get("/admin/dashboard-enhanced") 
+async def get_enhanced_admin_dashboard(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get accurate counts for all statuses
+    total_admissions = await db.students.count_documents({})
+    pending_admissions = await db.students.count_documents({"status": "pending"})
+    verified_admissions = await db.students.count_documents({"status": "verified"})
+    coordinator_approved = await db.students.count_documents({"status": "coordinator_approved"})
+    approved_admissions = await db.students.count_documents({"status": "approved"})
+    rejected_admissions = await db.students.count_documents({"status": "rejected"})
+    
+    # Agent statistics
+    total_agents = await db.users.count_documents({"role": "agent"})
+    active_agents = await db.users.count_documents({"role": "agent"})  # All agents considered active
+    
+    # Incentive statistics
+    total_incentives = await db.incentives.count_documents({})
+    paid_incentives = await db.incentives.count_documents({"status": "paid"})
+    unpaid_incentives = await db.incentives.count_documents({"status": "unpaid"})
+    
+    # Calculate incentive amounts
+    paid_incentives_cursor = db.incentives.find({"status": "paid"})
+    paid_incentives_list = await paid_incentives_cursor.to_list(length=None)
+    paid_amount = sum(incentive.get("amount", 0) for incentive in paid_incentives_list)
+    
+    unpaid_incentives_cursor = db.incentives.find({"status": "unpaid"})
+    unpaid_incentives_list = await unpaid_incentives_cursor.to_list(length=None)
+    pending_amount = sum(incentive.get("amount", 0) for incentive in unpaid_incentives_list)
+    
+    return {
+        "admissions": {
+            "total": total_admissions,
+            "pending": pending_admissions,
+            "verified": verified_admissions,
+            "coordinator_approved": coordinator_approved,
+            "approved": approved_admissions,
+            "rejected": rejected_admissions,
+            "breakdown": {
+                "pending": pending_admissions,
+                "verified": verified_admissions,
+                "coordinator_approved": coordinator_approved,
+                "approved": approved_admissions,
+                "rejected": rejected_admissions
+            }
+        },
+        "agents": {
+            "total": total_agents,
+            "active": active_agents
+        },
+        "incentives": {
+            "total_records": total_incentives,
+            "paid_records": paid_incentives,
+            "unpaid_records": unpaid_incentives,
+            "paid_amount": paid_amount,
+            "pending_amount": pending_amount,
+            "total_amount": paid_amount + pending_amount
+        }
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
