@@ -602,8 +602,8 @@ const ModernLeaderboard = () => {
             ) : (
               <Card className="text-center py-12">
                 <CardContent>
-                  <Trophy className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-500 dark:text-slate-400">No leaderboard data available</p>
+                  <Trophy className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500">No leaderboard data available</p>
                 </CardContent>
               </Card>
             )}
