@@ -593,11 +593,11 @@ const ModernLeaderboard = () => {
                               <TableCell className="text-center">
                                 <div className="space-y-1">
                                   <div className="font-bold text-lg text-green-600 dark:text-green-400">
-                                    ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive).toLocaleString()}
+                                    ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0).toLocaleString('en-IN')}
                                   </div>
                                   {activeTab !== 'overall' && (
                                     <div className="text-xs text-slate-500">
-                                      of ₹{agent.total_incentive.toLocaleString()} total
+                                      of ₹{(agent.total_incentive || 0).toLocaleString('en-IN')} total
                                     </div>
                                   )}
                                 </div>
