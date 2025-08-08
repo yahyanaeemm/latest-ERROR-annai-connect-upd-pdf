@@ -1571,7 +1571,16 @@ def main():
         tester.test_file_upload('agent1')
         tester.test_get_incentives('agent1')
     
-    print("\n📋 Phase 3: Enhanced E-Signature Tests (HIGH PRIORITY)")
+    print("\n📋 Phase 3: PRODUCTION READINESS TESTS (HIGH PRIORITY)")
+    print("-" * 60)
+    
+    # Test new production readiness features
+    if all(user in tester.tokens for user in ['admin', 'coordinator', 'agent1']):
+        tester.test_production_readiness_workflow('admin', 'coordinator', 'agent1')
+    else:
+        print("❌ Missing required user tokens for production readiness tests")
+    
+    print("\n📋 Phase 4: Enhanced E-Signature Tests (HIGH PRIORITY)")
     print("-" * 30)
     
     # Test enhanced coordinator workflow with signature
@@ -1579,42 +1588,42 @@ def main():
         tester.test_get_students('coordinator')
         tester.test_signature_status_update('coordinator', 'approved')
         
-    print("\n📋 Phase 4: Course Management Tests (HIGH PRIORITY)")
+    print("\n📋 Phase 5: Course Management Tests (HIGH PRIORITY)")
     print("-" * 30)
     
     # Test course management APIs
     if 'admin' in tester.tokens:
         tester.test_course_management_apis('admin')
         
-    print("\n📋 Phase 5: PDF Receipt Generation Tests (HIGH PRIORITY)")
+    print("\n📋 Phase 6: PDF Receipt Generation Tests (HIGH PRIORITY)")
     print("-" * 30)
     
     # Test PDF receipt generation
     if 'agent1' in tester.tokens:
         tester.test_pdf_receipt_generation('agent1')
     
-    print("\n📋 Phase 6: REACT SELECT COMPONENT FIX VERIFICATION (CRITICAL)")
+    print("\n📋 Phase 7: REACT SELECT COMPONENT FIX VERIFICATION (CRITICAL)")
     print("-" * 30)
     
     # Test React Select component fix
     if 'admin' in tester.tokens:
         tester.test_react_select_fix_verification('admin')
     
-    print("\n📋 Phase 7: Enhanced Export Tests (MEDIUM PRIORITY)")
+    print("\n📋 Phase 8: Enhanced Export Tests (MEDIUM PRIORITY)")
     print("-" * 30)
     
     # Test filtered Excel export
     if 'admin' in tester.tokens:
         tester.test_filtered_excel_export('admin')
     
-    print("\n📋 Phase 8: Incentive Management Tests (MEDIUM PRIORITY)")
+    print("\n📋 Phase 9: Incentive Management Tests (MEDIUM PRIORITY)")
     print("-" * 30)
     
     # Test admin incentive management
     if 'admin' in tester.tokens:
         tester.test_admin_incentive_management('admin')
     
-    print("\n📋 Phase 9: Admin Dashboard Tests")
+    print("\n📋 Phase 10: Admin Dashboard Tests")
     print("-" * 30)
     
     # Test admin functionality
@@ -1623,7 +1632,7 @@ def main():
         tester.test_get_students('admin')
         tester.test_get_incentives('admin')
     
-    print("\n📋 Phase 10: General API Tests")
+    print("\n📋 Phase 11: General API Tests")
     print("-" * 30)
     
     # Test incentive rules (public endpoint)
@@ -1633,7 +1642,7 @@ def main():
     if 'agent1' in tester.tokens:
         tester.test_get_incentives('agent1')
     
-    print("\n📋 Phase 11: DATABASE-BASED MANUAL USER REGISTRATION TESTS (PHASE 3 - HIGH PRIORITY)")
+    print("\n📋 Phase 12: DATABASE-BASED MANUAL USER REGISTRATION TESTS (PHASE 3 - HIGH PRIORITY)")
     print("-" * 30)
     
     # Test new database-based manual user registration system
@@ -1642,7 +1651,7 @@ def main():
     else:
         print("❌ Admin token not available for registration workflow tests")
     
-    print("\n📋 Phase 12: Comprehensive Workflow Test")
+    print("\n📋 Phase 13: Comprehensive Workflow Test")
     print("-" * 30)
     
     # Test complete enhanced workflow
