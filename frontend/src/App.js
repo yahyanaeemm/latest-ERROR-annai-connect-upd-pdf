@@ -2133,7 +2133,6 @@ const AdminDashboard = () => {
 
 const DashboardRouter = () => {
   const { user } = useAuth();
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const getDashboard = () => {
     switch (user?.role) {
@@ -2145,13 +2144,13 @@ const DashboardRouter = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 dark:from-slate-950 dark:via-blue-950/30 dark:to-purple-950/30 transition-colors duration-500">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 transition-colors duration-500">
       <Header />
       
       {/* Navigation Tabs */}
       <div className="container mx-auto px-4 pt-6">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 bg-white shadow-lg border border-slate-200">
             <TabsTrigger value="dashboard" className="flex items-center space-x-2">
               <Activity className="h-4 w-4" />
               <span>Dashboard</span>
