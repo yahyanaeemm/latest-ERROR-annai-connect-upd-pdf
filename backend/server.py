@@ -645,14 +645,24 @@ async def get_pending_admin_approvals(current_user: User = Depends(get_current_u
     # Get students that are coordinator_approved but awaiting admin approval
     students = await db.students.find({"status": "coordinator_approved"}).to_list(1000)
     
-    # Enrich with agent details
+    # Enrich with agent details and convert to proper format
     enriched_students = []
     for student in students:
         # Get agent details
         agent = await db.users.find_one({"id": student["agent_id"]})
         
+        # Convert MongoDB document to proper format (remove _id, handle datetime)
+        student_dict = dict(student)
+        if "_id" in student_dict:
+            del student_dict["_id"]
+        
+        # Convert datetime objects to ISO strings for JSON serialization
+        for key, value in student_dict.items():
+            if isinstance(value, datetime):
+                student_dict[key] = value.isoformat()
+        
         enriched_student = {
-            **student,
+            **student_dict,
             "agent": {
                 "username": agent["username"] if agent else None,
                 "email": agent["email"] if agent else None,
