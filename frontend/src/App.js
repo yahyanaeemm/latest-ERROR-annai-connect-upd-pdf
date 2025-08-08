@@ -1653,6 +1653,139 @@ const AdminDashboard = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Signature Manager Dialog */}
+      <Dialog open={showSignatureManager} onOpenChange={setShowSignatureManager}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Admin Signature</DialogTitle>
+            <DialogDescription>
+              Upload or draw your signature for official documents
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Current Signature Display */}
+            {adminSignature && (
+              <div className="border rounded-lg p-4">
+                <Label className="text-sm font-medium">Current Signature</Label>
+                <div className="mt-2 border rounded bg-gray-50 p-4">
+                  <img 
+                    src={adminSignature.signature_data} 
+                    alt="Current signature"
+                    className="max-w-full h-16 object-contain"
+                  />
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Type: {adminSignature.signature_type} | 
+                  Updated: {adminSignature.updated_at 
+                    ? new Date(adminSignature.updated_at).toLocaleDateString() 
+                    : 'Unknown'
+                  }
+                </div>
+              </div>
+            )}
+
+            {/* Upload New Signature */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Upload New Signature</Label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      uploadSignature(event.target.result, 'upload');
+                      setShowSignatureManager(false);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100"
+              />
+              
+              <div className="text-center text-gray-500 text-sm">
+                or
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => alert('Digital signature pad feature will be added in next update')}
+              >
+                <Pen className="h-4 w-4 mr-2" />
+                Draw Signature (Coming Soon)
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Backup Manager Dialog */}
+      <Dialog open={showBackupManager} onOpenChange={setShowBackupManager}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Backup Management</DialogTitle>
+            <DialogDescription>
+              View and manage system backups
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <Label className="text-sm font-medium">Available Backups</Label>
+              <Button 
+                size="sm" 
+                onClick={createBackup}
+                disabled={loading}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {loading ? 'Creating...' : 'New Backup'}
+              </Button>
+            </div>
+
+            {backups.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                No backups available
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {backups.map((backup, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium text-sm">{backup.filename}</div>
+                      <div className="text-xs text-gray-500">
+                        {backup.size_mb} MB • {backup.created}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        disabled
+                        title="Restore functionality available via CLI"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+              <strong>Note:</strong> Backup restoration should be performed by system administrators using the CLI tool located at /app/scripts/backup_system.py
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
