@@ -351,7 +351,7 @@ const ModernLeaderboard = () => {
   };
 
   return (
-    <Card className="w-full shadow-2xl border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800">
+    <Card className="w-full shadow-2xl border-0 bg-gradient-to-br from-white to-slate-50">
       <CardHeader className="pb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
@@ -362,7 +362,7 @@ const ModernLeaderboard = () => {
               <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Agent Leaderboard
               </CardTitle>
-              <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
+              <CardDescription className="text-sm text-slate-500">
                 Track performance and celebrate achievements
               </CardDescription>
             </div>
@@ -370,7 +370,7 @@ const ModernLeaderboard = () => {
           
           <div className="flex items-center space-x-2">
             <Activity className="h-4 w-4 text-green-500 animate-pulse" />
-            <span className="text-xs text-green-600 dark:text-green-400 font-medium">Live Updates</span>
+            <span className="text-xs text-green-600 font-medium">Live Updates</span>
           </div>
         </div>
       </CardHeader>
