@@ -937,6 +937,34 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchPendingApprovals = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/pending-approvals`);
+      setPendingApprovals(response.data);
+    } catch (error) {
+      console.error('Error fetching pending approvals:', error);
+    }
+  };
+
+  const fetchBackups = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/backups`);
+      setBackups(response.data);
+    } catch (error) {
+      console.error('Error fetching backups:', error);
+    }
+  };
+
+  const fetchAdminSignature = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/signature`);
+      setAdminSignature(response.data);
+    } catch (error) {
+      // It's okay if no signature exists
+      console.log('No admin signature found');
+    }
+  };
+
   const handleCourseSubmit = async (e) => {
     e.preventDefault();
     try {
