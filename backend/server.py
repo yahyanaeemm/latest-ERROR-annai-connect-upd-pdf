@@ -55,6 +55,8 @@ class User(BaseModel):
     email: str
     role: str  # "agent", "coordinator", "admin"
     agent_id: Optional[str] = None  # For agents only
+    first_name: Optional[str] = None  # For leaderboard display
+    last_name: Optional[str] = None   # For leaderboard display
     created_at: datetime = Field(default_factory=datetime.utcnow)
     hashed_password: str
     signature_data: Optional[str] = None  # Admin/Coordinator signature
