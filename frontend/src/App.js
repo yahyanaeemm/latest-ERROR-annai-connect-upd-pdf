@@ -1427,6 +1427,184 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Admin Final Approvals (3-Tier System) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Final Admin Approvals</span>
+            <Badge variant="outline">{pendingApprovals.length} awaiting admin approval</Badge>
+          </CardTitle>
+          <CardDescription>
+            Students approved by coordinators awaiting final admin approval (3-tier system)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingApprovals.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              No students awaiting admin approval
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Token</TableHead>
+                  <TableHead>Student Name</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Agent</TableHead>
+                  <TableHead>Coordinator Approved</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingApprovals.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{student.token_number}</TableCell>
+                    <TableCell>{student.first_name} {student.last_name}</TableCell>
+                    <TableCell>{student.course}</TableCell>
+                    <TableCell>{student.agent?.username || 'Unknown'}</TableCell>
+                    <TableCell>
+                      {student.coordinator_approved_at 
+                        ? new Date(student.coordinator_approved_at).toLocaleDateString()
+                        : 'N/A'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => adminApproveStudent(student.id)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Final Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:bg-red-50"
+                          onClick={() => adminRejectStudent(student.id)}
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* System Management */}
+      <Card>
+        <CardHeader>
+          <CardTitle>System Management</CardTitle>
+          <CardDescription>
+            Manage system settings, signatures, and backups
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Signature Management */}
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Pen className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold">Admin Signature</h3>
+              </div>
+              {adminSignature ? (
+                <div className="space-y-2">
+                  <div className="text-sm text-green-600 flex items-center">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Signature configured
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Updated: {adminSignature.updated_at 
+                      ? new Date(adminSignature.updated_at).toLocaleDateString() 
+                      : 'Unknown'
+                    }
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">
+                  No signature configured
+                </div>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full mt-3"
+                onClick={() => setShowSignatureManager(true)}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Manage Signature
+              </Button>
+            </div>
+
+            {/* Backup Management */}
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Archive className="h-5 w-5 text-green-600" />
+                <h3 className="font-semibold">Data Backup</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm text-gray-600">
+                  {backups.length} backups available
+                </div>
+                <div className="text-xs text-gray-500">
+                  Last: {backups.length > 0 
+                    ? new Date(backups[0]?.created || '').toLocaleDateString()
+                    : 'Never'
+                  }
+                </div>
+              </div>
+              <div className="flex space-x-2 mt-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={createBackup}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  <Archive className="h-4 w-4 mr-2" />
+                  {loading ? 'Creating...' : 'Backup Now'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowBackupManager(true)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* System Status */}
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Settings className="h-5 w-5 text-gray-600" />
+                <h3 className="font-semibold">System Status</h3>
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm text-green-600 flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  All systems operational
+                </div>
+                <div className="text-xs text-gray-500">
+                  3-tier approval active
+                </div>
+                <div className="text-xs text-gray-500">
+                  Auto backup available
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Course Form Dialog */}
       <Dialog open={showCourseForm} onOpenChange={setShowCourseForm}>
         <DialogContent>
