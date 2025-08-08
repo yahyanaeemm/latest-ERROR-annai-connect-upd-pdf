@@ -255,7 +255,6 @@ const LoginForm = () => {
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white p-4 shadow-2xl border-b border-blue-800/30">
@@ -274,16 +273,6 @@ const Header = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Theme Toggle */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={toggleTheme}
-            className="text-yellow-400 hover:text-yellow-300 hover:bg-slate-800/50 transition-all duration-300"
-          >
-            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          </Button>
-          
           {/* User Info */}
           <div className="flex items-center space-x-3">
             <Badge variant="outline" className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 border-yellow-400 font-semibold px-3 py-1 shadow-lg">
