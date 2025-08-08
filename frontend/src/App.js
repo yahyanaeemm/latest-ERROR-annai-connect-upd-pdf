@@ -523,7 +523,7 @@ const ModernLeaderboard = () => {
                           <div className="flex items-center justify-center space-x-2">
                             <DollarSign className="h-4 w-4 text-green-500" />
                             <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                              ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive).toLocaleString()}
+                              ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0).toLocaleString('en-IN')}
                             </span>
                           </div>
                         </div>
