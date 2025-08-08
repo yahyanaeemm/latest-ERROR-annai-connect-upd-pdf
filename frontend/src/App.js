@@ -533,7 +533,7 @@ const ModernLeaderboard = () => {
                               
                               <TableCell className="text-center">
                                 <div className="space-y-1">
-                                  <div className="font-bold text-lg text-blue-600 dark:text-blue-400">
+                                  <div className="font-bold text-lg text-blue-600">
                                     {activeTab === 'overall' ? agent.total_admissions : agent.period_admissions}
                                   </div>
                                   {activeTab !== 'overall' && (
@@ -546,7 +546,7 @@ const ModernLeaderboard = () => {
                               
                               <TableCell className="text-center">
                                 <div className="space-y-1">
-                                  <div className="font-bold text-lg text-green-600 dark:text-green-400">
+                                  <div className="font-bold text-lg text-green-600">
                                     ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0).toLocaleString('en-IN')}
                                   </div>
                                   {activeTab !== 'overall' && (
