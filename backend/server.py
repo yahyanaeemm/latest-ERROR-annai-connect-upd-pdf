@@ -602,6 +602,204 @@ async def reject_pending_user(
     
     return {"message": "User rejected successfully"}
 
+# Signature Management APIs
+@api_router.post("/admin/signature")
+async def upload_admin_signature(
+    signature_data: str = Form(...),
+    signature_type: str = Form("upload"),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in ["admin", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Admin or Coordinator access required")
+    
+    # Update user's signature
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "signature_data": signature_data,
+            "signature_type": signature_type,
+            "signature_updated_at": datetime.utcnow()
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "Signature updated successfully"}
+
+@api_router.get("/admin/signature")
+async def get_admin_signature(current_user: User = Depends(get_current_user)):
+    if current_user.role not in ["admin", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Admin or Coordinator access required")
+    
+    user_doc = await db.users.find_one({"id": current_user.id})
+    if not user_doc or not user_doc.get("signature_data"):
+        raise HTTPException(status_code=404, detail="No signature found")
+    
+    return {
+        "signature_data": user_doc["signature_data"],
+        "signature_type": user_doc["signature_type"],
+        "updated_at": user_doc.get("signature_updated_at")
+    }
+
+# Admin Final Approval Process
+@api_router.get("/admin/pending-approvals")
+async def get_pending_admin_approvals(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get students that are coordinator_approved but awaiting admin approval
+    students = await db.students.find({"status": "coordinator_approved"}).to_list(1000)
+    
+    # Enrich with agent details
+    enriched_students = []
+    for student in students:
+        # Get agent details
+        agent = await db.users.find_one({"id": student["agent_id"]})
+        
+        enriched_student = {
+            **student,
+            "agent": {
+                "username": agent["username"] if agent else None,
+                "email": agent["email"] if agent else None,
+            } if agent else None
+        }
+        enriched_students.append(enriched_student)
+    
+    return enriched_students
+
+@api_router.put("/admin/approve-student/{student_id}")
+async def admin_approve_student(
+    student_id: str,
+    notes: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get student details
+    student_doc = await db.students.find_one({"id": student_id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    if student_doc["status"] != "coordinator_approved":
+        raise HTTPException(status_code=400, detail="Student must be coordinator approved first")
+    
+    # Update student status to final approved
+    update_data = {
+        "status": "approved",
+        "admin_approved_at": datetime.utcnow(),
+        "admin_approved_by": current_user.id,
+        "updated_at": datetime.utcnow()
+    }
+    
+    if notes:
+        update_data["admin_notes"] = notes
+    
+    await db.students.update_one(
+        {"id": student_id},
+        {"$set": update_data}
+    )
+    
+    # Create incentive for the agent
+    incentive_rule = await db.incentive_rules.find_one({"course": student_doc["course"], "active": True})
+    if incentive_rule:
+        incentive = Incentive(
+            agent_id=student_doc["agent_id"],
+            student_id=student_id,
+            course=student_doc["course"],
+            amount=incentive_rule["amount"]
+        )
+        await db.incentives.insert_one(incentive.dict())
+    
+    return {"message": "Student approved by admin successfully"}
+
+@api_router.put("/admin/reject-student/{student_id}")
+async def admin_reject_student(
+    student_id: str,
+    notes: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    student_doc = await db.students.find_one({"id": student_id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Update student status to rejected
+    update_data = {
+        "status": "rejected",
+        "admin_rejected_at": datetime.utcnow(),
+        "admin_rejected_by": current_user.id,
+        "admin_notes": notes,
+        "updated_at": datetime.utcnow()
+    }
+    
+    await db.students.update_one(
+        {"id": student_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Student rejected by admin"}
+
+# Backup Management APIs
+@api_router.post("/admin/backup")
+async def create_backup(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Run backup script
+        import subprocess
+        result = subprocess.run([
+            'python', '/app/scripts/backup_system.py', 'create'
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            return {"message": "Backup created successfully", "output": result.stdout}
+        else:
+            raise HTTPException(status_code=500, detail=f"Backup failed: {result.stderr}")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Backup error: {str(e)}")
+
+@api_router.get("/admin/backups")
+async def list_backups(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        import subprocess
+        import json
+        
+        result = subprocess.run([
+            'python', '/app/scripts/backup_system.py', 'list'
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            # Parse backup list from output
+            from pathlib import Path
+            backup_dir = Path('/app/backups')
+            backups = []
+            
+            if backup_dir.exists():
+                for backup_file in backup_dir.glob('admission_system_backup_*.zip'):
+                    stat = backup_file.stat()
+                    backups.append({
+                        'filename': backup_file.name,
+                        'size_mb': round(stat.st_size / (1024 * 1024), 2),
+                        'created': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+                    })
+            
+            return sorted(backups, key=lambda x: x['created'], reverse=True)
+        
+        else:
+            raise HTTPException(status_code=500, detail="Failed to list backups")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing backups: {str(e)}")
+
 # Enhanced Export APIs
 @api_router.get("/admin/export/excel")
 async def export_excel(
