@@ -1069,6 +1069,70 @@ const AdminDashboard = () => {
     }
   };
 
+  // New functions for 3-tier approval system
+  const adminApproveStudent = async (studentId) => {
+    const notes = prompt('Admin approval notes (optional):');
+    if (notes !== null) {
+      try {
+        const formData = new FormData();
+        formData.append('notes', notes || 'Approved by admin');
+        await axios.put(`${API}/admin/approve-student/${studentId}`, formData);
+        fetchPendingApprovals();
+        fetchDashboard(); // Refresh stats
+        alert('Student approved by admin successfully!');
+      } catch (error) {
+        console.error('Error approving student:', error);
+        alert('Error approving student. Please try again.');
+      }
+    }
+  };
+
+  const adminRejectStudent = async (studentId) => {
+    const notes = prompt('Please provide a reason for rejection:');
+    if (notes) {
+      try {
+        const formData = new FormData();
+        formData.append('notes', notes);
+        await axios.put(`${API}/admin/reject-student/${studentId}`, formData);
+        fetchPendingApprovals();
+        alert('Student rejected by admin');
+      } catch (error) {
+        console.error('Error rejecting student:', error);
+        alert('Error rejecting student. Please try again.');
+      }
+    }
+  };
+
+  // Signature management functions
+  const uploadSignature = async (signatureData, signatureType) => {
+    try {
+      const formData = new FormData();
+      formData.append('signature_data', signatureData);
+      formData.append('signature_type', signatureType);
+      await axios.post(`${API}/admin/signature`, formData);
+      fetchAdminSignature();
+      alert('Signature updated successfully!');
+    } catch (error) {
+      console.error('Error uploading signature:', error);
+      alert('Error uploading signature. Please try again.');
+    }
+  };
+
+  // Backup management functions
+  const createBackup = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API}/admin/backup`);
+      alert(response.data.message);
+      fetchBackups();
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      alert('Error creating backup. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <h2 className="text-2xl font-bold text-slate-800">Admin Dashboard</h2>
