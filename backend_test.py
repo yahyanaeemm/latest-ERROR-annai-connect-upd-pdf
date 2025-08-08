@@ -345,7 +345,7 @@ class AdmissionSystemAPITester:
             print("❌ Failed to get students list")
             return False
             
-        students = response.get('data', [])
+        students = response if isinstance(response, list) else []
         approved_students = [s for s in students if s.get('status') == 'approved']
         
         if not approved_students:
