@@ -2000,22 +2000,7 @@ const DashboardRouter = () => {
           
           <TabsContent value="leaderboard">
             <main className="container mx-auto p-4">
-              <Card className="w-full shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold text-blue-600">
-                    Agent Leaderboard
-                  </CardTitle>
-                  <CardDescription>
-                    Performance rankings and achievements
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Trophy className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">Leaderboard temporarily disabled for debugging</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <SimpleLeaderboard />
             </main>
           </TabsContent>
         </Tabs>
