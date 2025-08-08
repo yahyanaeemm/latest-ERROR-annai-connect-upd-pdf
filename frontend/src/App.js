@@ -896,6 +896,9 @@ const AdminDashboard = () => {
     fetchCourseRules();
     fetchAllIncentives();
     fetchPendingUsers();
+    fetchPendingApprovals();
+    fetchBackups();
+    fetchAdminSignature();
   }, []);
 
   const fetchDashboard = async () => {
