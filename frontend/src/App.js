@@ -377,7 +377,7 @@ const ModernLeaderboard = () => {
       
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-4 mb-6 bg-slate-100 p-1 rounded-xl">
             <TabsTrigger value="overall" className="rounded-lg font-medium transition-all duration-300">
               <TrendingUp className="h-4 w-4 mr-2" />
               Overall
@@ -398,11 +398,11 @@ const ModernLeaderboard = () => {
 
           {/* Custom Date Range Filter */}
           {activeTab === 'custom' && (
-            <Card className="mb-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <Card className="mb-6 border border-slate-200 shadow-sm">
               <CardContent className="pt-4">
                 <div className="flex flex-col sm:flex-row gap-4 items-end">
                   <div className="flex-1">
-                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Start Date</Label>
+                    <Label className="text-sm font-medium text-slate-700">Start Date</Label>
                     <Input
                       type="date"
                       value={dateRange.start}
@@ -411,7 +411,7 @@ const ModernLeaderboard = () => {
                     />
                   </div>
                   <div className="flex-1">
-                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">End Date</Label>
+                    <Label className="text-sm font-medium text-slate-700">End Date</Label>
                     <Input
                       type="date"
                       value={dateRange.end}
