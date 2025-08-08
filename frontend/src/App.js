@@ -875,7 +875,12 @@ const AdminDashboard = () => {
   const [courseRules, setCourseRules] = useState([]);
   const [allIncentives, setAllIncentives] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [backups, setBackups] = useState([]);
   const [showCourseForm, setShowCourseForm] = useState(false);
+  const [showSignatureManager, setShowSignatureManager] = useState(false);
+  const [showBackupManager, setShowBackupManager] = useState(false);
+  const [adminSignature, setAdminSignature] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseForm, setCourseForm] = useState({ course: '', amount: '' });
   const [exportFilters, setExportFilters] = useState({
