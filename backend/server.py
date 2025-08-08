@@ -87,7 +87,7 @@ class Student(BaseModel):
     phone: str
     course: str
     documents: Dict[str, str] = {}  # document_type: file_path
-    status: str = "pending"  # pending, verified, approved, rejected
+    status: str = "pending"  # pending, verified, coordinator_approved, admin_pending, approved, rejected
     created_at: datetime = Field(default_factory=datetime.utcnow)
     coordinator_notes: Optional[str] = None
     signature_data: Optional[str] = None  # base64 encoded signature
