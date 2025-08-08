@@ -304,7 +304,6 @@ const ModernLeaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const { theme } = useTheme();
 
   const fetchLeaderboard = async (type = 'overall') => {
     setLoading(true);
