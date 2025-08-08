@@ -1,4 +1,4 @@
-/* Modern 2025 Design System with Dark/Light Mode */
+/* Modern 2025 Design System - Light Mode Only */
 :root {
   /* Light theme colors */
   --background: #ffffff;
@@ -37,34 +37,6 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
-}
-
-[data-theme="dark"] {
-  /* Dark theme colors */
-  --background: #020617;
-  --foreground: #f8fafc;
-  --card: #0f172a;
-  --card-foreground: #f8fafc;
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
-  --primary: #f8fafc;
-  --primary-foreground: #0f172a;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #f8fafc;
-  
-  /* Dark mode glass morphism */
-  --glass-background: rgba(15, 23, 42, 0.1);
-  --glass-border: rgba(248, 250, 252, 0.1);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 /* Base styles */
