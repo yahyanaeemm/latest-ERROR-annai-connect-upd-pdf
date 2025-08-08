@@ -755,11 +755,14 @@ async def create_backup(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     try:
-        # Run backup script
+        # Run backup script with proper python environment
         import subprocess
+        import sys
+        
+        # Use the same python environment as the main application
         result = subprocess.run([
-            'python', '/app/scripts/backup_system.py', 'create'
-        ], capture_output=True, text=True)
+            sys.executable, '/app/scripts/backup_system.py', 'create'
+        ], capture_output=True, text=True, env={**os.environ, 'PYTHONPATH': '/app/backend'})
         
         if result.returncode == 0:
             return {"message": "Backup created successfully", "output": result.stdout}
