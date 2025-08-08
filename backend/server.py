@@ -56,6 +56,9 @@ class User(BaseModel):
     agent_id: Optional[str] = None  # For agents only
     created_at: datetime = Field(default_factory=datetime.utcnow)
     hashed_password: str
+    signature_data: Optional[str] = None  # Admin/Coordinator signature
+    signature_type: Optional[str] = None  # "draw" or "upload"
+    signature_updated_at: Optional[datetime] = None
 
 class UserCreate(BaseModel):
     username: str
