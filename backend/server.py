@@ -856,26 +856,67 @@ async def export_excel(
     
     students = await db.students.find(query).to_list(1000)
     
-    # Create Excel file
+    # Create enhanced Excel file with agent information
     import pandas as pd
     from io import BytesIO
     
-    df = pd.DataFrame([{
-        "Token": student["token_number"],
-        "Student Name": f"{student['first_name']} {student['last_name']}",
-        "Email": student["email"],
-        "Phone": student["phone"],
-        "Course": student["course"],
-        "Status": student["status"],
-        "Agent ID": student["agent_id"],
-        "Created Date": student["created_at"].strftime("%Y-%m-%d %H:%M:%S"),
-        "Coordinator Notes": student.get("coordinator_notes", "")
-    } for student in students])
+    # Enrich student data with agent information and incentives
+    enriched_data = []
+    for student in students:
+        # Get agent details
+        agent = await db.users.find_one({"$or": [
+            {"agent_id": student["agent_id"]}, 
+            {"id": student["agent_id"]}
+        ]})
+        
+        # Get agent's total incentive
+        agent_incentives = await db.incentives.find({"agent_id": student["agent_id"]}).to_list(1000)
+        total_agent_incentive = sum(incentive.get("amount", 0) for incentive in agent_incentives)
+        
+        # Get student-specific incentive
+        student_incentive = await db.incentives.find_one({"student_id": student["id"]})
+        student_incentive_amount = student_incentive.get("amount", 0) if student_incentive else 0
+        
+        enriched_data.append({
+            "Token": student["token_number"],
+            "Student Name": f"{student['first_name']} {student['last_name']}",
+            "Email": student["email"],
+            "Phone": student["phone"],
+            "Course": student["course"],
+            "Status": student["status"],
+            "Agent ID": student["agent_id"],
+            "Agent Name": agent.get("username", "Unknown") if agent else "Unknown",
+            "Agent Full Name": f"{agent.get('first_name', '')} {agent.get('last_name', '')}".strip() if agent else "Unknown",
+            "Student Incentive (₹)": student_incentive_amount,
+            "Agent Total Incentive (₹)": total_agent_incentive,
+            "Created Date": student["created_at"].strftime("%Y-%m-%d %H:%M:%S"),
+            "Updated Date": student.get("updated_at", student["created_at"]).strftime("%Y-%m-%d %H:%M:%S"),
+            "Coordinator Notes": student.get("coordinator_notes", ""),
+            "Admin Notes": student.get("admin_notes", ""),
+            "Coordinator Approved": student.get("coordinator_approved_at", "").strftime("%Y-%m-%d %H:%M:%S") if student.get("coordinator_approved_at") else "",
+            "Admin Approved": student.get("admin_approved_at", "").strftime("%Y-%m-%d %H:%M:%S") if student.get("admin_approved_at") else ""
+        })
     
-    # Create Excel buffer
+    df = pd.DataFrame(enriched_data)
+    
+    # Create Excel buffer with multiple sheets
     excel_buffer = BytesIO()
     with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Students', index=False)
+        # Main students sheet
+        df.to_excel(writer, sheet_name='Students Data', index=False)
+        
+        # Agent summary sheet
+        agent_summary = df.groupby(['Agent ID', 'Agent Name', 'Agent Full Name']).agg({
+            'Token': 'count',
+            'Student Incentive (₹)': 'sum',
+            'Agent Total Incentive (₹)': 'first'
+        }).rename(columns={
+            'Token': 'Total Students',
+            'Student Incentive (₹)': 'Total Student Incentives',
+            'Agent Total Incentive (₹)': 'Agent Total Incentive'
+        }).reset_index()
+        
+        agent_summary.to_excel(writer, sheet_name='Agent Summary', index=False)
     
     excel_buffer.seek(0)
     
