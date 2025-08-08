@@ -954,6 +954,581 @@ class AdmissionSystemAPITester:
         
         return workflow_success
 
+    # NEW PRODUCTION READINESS TESTS - HIGH PRIORITY
+    
+    def test_admin_signature_management(self, user_key):
+        """Test admin signature management system"""
+        print("\n✍️ Testing Admin Signature Management System")
+        print("-" * 45)
+        
+        # Test signature upload with draw type
+        draw_signature_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        upload_data = {
+            'signature_data': draw_signature_data,
+            'signature_type': 'draw'
+        }
+        
+        success, response = self.run_test(
+            "Upload Admin Signature (Draw Type)",
+            "POST",
+            "admin/signature",
+            200,
+            data=upload_data,
+            files={},  # Form data mode
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Admin signature uploaded successfully")
+        
+        # Test signature retrieval
+        success, response = self.run_test(
+            "Get Admin Signature",
+            "GET",
+            "admin/signature",
+            200,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Verify signature data
+        if response.get('signature_data') != draw_signature_data:
+            print("❌ Retrieved signature data doesn't match uploaded data")
+            return False
+            
+        if response.get('signature_type') != 'draw':
+            print("❌ Retrieved signature type doesn't match uploaded type")
+            return False
+            
+        print("   ✅ Admin signature retrieved successfully")
+        
+        # Test signature upload with upload type
+        upload_signature_data = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
+        
+        update_data = {
+            'signature_data': upload_signature_data,
+            'signature_type': 'upload'
+        }
+        
+        success, response = self.run_test(
+            "Update Admin Signature (Upload Type)",
+            "POST",
+            "admin/signature",
+            200,
+            data=update_data,
+            files={},  # Form data mode
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Admin signature updated successfully")
+        
+        # Verify updated signature
+        success, response = self.run_test(
+            "Get Updated Admin Signature",
+            "GET",
+            "admin/signature",
+            200,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if response.get('signature_type') != 'upload':
+            print("❌ Updated signature type doesn't match")
+            return False
+            
+        print("   ✅ Updated signature verified successfully")
+        
+        return True
+    
+    def test_signature_access_control(self):
+        """Test signature management access control"""
+        print("\n🔒 Testing Signature Management Access Control")
+        print("-" * 45)
+        
+        # Test agent access (should fail)
+        if 'agent1' in self.tokens:
+            success, response = self.run_test(
+                "Agent Access to Signature Upload (Should Fail)",
+                "POST",
+                "admin/signature",
+                403,
+                data={'signature_data': 'test', 'signature_type': 'draw'},
+                files={},
+                token_user='agent1'
+            )
+            
+            if not success:
+                return False
+                
+            print("   ✅ Agent properly denied signature upload access")
+            
+            success, response = self.run_test(
+                "Agent Access to Signature Retrieval (Should Fail)",
+                "GET",
+                "admin/signature",
+                403,
+                token_user='agent1'
+            )
+            
+            if not success:
+                return False
+                
+            print("   ✅ Agent properly denied signature retrieval access")
+        
+        return True
+    
+    def test_three_tier_approval_process(self, admin_user_key, coordinator_user_key, agent_user_key):
+        """Test 3-tier admin final approval process"""
+        print("\n🔄 Testing 3-Tier Admin Final Approval Process")
+        print("-" * 50)
+        
+        # Step 1: Agent creates student
+        student_data = {
+            "first_name": "ThreeTier",
+            "last_name": "TestStudent",
+            "email": f"threetier.test.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "BSc"
+        }
+        
+        success, response = self.run_test(
+            "Agent Creates Student for 3-Tier Test",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        three_tier_student_id = response.get('id')
+        if not three_tier_student_id:
+            print("❌ No student ID returned")
+            return False
+            
+        print(f"   ✅ Student created for 3-tier test: {three_tier_student_id}")
+        
+        # Step 2: Coordinator approves (should set status to coordinator_approved)
+        coordinator_approval_data = {
+            'status': 'approved',
+            'notes': 'Coordinator approval for 3-tier test'
+        }
+        
+        success, response = self.run_test(
+            "Coordinator Approves Student (Should Set coordinator_approved)",
+            "PUT",
+            f"students/{three_tier_student_id}/status",
+            200,
+            data=coordinator_approval_data,
+            files={},
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Coordinator approval processed")
+        
+        # Step 3: Verify student status is coordinator_approved
+        success, response = self.run_test(
+            "Get Student Status After Coordinator Approval",
+            "GET",
+            f"students/{three_tier_student_id}",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if response.get('status') != 'coordinator_approved':
+            print(f"❌ Expected status 'coordinator_approved', got '{response.get('status')}'")
+            return False
+            
+        print("   ✅ Student status correctly set to coordinator_approved")
+        
+        # Step 4: Test admin pending approvals endpoint
+        success, response = self.run_test(
+            "Get Admin Pending Approvals",
+            "GET",
+            "admin/pending-approvals",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Find our test student in pending approvals
+        pending_students = response if isinstance(response, list) else []
+        test_student_found = False
+        for student in pending_students:
+            if student.get('id') == three_tier_student_id:
+                test_student_found = True
+                break
+                
+        if not test_student_found:
+            print("❌ Test student not found in pending approvals")
+            return False
+            
+        print(f"   ✅ Found {len(pending_students)} students awaiting admin approval")
+        
+        # Step 5: Admin final approval
+        admin_approval_data = {
+            'notes': 'Admin final approval for 3-tier test'
+        }
+        
+        success, response = self.run_test(
+            "Admin Final Approval",
+            "PUT",
+            f"admin/approve-student/{three_tier_student_id}",
+            200,
+            data=admin_approval_data,
+            files={},
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Admin final approval processed")
+        
+        # Step 6: Verify student status is now approved
+        success, response = self.run_test(
+            "Get Student Status After Admin Approval",
+            "GET",
+            f"students/{three_tier_student_id}",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if response.get('status') != 'approved':
+            print(f"❌ Expected status 'approved', got '{response.get('status')}'")
+            return False
+            
+        print("   ✅ Student status correctly set to approved after admin approval")
+        
+        # Step 7: Verify incentive was created
+        success, response = self.run_test(
+            "Get Agent Incentives After Admin Approval",
+            "GET",
+            "incentives",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        incentives = response.get('incentives', [])
+        incentive_found = False
+        for incentive in incentives:
+            if incentive.get('student_id') == three_tier_student_id:
+                incentive_found = True
+                print(f"   ✅ Incentive created: ₹{incentive.get('amount')} for course {incentive.get('course')}")
+                break
+                
+        if not incentive_found:
+            print("❌ No incentive found for approved student")
+            return False
+        
+        # Store for rejection test
+        self.test_data['three_tier_student_id'] = three_tier_student_id
+        
+        return True
+    
+    def test_admin_rejection_process(self, admin_user_key, coordinator_user_key, agent_user_key):
+        """Test admin rejection process"""
+        print("\n❌ Testing Admin Rejection Process")
+        print("-" * 35)
+        
+        # Create another student for rejection test
+        student_data = {
+            "first_name": "Rejection",
+            "last_name": "TestStudent",
+            "email": f"rejection.test.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "MBA"
+        }
+        
+        success, response = self.run_test(
+            "Agent Creates Student for Rejection Test",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        rejection_student_id = response.get('id')
+        
+        # Coordinator approves
+        success, response = self.run_test(
+            "Coordinator Approves Student for Rejection Test",
+            "PUT",
+            f"students/{rejection_student_id}/status",
+            200,
+            data={'status': 'approved', 'notes': 'Coordinator approval for rejection test'},
+            files={},
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+        
+        # Admin rejects
+        rejection_data = {
+            'notes': 'Admin rejection for testing purposes - documents incomplete'
+        }
+        
+        success, response = self.run_test(
+            "Admin Rejects Student",
+            "PUT",
+            f"admin/reject-student/{rejection_student_id}",
+            200,
+            data=rejection_data,
+            files={},
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Admin rejection processed")
+        
+        # Verify student status is rejected
+        success, response = self.run_test(
+            "Get Student Status After Admin Rejection",
+            "GET",
+            f"students/{rejection_student_id}",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if response.get('status') != 'rejected':
+            print(f"❌ Expected status 'rejected', got '{response.get('status')}'")
+            return False
+            
+        if response.get('admin_notes') != rejection_data['notes']:
+            print("❌ Admin rejection notes not saved correctly")
+            return False
+            
+        print("   ✅ Student status correctly set to rejected with notes")
+        
+        return True
+    
+    def test_automated_backup_system(self, admin_user_key):
+        """Test automated backup system"""
+        print("\n💾 Testing Automated Backup System")
+        print("-" * 35)
+        
+        # Test backup creation
+        success, response = self.run_test(
+            "Create System Backup",
+            "POST",
+            "admin/backup",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if 'successfully' not in response.get('message', '').lower():
+            print(f"❌ Expected success message, got: {response.get('message')}")
+            return False
+            
+        print("   ✅ System backup created successfully")
+        
+        # Test backup listing
+        success, response = self.run_test(
+            "List Available Backups",
+            "GET",
+            "admin/backups",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        backups = response if isinstance(response, list) else []
+        print(f"   ✅ Found {len(backups)} available backups")
+        
+        # Verify backup structure
+        if backups:
+            latest_backup = backups[0]
+            required_fields = ['filename', 'size_mb', 'created']
+            for field in required_fields:
+                if field not in latest_backup:
+                    print(f"❌ Missing field '{field}' in backup info")
+                    return False
+                    
+            print(f"   ✅ Latest backup: {latest_backup['filename']} ({latest_backup['size_mb']} MB)")
+        
+        return True
+    
+    def test_backup_access_control(self):
+        """Test backup system access control"""
+        print("\n🔒 Testing Backup System Access Control")
+        print("-" * 40)
+        
+        # Test non-admin access to backup creation
+        non_admin_users = ['agent1', 'coordinator']
+        
+        for user_key in non_admin_users:
+            if user_key not in self.tokens:
+                continue
+                
+            success, response = self.run_test(
+                f"Backup Creation as {user_key} (Should Fail)",
+                "POST",
+                "admin/backup",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            success, response = self.run_test(
+                f"Backup Listing as {user_key} (Should Fail)",
+                "GET",
+                "admin/backups",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ {user_key} properly denied backup access")
+        
+        return True
+    
+    def test_enhanced_excel_export_verification(self, admin_user_key):
+        """Test enhanced Excel export with new status fields"""
+        print("\n📊 Testing Enhanced Excel Export Verification")
+        print("-" * 45)
+        
+        # Test basic Excel export
+        success, response = self.run_test(
+            "Basic Excel Export",
+            "GET",
+            "admin/export/excel",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Basic Excel export working")
+        
+        # Test Excel export with new status filters
+        new_status_tests = [
+            'coordinator_approved',
+            'approved',
+            'rejected',
+            'pending'
+        ]
+        
+        for status in new_status_tests:
+            success, response = self.run_test(
+                f"Excel Export with Status Filter: {status}",
+                "GET",
+                f"admin/export/excel?status={status}",
+                200,
+                token_user=admin_user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ Excel export with status '{status}' working")
+        
+        # Test Excel export with multiple filters including new statuses
+        complex_filter_tests = [
+            "status=coordinator_approved&start_date=2024-01-01T00:00:00",
+            "status=approved&course=BSc",
+            "status=rejected&end_date=2024-12-31T23:59:59",
+            "status=all&start_date=2024-01-01T00:00:00&end_date=2024-12-31T23:59:59"
+        ]
+        
+        for filter_params in complex_filter_tests:
+            success, response = self.run_test(
+                f"Excel Export with Complex Filters",
+                "GET",
+                f"admin/export/excel?{filter_params}",
+                200,
+                token_user=admin_user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ Excel export with complex filters working")
+        
+        return True
+    
+    def test_production_readiness_workflow(self, admin_user_key, coordinator_user_key, agent_user_key):
+        """Test complete production readiness workflow"""
+        print("\n🚀 Testing Complete Production Readiness Workflow")
+        print("-" * 50)
+        
+        workflow_success = True
+        
+        # 1. Test signature management
+        if not self.test_admin_signature_management(admin_user_key):
+            workflow_success = False
+            
+        if not self.test_admin_signature_management(coordinator_user_key):
+            workflow_success = False
+            
+        if not self.test_signature_access_control():
+            workflow_success = False
+        
+        # 2. Test 3-tier approval process
+        if not self.test_three_tier_approval_process(admin_user_key, coordinator_user_key, agent_user_key):
+            workflow_success = False
+            
+        if not self.test_admin_rejection_process(admin_user_key, coordinator_user_key, agent_user_key):
+            workflow_success = False
+        
+        # 3. Test backup system
+        if not self.test_automated_backup_system(admin_user_key):
+            workflow_success = False
+            
+        if not self.test_backup_access_control():
+            workflow_success = False
+        
+        # 4. Test enhanced Excel export
+        if not self.test_enhanced_excel_export_verification(admin_user_key):
+            workflow_success = False
+        
+        return workflow_success
+
 def main():
     print("🚀 Starting Enhanced Admission System API Tests")
     print("=" * 60)
