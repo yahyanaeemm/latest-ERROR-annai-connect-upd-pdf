@@ -69,6 +69,8 @@ class UserCreate(BaseModel):
     password: str
     role: str
     agent_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 class UserLogin(BaseModel):
     username: str
