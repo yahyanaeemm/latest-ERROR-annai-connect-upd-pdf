@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
-import { Upload, Users, GraduationCap, DollarSign, FileText, Eye, CheckCircle, XCircle, Clock, Pen, Plus, Edit, Trash2, Download } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Pen, Plus, Edit, Trash2, Download, Upload, Archive, Settings } from "lucide-react";
 import SignatureCanvas from 'react-signature-canvas';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
