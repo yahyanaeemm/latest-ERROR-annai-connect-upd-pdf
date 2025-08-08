@@ -289,25 +289,374 @@ const LoginForm = () => {
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="bg-slate-800 text-white p-4 shadow-lg">
+    <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white p-4 shadow-2xl border-b border-blue-800/30">
       <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <GraduationCap className="h-8 w-8 text-yellow-400" />
-          <h1 className="text-xl font-bold">Admission System</h1>
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <GraduationCap className="h-10 w-10 text-yellow-400 drop-shadow-lg" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-300 bg-clip-text text-transparent">
+              EduAdmit Pro
+            </h1>
+            <p className="text-xs text-slate-300 hidden sm:block">Student Admission Management</p>
+          </div>
         </div>
+        
         <div className="flex items-center space-x-4">
-          <Badge variant="outline" className="bg-yellow-400 text-slate-800 border-yellow-400">
-            {user?.role?.toUpperCase()}
-          </Badge>
-          <span className="hidden sm:inline">Welcome, {user?.username}</span>
-          <Button variant="outline" size="sm" onClick={logout}>
+          {/* Theme Toggle */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleTheme}
+            className="text-yellow-400 hover:text-yellow-300 hover:bg-slate-800/50 transition-all duration-300"
+          >
+            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </Button>
+          
+          {/* User Info */}
+          <div className="flex items-center space-x-3">
+            <Badge variant="outline" className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 border-yellow-400 font-semibold px-3 py-1 shadow-lg">
+              {user?.role?.toUpperCase()}
+            </Badge>
+            <div className="hidden sm:block text-right">
+              <div className="text-sm font-medium">Welcome back!</div>
+              <div className="text-xs text-slate-300">{user?.username}</div>
+            </div>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={logout}
+            className="border-red-400 text-red-400 hover:bg-red-400 hover:text-white transition-all duration-300 shadow-lg"
+          >
             Logout
           </Button>
         </div>
       </div>
     </header>
+  );
+};
+
+// Modern Leaderboard Component
+const ModernLeaderboard = () => {
+  const [activeTab, setActiveTab] = useState('overall');
+  const [leaderboardData, setLeaderboardData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const { theme } = useTheme();
+
+  const fetchLeaderboard = async (type = 'overall') => {
+    setLoading(true);
+    try {
+      let endpoint = `/leaderboard/${type}`;
+      if (type === 'custom' && dateRange.start && dateRange.end) {
+        endpoint = `/leaderboard/date-range?start_date=${dateRange.start}&end_date=${dateRange.end}`;
+      }
+      
+      const response = await axios.get(`${API}${endpoint}`);
+      setLeaderboardData(response.data);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeaderboard(activeTab);
+  }, [activeTab]);
+
+  const handleCustomDateSearch = () => {
+    if (dateRange.start && dateRange.end) {
+      fetchLeaderboard('custom');
+    }
+  };
+
+  const getRankIcon = (rank) => {
+    switch (rank) {
+      case 1: return <Crown className="h-6 w-6 text-yellow-500" />;
+      case 2: return <Medal className="h-6 w-6 text-gray-400" />;
+      case 3: return <Award className="h-6 w-6 text-amber-600" />;
+      default: return <Trophy className="h-5 w-5 text-slate-400" />;
+    }
+  };
+
+  const getRankBadgeStyle = (rank) => {
+    switch (rank) {
+      case 1: return "bg-gradient-to-r from-yellow-400 to-yellow-600 text-yellow-900 shadow-lg ring-2 ring-yellow-300";
+      case 2: return "bg-gradient-to-r from-gray-300 to-gray-500 text-gray-900 shadow-lg ring-2 ring-gray-200";
+      case 3: return "bg-gradient-to-r from-amber-400 to-amber-600 text-amber-900 shadow-lg ring-2 ring-amber-300";
+      default: return theme === 'dark' ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-700";
+    }
+  };
+
+  return (
+    <Card className="w-full shadow-2xl border-0 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+              <BarChart3 className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Agent Leaderboard
+              </CardTitle>
+              <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
+                Track performance and celebrate achievements
+              </CardDescription>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Activity className="h-4 w-4 text-green-500 animate-pulse" />
+            <span className="text-xs text-green-600 dark:text-green-400 font-medium">Live Updates</span>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <TabsTrigger value="overall" className="rounded-lg font-medium transition-all duration-300">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Overall
+            </TabsTrigger>
+            <TabsTrigger value="weekly" className="rounded-lg font-medium transition-all duration-300">
+              <Calendar className="h-4 w-4 mr-2" />
+              Weekly
+            </TabsTrigger>
+            <TabsTrigger value="monthly" className="rounded-lg font-medium transition-all duration-300">
+              <Target className="h-4 w-4 mr-2" />
+              Monthly
+            </TabsTrigger>
+            <TabsTrigger value="custom" className="rounded-lg font-medium transition-all duration-300">
+              <Filter className="h-4 w-4 mr-2" />
+              Custom
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Custom Date Range Filter */}
+          {activeTab === 'custom' && (
+            <Card className="mb-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+              <CardContent className="pt-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <div className="flex-1">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Start Date</Label>
+                    <Input
+                      type="date"
+                      value={dateRange.start}
+                      onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">End Date</Label>
+                    <Input
+                      type="date"
+                      value={dateRange.end}
+                      onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleCustomDateSearch}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                    disabled={!dateRange.start || !dateRange.end}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Apply Filter
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Leaderboard Content */}
+          <div className="space-y-4">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              </div>
+            ) : leaderboardData?.leaderboard?.length > 0 ? (
+              <>
+                {/* Top 3 Spotlight */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  {leaderboardData.leaderboard.slice(0, 3).map((agent, index) => (
+                    <Card key={agent.agent_id} className={`relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+                      index === 0 ? 'ring-2 ring-yellow-400 shadow-yellow-100' : 
+                      index === 1 ? 'ring-2 ring-gray-400 shadow-gray-100' : 
+                      'ring-2 ring-amber-400 shadow-amber-100'
+                    }`}>
+                      <div className={`absolute top-0 left-0 right-0 h-1 ${
+                        index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                        index === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-500' :
+                        'bg-gradient-to-r from-amber-400 to-amber-600'
+                      }`} />
+                      
+                      <CardHeader className="text-center pb-2">
+                        <div className="flex justify-center mb-2">
+                          {getRankIcon(agent.rank)}
+                        </div>
+                        <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                          {agent.full_name}
+                        </CardTitle>
+                        <Badge className={`${getRankBadgeStyle(agent.rank)} text-xs font-bold px-3 py-1`}>
+                          #{agent.rank} Place
+                        </Badge>
+                      </CardHeader>
+                      
+                      <CardContent className="text-center space-y-3">
+                        <div className="grid grid-cols-1 gap-2">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Users className="h-4 w-4 text-blue-500" />
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              {activeTab === 'overall' ? agent.total_admissions : agent.period_admissions} Students
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-center space-x-2">
+                            <DollarSign className="h-4 w-4 text-green-500" />
+                            <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                              ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Full Rankings Table */}
+                <Card className="shadow-lg border border-slate-200 dark:border-slate-700">
+                  <CardHeader>
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-xl font-semibold">Complete Rankings</CardTitle>
+                      <Badge variant="outline" className="text-sm">
+                        {leaderboardData.total_agents} Active Agents
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-slate-200 dark:border-slate-700">
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Rank</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Agent</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Students</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Incentives</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300 text-center">Performance</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {leaderboardData.leaderboard.map((agent) => (
+                            <TableRow key={agent.agent_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200 border-slate-200 dark:border-slate-700">
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  {getRankIcon(agent.rank)}
+                                  <Badge className={`${getRankBadgeStyle(agent.rank)} text-xs font-bold px-2 py-1`}>
+                                    #{agent.rank}
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                              
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-slate-800 dark:text-slate-200">
+                                    {agent.full_name}
+                                  </div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                                    @{agent.username} • {agent.agent_id}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              
+                              <TableCell className="text-center">
+                                <div className="space-y-1">
+                                  <div className="font-bold text-lg text-blue-600 dark:text-blue-400">
+                                    {activeTab === 'overall' ? agent.total_admissions : agent.period_admissions}
+                                  </div>
+                                  {activeTab !== 'overall' && (
+                                    <div className="text-xs text-slate-500">
+                                      of {agent.total_admissions} total
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              
+                              <TableCell className="text-center">
+                                <div className="space-y-1">
+                                  <div className="font-bold text-lg text-green-600 dark:text-green-400">
+                                    ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive).toLocaleString()}
+                                  </div>
+                                  {activeTab !== 'overall' && (
+                                    <div className="text-xs text-slate-500">
+                                      of ₹{agent.total_incentive.toLocaleString()} total
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              
+                              <TableCell className="text-center">
+                                <div className="flex justify-center">
+                                  <Zap className={`h-5 w-5 ${
+                                    agent.rank <= 3 ? 'text-yellow-500 animate-pulse' : 
+                                    'text-slate-400'
+                                  }`} />
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Summary Statistics */}
+                {leaderboardData.summary && (
+                  <Card className="shadow-lg border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700">
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                            {leaderboardData.summary.total_period_admissions}
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">
+                            Total Period Admissions
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
+                            ₹{leaderboardData.summary.total_period_incentives.toLocaleString()}
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">
+                            Total Period Incentives
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <Trophy className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-500 dark:text-slate-400">No leaderboard data available</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 
