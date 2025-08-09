@@ -1227,7 +1227,7 @@ async def generate_student_receipt(
     
     # Header with institution branding
     p.setFont("Helvetica-Bold", 20)
-    p.drawString(50, height - 50, "Educational Institution")
+    p.drawString(50, height - 50, "AnnaiCONNECT")
     p.setFont("Helvetica", 14)
     p.drawString(50, height - 75, "Student Admission Receipt")
     
