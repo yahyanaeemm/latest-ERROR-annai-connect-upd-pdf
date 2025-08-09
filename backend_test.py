@@ -1988,6 +1988,13 @@ class AdmissionSystemAPITester:
                     
             print(f"   ✅ Pagination: Page {pagination['current_page']} of {pagination['total_pages']}, Total: {pagination['total_count']}")
             
+            # Verify pagination math
+            expected_total_pages = (pagination['total_count'] + pagination['limit'] - 1) // pagination['limit']
+            if pagination['total_pages'] != expected_total_pages:
+                print(f"❌ Pagination math error: expected {expected_total_pages} pages, got {pagination['total_pages']}")
+                return False
+            print("   ✅ Pagination math verified correctly")
+            
             # Verify student structure
             if students:
                 first_student = students[0]
@@ -2052,6 +2059,21 @@ class AdmissionSystemAPITester:
                     return False
                     
                 print("   ✅ Page navigation working correctly")
+        
+        # Test 4: Edge cases - invalid page numbers
+        success, response = self.run_test(
+            "Get Students Paginated (Page 0 - should default to 1)",
+            "GET",
+            "students/paginated?page=0",
+            200,
+            token_user=user_key
+        )
+        
+        if success and expected_status == 200:
+            if response['pagination']['current_page'] != 1:
+                print("❌ Page 0 should default to page 1")
+                return False
+            print("   ✅ Invalid page number handling working")
         
         return True
     
