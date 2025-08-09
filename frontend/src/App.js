@@ -1183,11 +1183,11 @@ const CoordinatorDashboard = () => {
 
       {/* Filters */}
       {showFilters && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Filter Students</CardTitle>
+        <Card className="border-2 border-blue-200 bg-blue-50/50 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+            <CardTitle className="text-lg font-semibold">Filter Students</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-white">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Search */}
               <div>
