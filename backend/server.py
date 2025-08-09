@@ -995,18 +995,28 @@ async def export_excel(
         # Main students sheet
         df.to_excel(writer, sheet_name='Students Data', index=False)
         
-        # Agent summary sheet
-        agent_summary = df.groupby(['Agent ID', 'Agent Name', 'Agent Full Name']).agg({
-            'Token': 'count',
-            'Student Incentive (₹)': 'sum',
-            'Agent Total Incentive (₹)': 'first'
-        }).rename(columns={
-            'Token': 'Total Students',
-            'Student Incentive (₹)': 'Total Student Incentives',
-            'Agent Total Incentive (₹)': 'Agent Total Incentive'
-        }).reset_index()
-        
-        agent_summary.to_excel(writer, sheet_name='Agent Summary', index=False)
+        # Agent summary sheet - only create if we have data
+        if not df.empty and len(df) > 0:
+            try:
+                agent_summary = df.groupby(['Agent ID', 'Agent Name', 'Agent Full Name']).agg({
+                    'Token': 'count',
+                    'Student Incentive (₹)': 'sum',
+                    'Agent Total Incentive (₹)': 'first'
+                }).rename(columns={
+                    'Token': 'Total Students',
+                    'Student Incentive (₹)': 'Total Student Incentives',
+                    'Agent Total Incentive (₹)': 'Agent Total Incentive'
+                }).reset_index()
+                
+                agent_summary.to_excel(writer, sheet_name='Agent Summary', index=False)
+            except KeyError:
+                # If groupby fails due to missing columns, create empty summary sheet
+                empty_summary = pd.DataFrame(columns=['Agent ID', 'Agent Name', 'Agent Full Name', 'Total Students', 'Total Student Incentives', 'Agent Total Incentive'])
+                empty_summary.to_excel(writer, sheet_name='Agent Summary', index=False)
+        else:
+            # Create empty summary sheet for empty data
+            empty_summary = pd.DataFrame(columns=['Agent ID', 'Agent Name', 'Agent Full Name', 'Total Students', 'Total Student Incentives', 'Agent Total Incentive'])
+            empty_summary.to_excel(writer, sheet_name='Agent Summary', index=False)
     
     excel_buffer.seek(0)
     
