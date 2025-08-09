@@ -329,6 +329,88 @@ async def update_student_status(
     
     return {"message": "Status updated successfully"}
 
+# Enhanced coordinator endpoints
+@api_router.get("/students/dropdown")
+async def get_students_dropdown(current_user: User = Depends(get_current_user)):
+    """Get simplified student list for dropdown selection"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    students = await db.students.find(
+        {}, 
+        {"id": 1, "first_name": 1, "last_name": 1, "token_number": 1, "course": 1, "status": 1}
+    ).to_list(1000)
+    
+    return [
+        {
+            "id": student["id"],
+            "name": f"{student['first_name']} {student['last_name']}",
+            "token_number": student["token_number"],
+            "course": student["course"],
+            "status": student["status"]
+        } 
+        for student in students
+    ]
+
+@api_router.get("/students/{student_id}/detailed")
+async def get_student_detailed(student_id: str, current_user: User = Depends(get_current_user)):
+    """Get detailed student information including agent details"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get student data
+    student_doc = await db.students.find_one({"id": student_id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Get agent information
+    agent_doc = await db.users.find_one({"id": student_doc["agent_id"]})
+    agent_info = None
+    if agent_doc:
+        agent_info = {
+            "id": agent_doc["id"],
+            "username": agent_doc["username"],
+            "email": agent_doc["email"],
+            "first_name": agent_doc.get("first_name", ""),
+            "last_name": agent_doc.get("last_name", "")
+        }
+    
+    # Prepare student data with agent info
+    student_data = dict(student_doc)
+    student_data["agent_info"] = agent_info
+    
+    return student_data
+
+@api_router.get("/students/{student_id}/documents")
+async def get_student_documents(student_id: str, current_user: User = Depends(get_current_user)):
+    """Get student documents with download information"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    student_doc = await db.students.find_one({"id": student_id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    documents = student_doc.get("documents", {})
+    document_info = []
+    
+    for doc_type, file_path in documents.items():
+        # Get file info
+        file_path_obj = Path(file_path)
+        document_info.append({
+            "type": doc_type,
+            "display_name": doc_type.replace('_', ' ').title(),
+            "file_name": file_path_obj.name,
+            "file_path": file_path,
+            "download_url": f"/uploads/{student_id}/{file_path_obj.name}",
+            "exists": file_path_obj.exists()
+        })
+    
+    return {
+        "student_id": student_id,
+        "documents": document_info
+    }
+
 # Incentive routes
 @api_router.get("/incentives")
 async def get_incentives(current_user: User = Depends(get_current_user)):
