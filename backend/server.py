@@ -323,8 +323,16 @@ async def get_student_detailed(student_id: str, current_user: User = Depends(get
             "last_name": agent_doc.get("last_name", "")
         }
     
-    # Prepare student data with agent info
+    # Prepare student data with agent info (remove MongoDB ObjectId)
     student_data = dict(student_doc)
+    if "_id" in student_data:
+        del student_data["_id"]
+    
+    # Convert datetime objects to ISO strings for JSON serialization
+    for key, value in student_data.items():
+        if isinstance(value, datetime):
+            student_data[key] = value.isoformat()
+    
     student_data["agent_info"] = agent_info
     
     return student_data
