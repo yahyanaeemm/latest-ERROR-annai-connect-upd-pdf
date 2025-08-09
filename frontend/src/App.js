@@ -874,32 +874,87 @@ const SignatureModal = ({ isOpen, onClose, onSave }) => {
 };
 
 const CoordinatorDashboard = () => {
-  const [studentsDropdown, setStudentsDropdown] = useState([]);
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentDocuments, setStudentDocuments] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showSignature, setShowSignature] = useState(false);
   const [actionType, setActionType] = useState('');
   const [notes, setNotes] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageLimit] = useState(20);
+
+  // Filter state
+  const [filters, setFilters] = useState({
+    status: 'all',
+    course: 'all',
+    agent_id: 'all',
+    search: '',
+    date_from: '',
+    date_to: ''
+  });
+
+  // Filter options
+  const [filterOptions, setFilterOptions] = useState({
+    courses: [],
+    statuses: [],
+    agents: []
+  });
+
+  // UI state
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedView, setSelectedView] = useState('list'); // 'list' or 'details'
 
   useEffect(() => {
-    fetchStudentsDropdown();
+    fetchFilterOptions();
+    fetchStudents();
   }, []);
 
-  const fetchStudentsDropdown = async () => {
+  useEffect(() => {
+    fetchStudents();
+  }, [currentPage, filters]);
+
+  const fetchFilterOptions = async () => {
     try {
-      const response = await axios.get(`${API}/students/dropdown`);
-      setStudentsDropdown(response.data);
+      const response = await axios.get(`${API}/students/filter-options`);
+      setFilterOptions(response.data);
     } catch (error) {
-      console.error('Error fetching students dropdown:', error);
+      console.error('Error fetching filter options:', error);
+    }
+  };
+
+  const fetchStudents = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageLimit.toString()
+      });
+
+      // Add filters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all' && value !== '') {
+          params.append(key, value);
+        }
+      });
+
+      const response = await axios.get(`${API}/students/paginated?${params}`);
+      setStudents(response.data.students);
+      setTotalPages(response.data.pagination.total_pages);
+      setTotalCount(response.data.pagination.total_count);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      alert('Error loading students. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchStudentDetails = async (studentId) => {
-    if (!studentId) return;
-    
     setLoading(true);
     try {
       // Fetch detailed student info
@@ -909,6 +964,8 @@ const CoordinatorDashboard = () => {
       // Fetch student documents
       const documentsResponse = await axios.get(`${API}/students/${studentId}/documents`);
       setStudentDocuments(documentsResponse.data);
+      
+      setSelectedView('details');
     } catch (error) {
       console.error('Error fetching student details:', error);
       alert('Error loading student details. Please try again.');
@@ -917,9 +974,27 @@ const CoordinatorDashboard = () => {
     }
   };
 
-  const handleStudentSelect = (studentId) => {
-    setSelectedStudentId(studentId);
-    fetchStudentDetails(studentId);
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: 'all',
+      course: 'all',
+      agent_id: 'all',
+      search: '',
+      date_from: '',
+      date_to: ''
+    });
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const updateStatus = async (studentId, status, notes = '', signatureData = '', signatureType = '') => {
@@ -933,9 +1008,9 @@ const CoordinatorDashboard = () => {
       await axios.put(`${API}/students/${studentId}/status`, formData);
       
       // Refresh data
-      fetchStudentsDropdown();
-      if (selectedStudentId) {
-        fetchStudentDetails(selectedStudentId);
+      fetchStudents();
+      if (selectedStudent && selectedStudent.id === studentId) {
+        fetchStudentDetails(studentId);
       }
     } catch (error) {
       console.error('Error updating status:', error);
@@ -943,12 +1018,15 @@ const CoordinatorDashboard = () => {
     }
   };
 
-  const handleStatusAction = (action) => {
+  const handleStatusAction = (student, action) => {
+    if (!selectedStudent) {
+      setSelectedStudent(student);
+    }
     setActionType(action);
     if (action === 'approved') {
       setShowSignature(true);
     } else {
-      updateStatus(selectedStudent.id, action);
+      updateStatus(student.id, action);
     }
   };
 
@@ -1019,241 +1097,450 @@ const CoordinatorDashboard = () => {
     );
   };
 
-  // Filter students based on search term
-  const filteredStudents = studentsDropdown.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.token_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.course.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <Button
+          key={i}
+          variant={currentPage === i ? "default" : "outline"}
+          size="sm"
+          onClick={() => handlePageChange(i)}
+          className={currentPage === i ? "bg-blue-600 text-white" : ""}
+        >
+          {i}
+        </Button>
+      );
+    }
+    
+    return (
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+        {pages}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="p-6 space-y-6">
-      <h2 className="text-2xl font-bold text-slate-800">Enhanced Coordinator Dashboard</h2>
-      
-      {/* Student Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Users className="h-5 w-5" />
-            <span>Select Student</span>
-          </CardTitle>
-          <CardDescription>Choose a student to view detailed information and manage their application</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="search">Search Students</Label>
-            <Input
-              id="search"
-              placeholder="Search by name, token, or course..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="student-select">Select Student</Label>
-            <Select value={selectedStudentId} onValueChange={handleStudentSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a student..." />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {filteredStudents.map((student) => (
-                  <SelectItem key={student.id} value={student.id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{student.name} - {student.token_number}</span>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <Badge variant="outline" className="text-xs">
-                          {student.course}
-                        </Badge>
-                        {getStatusBadge(student.status)}
-                      </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {selectedStudentId && (
-            <div className="text-sm text-gray-600">
-              Total Students: {studentsDropdown.length} | Filtered: {filteredStudents.length}
-            </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Coordinator Dashboard</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {totalCount} students total • Page {currentPage} of {totalPages}
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters ? "bg-blue-100 border-blue-300" : ""}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+          </Button>
+          {selectedView === 'details' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedView('list')}
+            >
+              Back to List
+            </Button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Student Details */}
-      {loading && (
+      {/* Filters */}
+      {showFilters && (
         <Card>
-          <CardContent className="p-8">
-            <div className="flex justify-center items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span className="ml-2">Loading student details...</span>
+          <CardHeader>
+            <CardTitle className="text-lg">Filter Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Search */}
+              <div>
+                <Label>Search</Label>
+                <Input
+                  placeholder="Name or token number..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <Label>Status</Label>
+                <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {filterOptions.statuses.map(status => (
+                      <SelectItem key={status} value={status}>
+                        {status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Course Filter */}
+              <div>
+                <Label>Course</Label>
+                <Select value={filters.course} onValueChange={(value) => handleFilterChange('course', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Courses</SelectItem>
+                    {filterOptions.courses.map(course => (
+                      <SelectItem key={course} value={course}>{course}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Agent Filter */}
+              <div>
+                <Label>Agent</Label>
+                <Select value={filters.agent_id} onValueChange={(value) => handleFilterChange('agent_id', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Agents</SelectItem>
+                    {filterOptions.agents.map(agent => (
+                      <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date From */}
+              <div>
+                <Label>From Date</Label>
+                <Input
+                  type="date"
+                  value={filters.date_from}
+                  onChange={(e) => handleFilterChange('date_from', e.target.value)}
+                />
+              </div>
+
+              {/* Date To */}
+              <div>
+                <Label>To Date</Label>
+                <Input
+                  type="date"
+                  value={filters.date_to}
+                  onChange={(e) => handleFilterChange('date_to', e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button variant="outline" onClick={clearFilters}>
+                Clear Filters
+              </Button>
+              <Button onClick={() => setShowFilters(false)}>
+                Apply Filters
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {selectedStudent && !loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Student Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <GraduationCap className="h-5 w-5" />
-                <span>Student Information</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Token Number</Label>
-                  <p className="font-mono text-lg">{selectedStudent.token_number}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Status</Label>
-                  <div className="mt-1">
-                    {getStatusBadge(selectedStudent.status)}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Full Name</Label>
-                  <p className="text-lg">{selectedStudent.first_name} {selectedStudent.last_name}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Course</Label>
-                  <p className="text-lg">{selectedStudent.course}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Email</Label>
-                  <p>{selectedStudent.email}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600">Phone</Label>
-                  <p>{selectedStudent.phone}</p>
-                </div>
+      {/* Main Content */}
+      {selectedView === 'list' ? (
+        /* Students List */
+        <Card>
+          <CardHeader>
+            <CardTitle>Students</CardTitle>
+            <CardDescription>
+              Showing {students.length} students on page {currentPage}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
-              
-              {selectedStudent.agent_info && (
-                <div className="border-t pt-4">
-                  <Label className="text-sm font-medium text-gray-600">Agent Information</Label>
-                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                    <p><strong>Agent:</strong> {selectedStudent.agent_info.first_name} {selectedStudent.agent_info.last_name}</p>
-                    <p><strong>Username:</strong> {selectedStudent.agent_info.username}</p>
-                    <p><strong>Email:</strong> {selectedStudent.agent_info.email}</p>
-                  </div>
-                </div>
-              )}
-              
-              {selectedStudent.coordinator_notes && (
-                <div className="border-t pt-4">
-                  <Label className="text-sm font-medium text-gray-600">Coordinator Notes</Label>
-                  <p className="mt-1 p-3 bg-blue-50 rounded-lg">{selectedStudent.coordinator_notes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Documents */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5" />
-                <span>Documents</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {studentDocuments && studentDocuments.documents.length > 0 ? (
-                <div className="space-y-3">
-                  {studentDocuments.documents.map((doc) => (
-                    <div key={doc.type} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium">{doc.display_name}</p>
-                          <p className="text-sm text-gray-500">{doc.file_name}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {doc.exists ? (
-                          <>
-                            <Badge className="bg-green-100 text-green-800">Available</Badge>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Token</TableHead>
+                      <TableHead>Student Name</TableHead>
+                      <TableHead>Course</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Agent</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {students.map((student) => (
+                      <TableRow key={student.id} className={
+                        student.status === 'approved' ? 'bg-green-50' :
+                        student.status === 'rejected' ? 'bg-red-50' :
+                        student.status === 'coordinator_approved' ? 'bg-purple-50' :
+                        student.status === 'pending' ? 'bg-yellow-50' : ''
+                      }>
+                        <TableCell className="font-mono text-sm">{student.token_number}</TableCell>
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        <TableCell>{student.course}</TableCell>
+                        <TableCell>{getStatusBadge(student.status)}</TableCell>
+                        <TableCell className="text-sm">{student.agent_name}</TableCell>
+                        <TableCell className="text-sm">
+                          {student.created_at ? new Date(student.created_at).toLocaleDateString() : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => downloadDocument(doc.download_url, doc.file_name)}
+                              onClick={() => fetchStudentDetails(student.id)}
+                              title="View Details"
                             >
-                              <Download className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </>
-                        ) : (
-                          <Badge variant="outline" className="text-red-600">Missing</Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <p>No documents uploaded</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                            {student.status === 'pending' && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => handleStatusAction(student, 'approved')}
+                                  title="Approve"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => handleStatusAction(student, 'rejected')}
+                                  title="Reject"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            {(student.status === 'approved' || student.status === 'coordinator_approved') && (
+                              <Button 
+                                size="sm"
+                                variant="outline"
+                                onClick={() => downloadReceipt(student.id, student.token_number)}
+                                title="Download Receipt"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
-      {/* Actions */}
-      {selectedStudent && !loading && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Actions</CardTitle>
-            <CardDescription>Manage student application status and download receipts</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {selectedStudent.status === 'pending' && (
-                <>
-                  <Button 
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    onClick={() => handleStatusAction('approved')}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve Student
-                  </Button>
-                  <Button 
-                    variant="destructive"
-                    onClick={() => handleStatusAction('rejected')}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject Student
-                  </Button>
-                </>
-              )}
-              
-              {(selectedStudent.status === 'approved' || selectedStudent.status === 'coordinator_approved') && (
-                <Button 
-                  variant="outline"
-                  onClick={() => downloadReceipt(selectedStudent.id, selectedStudent.token_number)}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Receipt
-                </Button>
-              )}
-              
-              <div className="flex items-center space-x-2 ml-auto">
-                {selectedStudent.signature_data && (
-                  <Badge variant="outline" className="text-green-600">
-                    <Pen className="h-3 w-3 mr-1" />
-                    E-Signature Added
-                  </Badge>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center mt-6">
+                    {renderPagination()}
+                  </div>
                 )}
-              </div>
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
+      ) : (
+        /* Student Details View */
+        selectedStudent && !loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Student Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <GraduationCap className="h-5 w-5" />
+                  <span>Student Information</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Token Number</Label>
+                    <p className="font-mono text-lg">{selectedStudent.token_number}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Status</Label>
+                    <div className="mt-1">
+                      {getStatusBadge(selectedStudent.status)}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Full Name</Label>
+                    <p className="text-lg">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Course</Label>
+                    <p className="text-lg">{selectedStudent.course}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Email</Label>
+                    <p>{selectedStudent.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                    <p>{selectedStudent.phone}</p>
+                  </div>
+                </div>
+                
+                {selectedStudent.agent_info && (
+                  <div className="border-t pt-4">
+                    <Label className="text-sm font-medium text-gray-600">Agent Information</Label>
+                    <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                      <p><strong>Agent:</strong> {selectedStudent.agent_info.first_name} {selectedStudent.agent_info.last_name}</p>
+                      <p><strong>Username:</strong> {selectedStudent.agent_info.username}</p>
+                      <p><strong>Email:</strong> {selectedStudent.agent_info.email}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedStudent.coordinator_notes && (
+                  <div className="border-t pt-4">
+                    <Label className="text-sm font-medium text-gray-600">Coordinator Notes</Label>
+                    <p className="mt-1 p-3 bg-blue-50 rounded-lg">{selectedStudent.coordinator_notes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Documents */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="h-5 w-5" />
+                  <span>Documents</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {studentDocuments && studentDocuments.documents.length > 0 ? (
+                  <div className="space-y-3">
+                    {studentDocuments.documents.map((doc) => (
+                      <div key={doc.type} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="font-medium">{doc.display_name}</p>
+                            <p className="text-sm text-gray-500">{doc.file_name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {doc.exists ? (
+                            <>
+                              <Badge className="bg-green-100 text-green-800">Available</Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => downloadDocument(doc.download_url, doc.file_name)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Badge variant="outline" className="text-red-600">Missing</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <p>No documents uploaded</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Actions for selected student */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Actions</CardTitle>
+                <CardDescription>Manage student application status and download receipts</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  {selectedStudent.status === 'pending' && (
+                    <>
+                      <Button 
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleStatusAction(selectedStudent, 'approved')}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve Student
+                      </Button>
+                      <Button 
+                        variant="destructive"
+                        onClick={() => handleStatusAction(selectedStudent, 'rejected')}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject Student
+                      </Button>
+                    </>
+                  )}
+                  
+                  {(selectedStudent.status === 'approved' || selectedStudent.status === 'coordinator_approved') && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => downloadReceipt(selectedStudent.id, selectedStudent.token_number)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download Receipt
+                    </Button>
+                  )}
+                  
+                  <div className="flex items-center space-x-2 ml-auto">
+                    {selectedStudent.signature_data && (
+                      <Badge variant="outline" className="text-green-600">
+                        <Pen className="h-3 w-3 mr-1" />
+                        E-Signature Added
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
       )}
 
       <SignatureModal
