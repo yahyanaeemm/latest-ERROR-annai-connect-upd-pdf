@@ -676,6 +676,25 @@ const AgentDashboard = () => {
     );
   };
 
+  const getAchievementBadge = (achievement) => {
+    const badges = {
+      'first_student': { label: 'First Student', icon: '🌟', color: 'bg-yellow-100 text-yellow-800' },
+      'recruiter_bronze': { label: 'Bronze Recruiter', icon: '🥉', color: 'bg-amber-100 text-amber-800' },
+      'recruiter_silver': { label: 'Silver Recruiter', icon: '🥈', color: 'bg-gray-100 text-gray-800' },
+      'recruiter_gold': { label: 'Gold Recruiter', icon: '🥇', color: 'bg-yellow-100 text-yellow-800' },
+      'approval_master': { label: 'Approval Master', icon: '✅', color: 'bg-green-100 text-green-800' },
+      'earning_champion': { label: 'Earning Champion', icon: '💰', color: 'bg-emerald-100 text-emerald-800' }
+    };
+    const badge = badges[achievement] || { label: achievement, icon: '🏆', color: 'bg-blue-100 text-blue-800' };
+    
+    return (
+      <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${badge.color} mr-2 mb-2`}>
+        <span className="mr-1">{badge.icon}</span>
+        {badge.label}
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
