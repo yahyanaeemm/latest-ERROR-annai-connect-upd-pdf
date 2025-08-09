@@ -533,7 +533,28 @@ const AgentDashboard = () => {
     fetchStudents();
     fetchIncentives();
     fetchCourseRules();
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await axios.get(`${API}/agent/profile`);
+      setProfileData(response.data);
+      // Pre-fill profile form with existing data
+      const profile = response.data.profile;
+      setProfileForm({
+        phone: profile.phone || '',
+        address: profile.address || '',
+        experience_level: profile.experience_level || 'beginner',
+        specializations: profile.specializations || [],
+        monthly_target: profile.monthly_target || '',
+        quarterly_target: profile.quarterly_target || '',
+        bio: profile.bio || ''
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const fetchStudents = async () => {
     try {
