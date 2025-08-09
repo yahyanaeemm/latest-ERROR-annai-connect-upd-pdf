@@ -941,7 +941,7 @@ async def export_excel(
         query["agent_id"] = agent_id
     if course:
         query["course"] = course
-    if status:
+    if status and status != "all":
         query["status"] = status
     
     students = await db.students.find(query).to_list(1000)
