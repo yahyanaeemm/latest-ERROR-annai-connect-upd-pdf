@@ -261,12 +261,16 @@ const Header = () => {
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <GraduationCap className="h-10 w-10 text-yellow-400 drop-shadow-lg" />
+            <img 
+              src="/annaiconnect-logo.png" 
+              alt="AnnaiCONNECT Logo" 
+              className="h-12 w-12 object-contain drop-shadow-lg"
+            />
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
           </div>
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-300 bg-clip-text text-transparent">
-              EduAdmit Pro
+              AnnaiCONNECT
             </h1>
             <p className="text-xs text-slate-300 hidden sm:block">Student Admission Management</p>
           </div>
