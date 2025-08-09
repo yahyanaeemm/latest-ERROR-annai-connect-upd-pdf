@@ -212,6 +212,8 @@ async def register(user_data: UserCreate):
         email=user_data.email,
         role=user_data.role,
         agent_id=user_data.agent_id,
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
         hashed_password=hashed_password
     )
     
