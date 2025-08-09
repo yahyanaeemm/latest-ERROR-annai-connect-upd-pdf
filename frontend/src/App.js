@@ -1191,19 +1191,20 @@ const CoordinatorDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Search */}
               <div>
-                <Label>Search</Label>
+                <Label className="text-gray-700 font-medium text-sm mb-1 block">Search</Label>
                 <Input
                   placeholder="Name or token number..."
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
               {/* Status Filter */}
               <div>
-                <Label>Status</Label>
+                <Label className="text-gray-700 font-medium text-sm mb-1 block">Status</Label>
                 <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-2 border-gray-300 focus:border-blue-500 bg-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1219,9 +1220,9 @@ const CoordinatorDashboard = () => {
 
               {/* Course Filter */}
               <div>
-                <Label>Course</Label>
+                <Label className="text-gray-700 font-medium text-sm mb-1 block">Course</Label>
                 <Select value={filters.course} onValueChange={(value) => handleFilterChange('course', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-2 border-gray-300 focus:border-blue-500 bg-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1235,9 +1236,9 @@ const CoordinatorDashboard = () => {
 
               {/* Agent Filter */}
               <div>
-                <Label>Agent</Label>
+                <Label className="text-gray-700 font-medium text-sm mb-1 block">Agent</Label>
                 <Select value={filters.agent_id} onValueChange={(value) => handleFilterChange('agent_id', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-2 border-gray-300 focus:border-blue-500 bg-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
