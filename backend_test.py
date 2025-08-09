@@ -1949,6 +1949,313 @@ class AdmissionSystemAPITester:
     
     # ENHANCED COORDINATOR DASHBOARD BACKEND API TESTS (NEW)
     
+    def test_students_paginated_api(self, user_key, expected_status=200):
+        """Test GET /api/students/paginated endpoint with comprehensive pagination and filtering"""
+        print(f"\n📋 Testing Students Paginated API as {user_key}")
+        print("-" * 50)
+        
+        # Test 1: Basic pagination with default parameters
+        success, response = self.run_test(
+            f"Get Students Paginated (Default) as {user_key}",
+            "GET",
+            "students/paginated",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response structure
+            required_fields = ['students', 'pagination']
+            for field in required_fields:
+                if field not in response:
+                    print(f"❌ Missing field '{field}' in paginated response")
+                    return False
+                    
+            students = response['students']
+            pagination = response['pagination']
+            
+            print(f"   ✅ Found {len(students)} students on page 1")
+            
+            # Verify pagination metadata
+            required_pagination_fields = ['current_page', 'total_pages', 'total_count', 'limit', 'has_next', 'has_previous']
+            for field in required_pagination_fields:
+                if field not in pagination:
+                    print(f"❌ Missing pagination field '{field}'")
+                    return False
+                    
+            print(f"   ✅ Pagination: Page {pagination['current_page']} of {pagination['total_pages']}, Total: {pagination['total_count']}")
+            
+            # Verify student structure
+            if students:
+                first_student = students[0]
+                required_student_fields = ['id', 'name', 'token_number', 'course', 'status', 'email', 'phone', 'agent_name', 'created_at', 'updated_at']
+                for field in required_student_fields:
+                    if field not in first_student:
+                        print(f"❌ Missing student field '{field}' in paginated response")
+                        return False
+                        
+                print(f"   ✅ Sample student: {first_student['name']} - {first_student['token_number']} - Agent: {first_student['agent_name']}")
+                
+                # Store data for further tests
+                self.test_data['paginated_student_id'] = first_student['id']
+                self.test_data['total_students'] = pagination['total_count']
+        
+        # Test 2: Different page sizes
+        page_sizes = [5, 10, 50]
+        for limit in page_sizes:
+            success, response = self.run_test(
+                f"Get Students Paginated (limit={limit})",
+                "GET",
+                f"students/paginated?limit={limit}",
+                expected_status,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            if expected_status == 200:
+                students = response['students']
+                pagination = response['pagination']
+                
+                if len(students) > limit:
+                    print(f"❌ Returned {len(students)} students, expected max {limit}")
+                    return False
+                    
+                if pagination['limit'] != limit:
+                    print(f"❌ Pagination limit mismatch: expected {limit}, got {pagination['limit']}")
+                    return False
+                    
+                print(f"   ✅ Page size {limit}: {len(students)} students returned")
+        
+        # Test 3: Pagination navigation
+        if expected_status == 200 and self.test_data.get('total_students', 0) > 20:
+            success, response = self.run_test(
+                "Get Students Paginated (Page 2)",
+                "GET",
+                "students/paginated?page=2",
+                200,
+                token_user=user_key
+            )
+            
+            if success:
+                pagination = response['pagination']
+                if pagination['current_page'] != 2:
+                    print("❌ Page navigation failed")
+                    return False
+                    
+                if not pagination['has_previous']:
+                    print("❌ Page 2 should have previous page")
+                    return False
+                    
+                print("   ✅ Page navigation working correctly")
+        
+        return True
+    
+    def test_students_paginated_filters(self, user_key):
+        """Test filtering functionality of paginated students API"""
+        print(f"\n🔍 Testing Students Paginated Filters as {user_key}")
+        print("-" * 50)
+        
+        # Test status filters
+        status_filters = ['pending', 'approved', 'rejected', 'coordinator_approved', 'all']
+        for status in status_filters:
+            success, response = self.run_test(
+                f"Filter by Status: {status}",
+                "GET",
+                f"students/paginated?status={status}",
+                200,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            students = response['students']
+            pagination = response['pagination']
+            
+            # Verify filtering works (except for 'all')
+            if status != 'all' and students:
+                for student in students:
+                    if student['status'] != status:
+                        print(f"❌ Status filter failed: expected {status}, got {student['status']}")
+                        return False
+                        
+            print(f"   ✅ Status filter '{status}': {len(students)} students, total: {pagination['total_count']}")
+        
+        # Test course filter
+        success, response = self.run_test(
+            "Filter by Course: BSc",
+            "GET",
+            "students/paginated?course=BSc",
+            200,
+            token_user=user_key
+        )
+        
+        if success:
+            students = response['students']
+            if students:
+                for student in students:
+                    if student['course'] != 'BSc':
+                        print(f"❌ Course filter failed: expected BSc, got {student['course']}")
+                        return False
+                        
+            print(f"   ✅ Course filter 'BSc': {len(students)} students")
+        
+        # Test search filter
+        if self.test_data.get('paginated_student_id'):
+            # Get a student to search for
+            success, response = self.run_test(
+                "Get Student for Search Test",
+                "GET",
+                f"students/{self.test_data['paginated_student_id']}",
+                200,
+                token_user=user_key
+            )
+            
+            if success:
+                student_name = response.get('first_name', '')
+                token_number = response.get('token_number', '')
+                
+                # Test search by name
+                if student_name:
+                    success, response = self.run_test(
+                        f"Search by Name: {student_name}",
+                        "GET",
+                        f"students/paginated?search={student_name}",
+                        200,
+                        token_user=user_key
+                    )
+                    
+                    if success:
+                        students = response['students']
+                        found = any(student_name.lower() in student['name'].lower() for student in students)
+                        if not found and students:
+                            print(f"❌ Search by name failed: '{student_name}' not found in results")
+                            return False
+                        print(f"   ✅ Search by name '{student_name}': {len(students)} students")
+                
+                # Test search by token number
+                if token_number:
+                    success, response = self.run_test(
+                        f"Search by Token: {token_number[:8]}",
+                        "GET",
+                        f"students/paginated?search={token_number[:8]}",
+                        200,
+                        token_user=user_key
+                    )
+                    
+                    if success:
+                        students = response['students']
+                        found = any(token_number[:8] in student['token_number'] for student in students)
+                        if not found and students:
+                            print(f"❌ Search by token failed: '{token_number[:8]}' not found in results")
+                            return False
+                        print(f"   ✅ Search by token '{token_number[:8]}': {len(students)} students")
+        
+        # Test date range filter
+        success, response = self.run_test(
+            "Filter by Date Range",
+            "GET",
+            "students/paginated?date_from=2024-01-01T00:00:00&date_to=2024-12-31T23:59:59",
+            200,
+            token_user=user_key
+        )
+        
+        if success:
+            students = response['students']
+            print(f"   ✅ Date range filter: {len(students)} students")
+        
+        # Test combined filters
+        success, response = self.run_test(
+            "Combined Filters Test",
+            "GET",
+            "students/paginated?status=approved&course=BSc&limit=10",
+            200,
+            token_user=user_key
+        )
+        
+        if success:
+            students = response['students']
+            pagination = response['pagination']
+            
+            # Verify combined filtering
+            for student in students:
+                if student['status'] != 'approved' or student['course'] != 'BSc':
+                    print(f"❌ Combined filter failed for student: {student['name']}")
+                    return False
+                    
+            print(f"   ✅ Combined filters (approved + BSc): {len(students)} students")
+        
+        return True
+    
+    def test_students_filter_options_api(self, user_key, expected_status=200):
+        """Test GET /api/students/filter-options endpoint"""
+        print(f"\n⚙️ Testing Students Filter Options API as {user_key}")
+        print("-" * 50)
+        
+        success, response = self.run_test(
+            f"Get Students Filter Options as {user_key}",
+            "GET",
+            "students/filter-options",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response structure
+            required_fields = ['courses', 'statuses', 'agents']
+            for field in required_fields:
+                if field not in response:
+                    print(f"❌ Missing field '{field}' in filter options response")
+                    return False
+                    
+            courses = response['courses']
+            statuses = response['statuses']
+            agents = response['agents']
+            
+            print(f"   ✅ Filter options: {len(courses)} courses, {len(statuses)} statuses, {len(agents)} agents")
+            
+            # Verify courses are sorted
+            if courses and courses != sorted(courses):
+                print("❌ Courses should be sorted")
+                return False
+                
+            # Verify statuses are sorted
+            if statuses and statuses != sorted(statuses):
+                print("❌ Statuses should be sorted")
+                return False
+                
+            # Verify agent structure
+            if agents:
+                first_agent = agents[0]
+                required_agent_fields = ['id', 'name']
+                for field in required_agent_fields:
+                    if field not in first_agent:
+                        print(f"❌ Missing agent field '{field}' in filter options")
+                        return False
+                        
+                print(f"   ✅ Sample agent: {first_agent['name']}")
+                
+                # Verify agent names are properly formatted
+                for agent in agents:
+                    if not agent['name'] or len(agent['name'].strip()) == 0:
+                        print("❌ Agent name should not be empty")
+                        return False
+                        
+                print("   ✅ Agent names properly formatted")
+            
+            print(f"   ✅ Available courses: {', '.join(courses[:5])}{'...' if len(courses) > 5 else ''}")
+            print(f"   ✅ Available statuses: {', '.join(statuses)}")
+        
+        return True
+    
     def test_students_dropdown_api(self, user_key, expected_status=200):
         """Test GET /api/students/dropdown endpoint"""
         print(f"\n📋 Testing Students Dropdown API as {user_key}")
