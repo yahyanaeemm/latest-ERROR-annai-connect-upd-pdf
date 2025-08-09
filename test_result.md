@@ -552,6 +552,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "✅ DROPDOWN & SIGNATURE VISIBILITY ISSUES RESOLVED - Fixed critical visibility problems: 1) DROPDOWN FIXES: Added comprehensive CSS rules for [role='listbox'], [data-radix-select-content], and [role='option'] with white backgrounds, blue borders, proper padding, z-index 9999, and enhanced hover states (blue background, white text). 2) SELECT TRIGGERS: Enhanced [data-radix-select-trigger] with better borders, focus states, and active styling. 3) ADMIN SIGNATURE BUTTON: Added .manage-signature-btn styling with blue gradient background, enhanced padding, shadows, and hover effects. 4) DIALOG IMPROVEMENTS: Enhanced .dialog-overlay and .dialog-content with better z-index, backdrop blur, and positioning. All dropdown options now have excellent contrast, clear hover states, and professional appearance. The 'Manage Signature' button in admin dashboard is now highly visible with blue gradient styling."
+      - working: false
+        agent: "user"
+        comment: "🚨 SIGNATURE DIALOG UI CORRUPTION & PDF ISSUE - User provided screenshot showing 'manage signature options appears like the attached image when i try to click open it and added signature is not appearing pdf reciept' - The signature dialog has severe UI overlay/corruption issues where elements appear garbled and overlapping. Additionally, signatures are not being integrated into PDF receipts properly. This indicates both frontend dialog CSS issues and backend PDF generation problems."
 
 metadata:
   created_by: "main_agent"
