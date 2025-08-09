@@ -1076,6 +1076,7 @@ const AdminDashboard = () => {
   const [showSignatureManager, setShowSignatureManager] = useState(false);
   const [showBackupManager, setShowBackupManager] = useState(false);
   const [adminSignature, setAdminSignature] = useState(null);
+  const [allStudents, setAllStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseForm, setCourseForm] = useState({ course: '', amount: '' });
