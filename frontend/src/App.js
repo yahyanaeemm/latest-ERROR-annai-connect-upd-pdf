@@ -1163,6 +1163,36 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAllStudents = async () => {
+    try {
+      const response = await axios.get(`${API}/students`);
+      setAllStudents(response.data);
+    } catch (error) {
+      console.error('Error fetching all students:', error);
+    }
+  };
+
+  const downloadAdminReceipt = async (studentId, tokenNumber) => {
+    try {
+      const response = await axios.get(`${API}/admin/students/${studentId}/receipt`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `admin_receipt_${tokenNumber}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading admin receipt:', error);
+      alert('Error downloading receipt. Make sure the student is approved.');
+    }
+  };
+
   const handleCourseSubmit = async (e) => {
     e.preventDefault();
     try {
