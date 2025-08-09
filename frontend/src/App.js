@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { 
   Upload, Users, GraduationCap, DollarSign, FileText, Eye, CheckCircle, XCircle, Clock, Pen, Plus, Edit, 
   Trash2, Download, Archive, Settings, Trophy, Medal, Crown, TrendingUp, Calendar, Filter,
-  Star, Award, Target, BarChart3, Activity, Zap
+  Star, Award, Target, BarChart3, Activity, Zap, User
 } from "lucide-react";
 import SignatureCanvas from 'react-signature-canvas';
 
