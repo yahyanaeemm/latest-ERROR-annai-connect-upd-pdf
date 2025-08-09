@@ -629,6 +629,34 @@ const AgentDashboard = () => {
     }
   };
 
+  const updateProfile = async () => {
+    try {
+      await axios.put(`${API}/agent/profile`, profileForm);
+      fetchProfile(); // Refresh profile data
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Error updating profile');
+    }
+  };
+
+  const uploadProfilePhoto = async (file) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const formData = new FormData();
+        formData.append('photo_data', e.target.result);
+        await axios.post(`${API}/agent/profile/photo`, formData);
+        fetchProfile(); // Refresh profile data
+        alert('Profile photo updated successfully!');
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        alert('Error uploading photo');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       pending: { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Clock },
