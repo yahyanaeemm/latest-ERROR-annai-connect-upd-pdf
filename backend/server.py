@@ -1484,6 +1484,117 @@ async def get_enhanced_admin_dashboard(current_user: User = Depends(get_current_
         }
     }
 
+# User Management APIs - NEW
+@api_router.get("/admin/users")
+async def get_all_users(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all users from database
+    users_cursor = db.users.find({})
+    users_list = await users_cursor.to_list(length=None)
+    
+    # Convert MongoDB documents to proper format
+    users_data = []
+    for user in users_list:
+        user_dict = dict(user)
+        if "_id" in user_dict:
+            del user_dict["_id"]
+        
+        # Convert datetime objects to ISO strings
+        for key, value in user_dict.items():
+            if isinstance(value, datetime):
+                user_dict[key] = value.isoformat()
+        
+        # Don't include password hash
+        if "hashed_password" in user_dict:
+            del user_dict["hashed_password"]
+            
+        users_data.append(user_dict)
+    
+    return users_data
+
+@api_router.get("/agents")
+async def get_all_agents(current_user: User = Depends(get_current_user)):
+    if current_user.role not in ["admin", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Admin or Coordinator access required")
+    
+    # Get all agents
+    agents_cursor = db.users.find({"role": "agent"})
+    agents_list = await agents_cursor.to_list(length=None)
+    
+    # Convert to proper format
+    agents_data = []
+    for agent in agents_list:
+        agent_dict = dict(agent)
+        if "_id" in agent_dict:
+            del agent_dict["_id"]
+        if "hashed_password" in agent_dict:
+            del agent_dict["hashed_password"]
+            
+        # Convert datetime objects
+        for key, value in agent_dict.items():
+            if isinstance(value, datetime):
+                agent_dict[key] = value.isoformat()
+                
+        agents_data.append(agent_dict)
+    
+    return agents_data
+
+@api_router.get("/coordinators") 
+async def get_all_coordinators(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all coordinators
+    coordinators_cursor = db.users.find({"role": "coordinator"})
+    coordinators_list = await coordinators_cursor.to_list(length=None)
+    
+    # Convert to proper format
+    coordinators_data = []
+    for coordinator in coordinators_list:
+        coordinator_dict = dict(coordinator)
+        if "_id" in coordinator_dict:
+            del coordinator_dict["_id"]
+        if "hashed_password" in coordinator_dict:
+            del coordinator_dict["hashed_password"]
+            
+        # Convert datetime objects
+        for key, value in coordinator_dict.items():
+            if isinstance(value, datetime):
+                coordinator_dict[key] = value.isoformat()
+                
+        coordinators_data.append(coordinator_dict)
+    
+    return coordinators_data
+
+@api_router.get("/admins")
+async def get_all_admins(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all admins
+    admins_cursor = db.users.find({"role": "admin"})
+    admins_list = await admins_cursor.to_list(length=None)
+    
+    # Convert to proper format
+    admins_data = []
+    for admin in admins_list:
+        admin_dict = dict(admin)
+        if "_id" in admin_dict:
+            del admin_dict["_id"]
+        if "hashed_password" in admin_dict:
+            del admin_dict["hashed_password"]
+            
+        # Convert datetime objects
+        for key, value in admin_dict.items():
+            if isinstance(value, datetime):
+                admin_dict[key] = value.isoformat()
+                
+        admins_data.append(admin_dict)
+    
+    return admins_data
+
 # Include the router in the main app
 app.include_router(api_router)
 
