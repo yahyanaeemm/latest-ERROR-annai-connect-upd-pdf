@@ -1158,10 +1158,13 @@ const CoordinatorDashboard = () => {
         </div>
         <div className="flex items-center space-x-3">
           <Button
-            variant="outline"
+            variant={showFilters ? "default" : "outline"}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className={showFilters ? "bg-blue-100 border-blue-300" : ""}
+            className={showFilters ? 
+              "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : 
+              "bg-white border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 text-gray-700 font-medium"
+            }
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
