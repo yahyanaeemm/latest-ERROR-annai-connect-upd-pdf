@@ -915,6 +915,255 @@ const AgentDashboard = () => {
           </form>
         </DialogContent>
       </Dialog>
+        </>
+      )}
+
+      {activeTab === 'profile' && profileData && (
+        <div className="space-y-6">
+          {/* Profile Header */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <User className="h-6 w-6" />
+                Agent Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start space-x-6">
+                {/* Profile Photo */}
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {profileData.profile.profile_photo ? (
+                      <img 
+                        src={profileData.profile.profile_photo} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-12 w-12 text-gray-400" />
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    id="photo-upload"
+                    onChange={(e) => e.target.files[0] && uploadProfilePhoto(e.target.files[0])}
+                  />
+                  <label htmlFor="photo-upload" className="cursor-pointer">
+                    <Button variant="outline" size="sm">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Photo
+                    </Button>
+                  </label>
+                </div>
+
+                {/* Basic Info */}
+                <div className="flex-1 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Name</Label>
+                      <div className="text-lg font-semibold">
+                        {profileData.profile.first_name} {profileData.profile.last_name}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Username</Label>
+                      <div className="text-lg">{profileData.profile.username}</div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Email</Label>
+                      <div className="text-lg">{profileData.profile.email}</div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Tenure</Label>
+                      <div className="text-lg">{profileData.profile.tenure_days} days</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Performance Metrics */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <BarChart3 className="h-6 w-6" />
+                Performance Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{profileData.performance.total_students}</div>
+                  <div className="text-sm text-gray-600">Total Students</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{profileData.performance.approved_students}</div>
+                  <div className="text-sm text-gray-600">Approved</div>
+                </div>
+                <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                  <div className="text-2xl font-bold text-yellow-600">{profileData.performance.pending_approvals}</div>
+                  <div className="text-sm text-gray-600">Pending</div>
+                </div>
+                <div className="text-center p-4 bg-emerald-50 rounded-lg">
+                  <div className="text-2xl font-bold text-emerald-600">₹{profileData.performance.total_incentive}</div>
+                  <div className="text-sm text-gray-600">Total Earned</div>
+                </div>
+              </div>
+
+              {/* Top Courses */}
+              {profileData.performance.top_courses.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="font-semibold mb-3">Top Performing Courses</h4>
+                  <div className="space-y-2">
+                    {profileData.performance.top_courses.map((course, index) => (
+                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <span>{course.course}</span>
+                        <Badge>{course.count} students</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Achievement Badges */}
+          {profileData.achievements.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-3">
+                  <Award className="h-6 w-6" />
+                  Achievement Badges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap">
+                  {profileData.achievements.map((achievement, index) => (
+                    <div key={index}>
+                      {getAchievementBadge(achievement)}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <Activity className="h-6 w-6" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {profileData.recent_activity.slice(0, 5).map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <div>
+                        <div className="font-medium">{activity.name}</div>
+                        <div className="text-sm text-gray-600">{activity.course}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">{getStatusBadge(activity.status)}</div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(activity.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Profile Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <Settings className="h-6 w-6" />
+                Profile Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input 
+                    id="phone"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="experience">Experience Level</Label>
+                  <Select value={profileForm.experience_level} onValueChange={(value) => setProfileForm({...profileForm, experience_level: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="expert">Expert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="monthly_target">Monthly Target</Label>
+                  <Input 
+                    id="monthly_target"
+                    type="number"
+                    value={profileForm.monthly_target}
+                    onChange={(e) => setProfileForm({...profileForm, monthly_target: parseInt(e.target.value) || ''})}
+                    placeholder="Target students per month"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="quarterly_target">Quarterly Target</Label>
+                  <Input 
+                    id="quarterly_target"
+                    type="number"
+                    value={profileForm.quarterly_target}
+                    onChange={(e) => setProfileForm({...profileForm, quarterly_target: parseInt(e.target.value) || ''})}
+                    placeholder="Target students per quarter"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input 
+                    id="address"
+                    value={profileForm.address}
+                    onChange={(e) => setProfileForm({...profileForm, address: e.target.value})}
+                    placeholder="Enter address"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <textarea 
+                    id="bio"
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    rows="3"
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
+                    placeholder="Tell us about yourself..."
+                  />
+                </div>
+              </div>
+              <div className="mt-6">
+                <Button onClick={updateProfile} className="bg-blue-600 hover:bg-blue-700">
+                  Update Profile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
