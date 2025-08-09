@@ -2801,7 +2801,7 @@ class AdmissionSystemAPITester:
         enhancement_success = True
         
         # 0. Test NEW Enhanced Coordinator Dashboard Backend APIs (HIGHEST PRIORITY)
-        if not self.test_enhanced_coordinator_dashboard_backend_apis():
+        if not self.test_comprehensive_paginated_coordinator_dashboard():
             enhancement_success = False
         
         # 1. Test leaderboard system
