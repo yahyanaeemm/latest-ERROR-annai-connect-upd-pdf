@@ -874,22 +874,88 @@ const SignatureModal = ({ isOpen, onClose, onSave }) => {
 };
 
 const CoordinatorDashboard = () => {
-  const [students, setStudents] = useState([]);
-  const [showSignature, setShowSignature] = useState(false);
+  const [studentsDropdown, setStudentsDropdown] = useState([]);
+  const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentDocuments, setStudentDocuments] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showSignature, setShowSignature] = useState(false);
   const [actionType, setActionType] = useState('');
   const [notes, setNotes] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchStudents();
+    fetchStudentsDropdown();
   }, []);
 
-  const fetchStudents = async () => {
+  const fetchStudentsDropdown = async () => {
     try {
-      const response = await axios.get(`${API}/students`);
-      setStudents(response.data);
+      const response = await axios.get(`${API}/students/dropdown`);
+      setStudentsDropdown(response.data);
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error('Error fetching students dropdown:', error);
+    }
+  };
+
+  const fetchStudentDetails = async (studentId) => {
+    if (!studentId) return;
+    
+    setLoading(true);
+    try {
+      // Fetch detailed student info
+      const studentResponse = await axios.get(`${API}/students/${studentId}/detailed`);
+      setSelectedStudent(studentResponse.data);
+      
+      // Fetch student documents
+      const documentsResponse = await axios.get(`${API}/students/${studentId}/documents`);
+      setStudentDocuments(documentsResponse.data);
+    } catch (error) {
+      console.error('Error fetching student details:', error);
+      alert('Error loading student details. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStudentSelect = (studentId) => {
+    setSelectedStudentId(studentId);
+    fetchStudentDetails(studentId);
+  };
+
+  const updateStatus = async (studentId, status, notes = '', signatureData = '', signatureType = '') => {
+    try {
+      const formData = new FormData();
+      formData.append('status', status);
+      if (notes) formData.append('notes', notes);
+      if (signatureData) formData.append('signature_data', signatureData);
+      if (signatureType) formData.append('signature_type', signatureType);
+      
+      await axios.put(`${API}/students/${studentId}/status`, formData);
+      
+      // Refresh data
+      fetchStudentsDropdown();
+      if (selectedStudentId) {
+        fetchStudentDetails(selectedStudentId);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Error updating student status. Please try again.');
+    }
+  };
+
+  const handleStatusAction = (action) => {
+    setActionType(action);
+    if (action === 'approved') {
+      setShowSignature(true);
+    } else {
+      updateStatus(selectedStudent.id, action);
+    }
+  };
+
+  const handleSignatureSave = (signatureData, signatureType) => {
+    if (selectedStudent) {
+      updateStatus(selectedStudent.id, actionType, notes, signatureData, signatureType);
+      setNotes('');
     }
   };
 
@@ -913,36 +979,23 @@ const CoordinatorDashboard = () => {
     }
   };
 
-  const updateStatus = async (studentId, status, notes = '', signatureData = '', signatureType = '') => {
+  const downloadDocument = async (documentPath, fileName) => {
     try {
-      const formData = new FormData();
-      formData.append('status', status);
-      if (notes) formData.append('notes', notes);
-      if (signatureData) formData.append('signature_data', signatureData);
-      if (signatureType) formData.append('signature_type', signatureType);
+      const response = await axios.get(`${BACKEND_URL}${documentPath}`, {
+        responseType: 'blob'
+      });
       
-      await axios.put(`${API}/students/${studentId}/status`, formData);
-      fetchStudents();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  };
-
-  const handleStatusAction = (student, action) => {
-    setSelectedStudent(student);
-    setActionType(action);
-    if (action === 'approved') {
-      setShowSignature(true);
-    } else {
-      updateStatus(student.id, action);
-    }
-  };
-
-  const handleSignatureSave = (signatureData, signatureType) => {
-    if (selectedStudent) {
-      updateStatus(selectedStudent.id, actionType, notes, signatureData, signatureType);
-      setNotes('');
-      setSelectedStudent(null);
+      console.error('Error downloading document:', error);
+      alert('Error downloading document. Please try again.');
     }
   };
 
@@ -950,6 +1003,7 @@ const CoordinatorDashboard = () => {
     const statusConfig = {
       pending: { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Clock },
       verified: { color: 'bg-blue-100 text-blue-800 border-blue-300', icon: Eye },
+      coordinator_approved: { color: 'bg-purple-100 text-purple-800 border-purple-300', icon: CheckCircle },
       approved: { color: 'bg-green-100 text-green-800 border-green-300', icon: CheckCircle },
       rejected: { color: 'bg-red-100 text-red-800 border-red-300', icon: XCircle }
     };
@@ -960,105 +1014,247 @@ const CoordinatorDashboard = () => {
     return (
       <Badge className={`${config.color} border flex items-center gap-1`}>
         <IconComponent className="h-3 w-3" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1)}
       </Badge>
     );
   };
 
+  // Filter students based on search term
+  const filteredStudents = studentsDropdown.filter(student =>
+    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.token_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.course.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-slate-800 mb-6">Coordinator Dashboard</h2>
+    <div className="p-6 space-y-6">
+      <h2 className="text-2xl font-bold text-slate-800">Enhanced Coordinator Dashboard</h2>
       
+      {/* Student Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Student Reviews</CardTitle>
-          <CardDescription>Review and approve student admissions</CardDescription>
+          <CardTitle className="flex items-center space-x-2">
+            <Users className="h-5 w-5" />
+            <span>Select Student</span>
+          </CardTitle>
+          <CardDescription>Choose a student to view detailed information and manage their application</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Token</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Documents</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id} className={
-                  student.status === 'approved' ? 'bg-green-50' :
-                  student.status === 'rejected' ? 'bg-red-50' :
-                  student.status === 'pending' ? 'bg-yellow-50' : ''
-                }>
-                  <TableCell className="font-mono">{student.token_number}</TableCell>
-                  <TableCell>{student.first_name} {student.last_name}</TableCell>
-                  <TableCell>{student.course}</TableCell>
-                  <TableCell>{getStatusBadge(student.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      {Object.entries(student.documents).map(([type, path]) => (
-                        <Badge key={type} variant="secondary" className="text-xs">
-                          {type.replace('_', ' ').toUpperCase()}
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="search">Search Students</Label>
+            <Input
+              id="search"
+              placeholder="Search by name, token, or course..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="student-select">Select Student</Label>
+            <Select value={selectedStudentId} onValueChange={handleStudentSelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a student..." />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {filteredStudents.map((student) => (
+                  <SelectItem key={student.id} value={student.id}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{student.name} - {student.token_number}</span>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <Badge variant="outline" className="text-xs">
+                          {student.course}
                         </Badge>
-                      ))}
+                        {getStatusBadge(student.status)}
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      {student.status === 'pending' && (
-                        <>
-                          <Button 
-                            size="sm" 
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => handleStatusAction(student, 'approved')}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={() => handleStatusAction(student, 'rejected')}
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                      {student.status !== 'pending' && (
-                        <div className="flex items-center space-x-2">
-                          <div className="flex items-center text-sm text-gray-500">
-                            {student.status === 'approved' && student.signature_data && (
-                              <Badge variant="outline" className="text-green-600">
-                                <Pen className="h-3 w-3 mr-1" />
-                                Signed
-                              </Badge>
-                            )}
-                            <span className="ml-2">{student.status === 'approved' ? 'Approved' : 'Processed'}</span>
-                          </div>
-                          {student.status === 'approved' && (
-                            <Button 
-                              variant="outline" 
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {selectedStudentId && (
+            <div className="text-sm text-gray-600">
+              Total Students: {studentsDropdown.length} | Filtered: {filteredStudents.length}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Student Details */}
+      {loading && (
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex justify-center items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <span className="ml-2">Loading student details...</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedStudent && !loading && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Student Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <GraduationCap className="h-5 w-5" />
+                <span>Student Information</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Token Number</Label>
+                  <p className="font-mono text-lg">{selectedStudent.token_number}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Status</Label>
+                  <div className="mt-1">
+                    {getStatusBadge(selectedStudent.status)}
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Full Name</Label>
+                  <p className="text-lg">{selectedStudent.first_name} {selectedStudent.last_name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Course</Label>
+                  <p className="text-lg">{selectedStudent.course}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Email</Label>
+                  <p>{selectedStudent.email}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                  <p>{selectedStudent.phone}</p>
+                </div>
+              </div>
+              
+              {selectedStudent.agent_info && (
+                <div className="border-t pt-4">
+                  <Label className="text-sm font-medium text-gray-600">Agent Information</Label>
+                  <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                    <p><strong>Agent:</strong> {selectedStudent.agent_info.first_name} {selectedStudent.agent_info.last_name}</p>
+                    <p><strong>Username:</strong> {selectedStudent.agent_info.username}</p>
+                    <p><strong>Email:</strong> {selectedStudent.agent_info.email}</p>
+                  </div>
+                </div>
+              )}
+              
+              {selectedStudent.coordinator_notes && (
+                <div className="border-t pt-4">
+                  <Label className="text-sm font-medium text-gray-600">Coordinator Notes</Label>
+                  <p className="mt-1 p-3 bg-blue-50 rounded-lg">{selectedStudent.coordinator_notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Documents */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Documents</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {studentDocuments && studentDocuments.documents.length > 0 ? (
+                <div className="space-y-3">
+                  {studentDocuments.documents.map((doc) => (
+                    <div key={doc.type} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="font-medium">{doc.display_name}</p>
+                          <p className="text-sm text-gray-500">{doc.file_name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {doc.exists ? (
+                          <>
+                            <Badge className="bg-green-100 text-green-800">Available</Badge>
+                            <Button
                               size="sm"
-                              onClick={() => downloadReceipt(student.id, student.token_number)}
-                              title="Download Receipt"
+                              variant="outline"
+                              onClick={() => downloadDocument(doc.download_url, doc.file_name)}
                             >
                               <Download className="h-4 w-4" />
                             </Button>
-                          )}
-                        </div>
-                      )}
+                          </>
+                        ) : (
+                          <Badge variant="outline" className="text-red-600">Missing</Badge>
+                        )}
+                      </div>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No documents uploaded</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Actions */}
+      {selectedStudent && !loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Actions</CardTitle>
+            <CardDescription>Manage student application status and download receipts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {selectedStudent.status === 'pending' && (
+                <>
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => handleStatusAction('approved')}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve Student
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    onClick={() => handleStatusAction('rejected')}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject Student
+                  </Button>
+                </>
+              )}
+              
+              {(selectedStudent.status === 'approved' || selectedStudent.status === 'coordinator_approved') && (
+                <Button 
+                  variant="outline"
+                  onClick={() => downloadReceipt(selectedStudent.id, selectedStudent.token_number)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Receipt
+                </Button>
+              )}
+              
+              <div className="flex items-center space-x-2 ml-auto">
+                {selectedStudent.signature_data && (
+                  <Badge variant="outline" className="text-green-600">
+                    <Pen className="h-3 w-3 mr-1" />
+                    E-Signature Added
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <SignatureModal
         isOpen={showSignature}
