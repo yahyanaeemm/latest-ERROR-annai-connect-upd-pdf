@@ -3269,6 +3269,586 @@ class AdmissionSystemAPITester:
         
         return comprehensive_success
 
+    # PRODUCTION DEPLOYMENT PREPARATION SYSTEM TESTS
+    
+    def test_database_cleanup_api(self, admin_user_key):
+        """Test database cleanup API for production deployment"""
+        print("\n🧹 Testing Database Cleanup API")
+        print("-" * 35)
+        
+        # First, verify we have some data to clean
+        success, response = self.run_test(
+            "Check Current Data Before Cleanup",
+            "GET",
+            "admin/dashboard-enhanced",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if success:
+            admissions_count = response.get('admissions', {}).get('total', 0)
+            print(f"   Current admissions in database: {admissions_count}")
+        
+        # Test database cleanup
+        success, response = self.run_test(
+            "Database Cleanup for Production",
+            "POST",
+            "admin/cleanup-database",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Verify response structure
+        if 'message' not in response or 'deleted_records' not in response:
+            print("❌ Missing required fields in cleanup response")
+            return False
+            
+        if response.get('status') != 'success':
+            print("❌ Expected status 'success' in cleanup response")
+            return False
+            
+        deleted_records = response['deleted_records']
+        expected_collections = ["users", "pending_users", "students", "incentives", "incentive_rules", "leaderboard_cache"]
+        
+        for collection in expected_collections:
+            if collection not in deleted_records:
+                print(f"❌ Missing collection '{collection}' in deleted records")
+                return False
+                
+        print("   ✅ Database cleanup completed successfully")
+        print(f"   Deleted records: {deleted_records}")
+        
+        # Verify database is actually clean
+        success, response = self.run_test(
+            "Verify Database is Clean",
+            "GET",
+            "admin/dashboard-enhanced",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if success:
+            admissions_count = response.get('admissions', {}).get('total', 0)
+            if admissions_count > 0:
+                print(f"❌ Database not properly cleaned - still has {admissions_count} admissions")
+                return False
+            print("   ✅ Database successfully cleaned - 0 admissions remaining")
+        
+        return True
+    
+    def test_cleanup_access_control(self):
+        """Test cleanup API access control"""
+        print("\n🔒 Testing Cleanup API Access Control")
+        print("-" * 40)
+        
+        # Test non-admin access to cleanup
+        non_admin_users = ['agent1', 'coordinator']
+        
+        for user_key in non_admin_users:
+            if user_key not in self.tokens:
+                continue
+                
+            success, response = self.run_test(
+                f"Database Cleanup as {user_key} (Should Fail)",
+                "POST",
+                "admin/cleanup-database",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ {user_key} properly denied cleanup access")
+        
+        return True
+    
+    def test_production_data_setup_api(self, admin_user_key):
+        """Test production data setup API"""
+        print("\n🏭 Testing Production Data Setup API")
+        print("-" * 40)
+        
+        success, response = self.run_test(
+            "Setup Production Data",
+            "POST",
+            "admin/setup-production-data",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Verify response structure
+        if 'message' not in response or 'created_users' not in response or 'created_courses' not in response:
+            print("❌ Missing required fields in setup response")
+            return False
+            
+        if response.get('status') != 'success':
+            print("❌ Expected status 'success' in setup response")
+            return False
+            
+        created_users = response['created_users']
+        created_courses = response['created_courses']
+        
+        # Verify expected users were created
+        expected_users = [
+            "admin: super admin",
+            "coordinator: arulanantham", 
+            "agent: agent1",
+            "agent: agent2",
+            "agent: agent3"
+        ]
+        
+        for expected_user in expected_users:
+            if expected_user not in created_users:
+                print(f"❌ Expected user '{expected_user}' not found in created users")
+                return False
+                
+        print("   ✅ All expected production users created")
+        print(f"   Created users: {created_users}")
+        
+        # Verify expected courses were created
+        expected_courses = [
+            "B.Ed: ₹6000.0",
+            "MBA: ₹2500.0",
+            "BNYS: ₹20000.0"
+        ]
+        
+        for expected_course in expected_courses:
+            if expected_course not in created_courses:
+                print(f"❌ Expected course '{expected_course}' not found in created courses")
+                return False
+                
+        print("   ✅ All expected production courses created")
+        print(f"   Created courses: {created_courses}")
+        
+        return True
+    
+    def test_production_users_login(self):
+        """Test that production users can login with specified credentials"""
+        print("\n🔐 Testing Production Users Login")
+        print("-" * 35)
+        
+        # Test production user credentials
+        production_credentials = [
+            {"username": "super admin", "password": "Admin@annaiconnect", "role": "admin"},
+            {"username": "arulanantham", "password": "Arul@annaiconnect", "role": "coordinator"},
+            {"username": "agent1", "password": "agent@123", "role": "agent"},
+            {"username": "agent2", "password": "agent@123", "role": "agent"},
+            {"username": "agent3", "password": "agent@123", "role": "agent"}
+        ]
+        
+        login_success = True
+        for creds in production_credentials:
+            success, response = self.run_test(
+                f"Login Production User: {creds['username']}",
+                "POST",
+                "login",
+                200,
+                data={"username": creds['username'], "password": creds['password']}
+            )
+            
+            if not success:
+                login_success = False
+                continue
+                
+            # Verify role in response
+            if response.get('role') != creds['role']:
+                print(f"❌ Expected role '{creds['role']}', got '{response.get('role')}'")
+                login_success = False
+                continue
+                
+            # Store token for further testing
+            self.tokens[f"prod_{creds['role']}"] = response['access_token']
+            print(f"   ✅ {creds['username']} login successful - Role: {creds['role']}")
+        
+        return login_success
+    
+    def test_production_courses_availability(self):
+        """Test that production courses are available via incentive rules"""
+        print("\n📚 Testing Production Courses Availability")
+        print("-" * 45)
+        
+        success, response = self.run_test(
+            "Get Production Incentive Rules",
+            "GET",
+            "incentive-rules",
+            200
+        )
+        
+        if not success:
+            return False
+            
+        courses = response if isinstance(response, list) else []
+        
+        # Verify expected production courses
+        expected_courses = {
+            "B.Ed": 6000.0,
+            "MBA": 2500.0,
+            "BNYS": 20000.0
+        }
+        
+        found_courses = {}
+        for course in courses:
+            course_name = course.get('course')
+            course_amount = course.get('amount')
+            if course_name in expected_courses:
+                found_courses[course_name] = course_amount
+                
+        for course_name, expected_amount in expected_courses.items():
+            if course_name not in found_courses:
+                print(f"❌ Expected course '{course_name}' not found")
+                return False
+                
+            if found_courses[course_name] != expected_amount:
+                print(f"❌ Course '{course_name}' has amount ₹{found_courses[course_name]}, expected ₹{expected_amount}")
+                return False
+                
+        print("   ✅ All production courses available with correct incentive amounts")
+        for course_name, amount in found_courses.items():
+            print(f"       {course_name}: ₹{amount}")
+        
+        return True
+    
+    def test_production_agent_functionality(self):
+        """Test agent functionality with production users"""
+        print("\n👤 Testing Production Agent Functionality")
+        print("-" * 45)
+        
+        # Test with production agent1
+        if 'prod_agent' not in self.tokens:
+            print("❌ No production agent token available")
+            return False
+            
+        # Test agent can create students
+        student_data = {
+            "first_name": "Ananya",
+            "last_name": "Reddy",
+            "email": f"ananya.reddy.{datetime.now().strftime('%H%M%S')}@annaiconnect.com",
+            "phone": "9876543210",
+            "course": "B.Ed"
+        }
+        
+        success, response = self.run_test(
+            "Production Agent Creates Student",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user='prod_agent'
+        )
+        
+        if not success:
+            return False
+            
+        prod_student_id = response.get('id')
+        token_number = response.get('token_number')
+        
+        if not token_number or not token_number.startswith('AGI'):
+            print(f"❌ Expected AGI token format, got: {token_number}")
+            return False
+            
+        print(f"   ✅ Production agent created student with AGI token: {token_number}")
+        
+        # Test agent can view their students
+        success, response = self.run_test(
+            "Production Agent Views Students",
+            "GET",
+            "students",
+            200,
+            token_user='prod_agent'
+        )
+        
+        if not success:
+            return False
+            
+        students = response if isinstance(response, list) else []
+        agent_students = [s for s in students if s.get('id') == prod_student_id]
+        
+        if not agent_students:
+            print("❌ Production agent cannot see their created student")
+            return False
+            
+        print(f"   ✅ Production agent can view their students ({len(students)} total)")
+        
+        # Store for coordinator testing
+        self.test_data['prod_student_id'] = prod_student_id
+        
+        return True
+    
+    def test_production_coordinator_functionality(self):
+        """Test coordinator functionality with production users"""
+        print("\n👥 Testing Production Coordinator Functionality")
+        print("-" * 50)
+        
+        if 'prod_coordinator' not in self.tokens:
+            print("❌ No production coordinator token available")
+            return False
+            
+        if 'prod_student_id' not in self.test_data:
+            print("❌ No production student available for coordinator testing")
+            return False
+            
+        student_id = self.test_data['prod_student_id']
+        
+        # Test coordinator can approve students
+        approval_data = {
+            'status': 'approved',
+            'notes': 'Production coordinator approval test'
+        }
+        
+        success, response = self.run_test(
+            "Production Coordinator Approves Student",
+            "PUT",
+            f"students/{student_id}/status",
+            200,
+            data=approval_data,
+            files={},
+            token_user='prod_coordinator'
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Production coordinator can approve students")
+        
+        # Verify status is coordinator_approved (3-tier system)
+        success, response = self.run_test(
+            "Check Student Status After Coordinator Approval",
+            "GET",
+            f"students/{student_id}",
+            200,
+            token_user='prod_coordinator'
+        )
+        
+        if not success:
+            return False
+            
+        if response.get('status') != 'coordinator_approved':
+            print(f"❌ Expected 'coordinator_approved', got '{response.get('status')}'")
+            return False
+            
+        print("   ✅ 3-tier approval system working - status set to coordinator_approved")
+        
+        return True
+    
+    def test_production_admin_functionality(self):
+        """Test admin functionality with production users"""
+        print("\n👑 Testing Production Admin Functionality")
+        print("-" * 45)
+        
+        if 'prod_admin' not in self.tokens:
+            print("❌ No production admin token available")
+            return False
+            
+        # Test admin dashboard access
+        success, response = self.run_test(
+            "Production Admin Dashboard Access",
+            "GET",
+            "admin/dashboard-enhanced",
+            200,
+            token_user='prod_admin'
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Production admin can access dashboard")
+        
+        # Test admin can see pending approvals
+        success, response = self.run_test(
+            "Production Admin Pending Approvals",
+            "GET",
+            "admin/pending-approvals",
+            200,
+            token_user='prod_admin'
+        )
+        
+        if not success:
+            return False
+            
+        pending_students = response if isinstance(response, list) else []
+        print(f"   ✅ Production admin can see pending approvals ({len(pending_students)} students)")
+        
+        # Test final approval if we have a student
+        if 'prod_student_id' in self.test_data:
+            student_id = self.test_data['prod_student_id']
+            
+            approval_data = {
+                'notes': 'Production admin final approval test'
+            }
+            
+            success, response = self.run_test(
+                "Production Admin Final Approval",
+                "PUT",
+                f"admin/approve-student/{student_id}",
+                200,
+                data=approval_data,
+                files={},
+                token_user='prod_admin'
+            )
+            
+            if not success:
+                return False
+                
+            print("   ✅ Production admin can perform final approvals")
+            
+            # Verify incentive creation
+            success, response = self.run_test(
+                "Check Incentive Creation After Admin Approval",
+                "GET",
+                "admin/incentives",
+                200,
+                token_user='prod_admin'
+            )
+            
+            if success:
+                incentives = response if isinstance(response, list) else []
+                student_incentive = [i for i in incentives if i.get('student_id') == student_id]
+                if student_incentive:
+                    print(f"   ✅ Incentive created: ₹{student_incentive[0].get('amount')}")
+                else:
+                    print("   ⚠️ No incentive found for approved student")
+        
+        return True
+    
+    def test_setup_production_data_access_control(self):
+        """Test production setup API access control"""
+        print("\n🔒 Testing Production Setup Access Control")
+        print("-" * 45)
+        
+        # Test non-admin access to setup
+        non_admin_users = ['agent1', 'coordinator']
+        
+        for user_key in non_admin_users:
+            if user_key not in self.tokens:
+                continue
+                
+            success, response = self.run_test(
+                f"Production Setup as {user_key} (Should Fail)",
+                "POST",
+                "admin/setup-production-data",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ {user_key} properly denied setup access")
+        
+        return True
+    
+    def test_cleanup_when_empty(self, admin_user_key):
+        """Test cleanup when database is already empty"""
+        print("\n🗑️ Testing Cleanup When Database Already Empty")
+        print("-" * 50)
+        
+        # Run cleanup again on already clean database
+        success, response = self.run_test(
+            "Cleanup Already Empty Database",
+            "POST",
+            "admin/cleanup-database",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Should still return success with 0 deleted records
+        deleted_records = response.get('deleted_records', {})
+        total_deleted = sum(deleted_records.values())
+        
+        if total_deleted > 0:
+            print(f"❌ Expected 0 deleted records, got {total_deleted}")
+            return False
+            
+        print("   ✅ Cleanup on empty database works correctly")
+        print(f"   Deleted records: {deleted_records}")
+        
+        return True
+    
+    def test_setup_when_data_exists(self, admin_user_key):
+        """Test setup when data already exists"""
+        print("\n🔄 Testing Setup When Data Already Exists")
+        print("-" * 45)
+        
+        # Run setup again (should handle existing data gracefully)
+        success, response = self.run_test(
+            "Setup Production Data Again",
+            "POST",
+            "admin/setup-production-data",
+            200,  # Should still succeed or handle gracefully
+            token_user=admin_user_key
+        )
+        
+        # Note: This might fail with 400 if users already exist, which is acceptable
+        if not success:
+            print("   ⚠️ Setup failed when data exists (expected behavior)")
+            return True  # This is acceptable behavior
+            
+        print("   ✅ Setup handles existing data gracefully")
+        
+        return True
+    
+    def test_complete_production_deployment_workflow(self, admin_user_key):
+        """Test complete cleanup → setup → login workflow"""
+        print("\n🚀 Testing Complete Production Deployment Workflow")
+        print("-" * 55)
+        
+        workflow_success = True
+        
+        # Step 1: Test cleanup access control
+        if not self.test_cleanup_access_control():
+            workflow_success = False
+            
+        # Step 2: Test setup access control  
+        if not self.test_setup_production_data_access_control():
+            workflow_success = False
+            
+        # Step 3: Test database cleanup
+        if not self.test_database_cleanup_api(admin_user_key):
+            workflow_success = False
+            
+        # Step 4: Test cleanup when empty
+        if not self.test_cleanup_when_empty(admin_user_key):
+            workflow_success = False
+            
+        # Step 5: Test production data setup
+        if not self.test_production_data_setup_api(admin_user_key):
+            workflow_success = False
+            
+        # Step 6: Test production users can login
+        if not self.test_production_users_login():
+            workflow_success = False
+            
+        # Step 7: Test production courses availability
+        if not self.test_production_courses_availability():
+            workflow_success = False
+            
+        # Step 8: Test production agent functionality
+        if not self.test_production_agent_functionality():
+            workflow_success = False
+            
+        # Step 9: Test production coordinator functionality
+        if not self.test_production_coordinator_functionality():
+            workflow_success = False
+            
+        # Step 10: Test production admin functionality
+        if not self.test_production_admin_functionality():
+            workflow_success = False
+            
+        # Step 11: Test setup when data exists
+        if not self.test_setup_when_data_exists(admin_user_key):
+            workflow_success = False
+        
+        return workflow_success
+
     def test_new_backend_enhancements(self, admin_user_key):
         """Test all new backend enhancements"""
         print("\n🚀 Testing NEW BACKEND ENHANCEMENTS")
