@@ -6,7 +6,7 @@ import os
 import tempfile
 
 class AdmissionSystemAPITester:
-    def __init__(self, base_url="https://f41fdfad-2ab7-4802-b49a-62d590bbc1ba.preview.emergentagent.com"):
+    def __init__(self, base_url="https://0852e42c-8e90-4ca2-b475-b2bbf75ea44e.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tokens = {}  # Store tokens for different users
