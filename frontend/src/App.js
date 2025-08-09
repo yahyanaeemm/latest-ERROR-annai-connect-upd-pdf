@@ -1832,6 +1832,79 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Student Management - PDF Receipt Generation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Student Management</span>
+            <Badge variant="outline">{allStudents.filter(s => s.status === 'approved').length} approved students</Badge>
+          </CardTitle>
+          <CardDescription>
+            Manage students and generate PDF receipts (Admin Console)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-96 overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Token #</TableHead>
+                  <TableHead>Student Name</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Agent</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allStudents.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{student.token_number}</TableCell>
+                    <TableCell>{student.first_name} {student.last_name}</TableCell>
+                    <TableCell>{student.course}</TableCell>
+                    <TableCell>{student.agent?.username || 'Unknown'}</TableCell>
+                    <TableCell>
+                      <Badge className={
+                        student.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        student.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        student.status === 'coordinator_approved' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }>
+                        {student.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        {student.status === 'approved' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => downloadAdminReceipt(student.id, student.token_number)}
+                            title="Generate Admin PDF Receipt"
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            PDF Receipt
+                          </Button>
+                        )}
+                        {student.status !== 'approved' && (
+                          <span className="text-sm text-gray-400">Receipt not available</span>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {allStudents.length === 0 && (
+            <div className="text-center py-6 text-gray-500">
+              No students found
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Course Form Dialog */}
       <Dialog open={showCourseForm} onOpenChange={setShowCourseForm}>
         <DialogContent>
