@@ -923,6 +923,180 @@ async def get_admin_signature(current_user: User = Depends(get_current_user)):
         "updated_at": user_doc.get("signature_updated_at")
     }
 
+# AGENT PROFILE MANAGEMENT APIs
+@api_router.get("/agent/profile")
+async def get_agent_profile(current_user: User = Depends(get_current_user)):
+    """Get agent profile information"""
+    if current_user.role != "agent":
+        raise HTTPException(status_code=403, detail="Agent access required")
+    
+    # Get updated user data from database
+    user_doc = await db.users.find_one({"id": current_user.id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Calculate performance metrics
+    agent_id = user_doc.get("agent_id", user_doc["id"])
+    
+    # Get total students recruited
+    total_students = await db.students.count_documents({"agent_id": agent_id})
+    
+    # Get approved students
+    approved_students = await db.students.count_documents({"agent_id": agent_id, "status": "approved"})
+    
+    # Get pending approvals
+    pending_approvals = await db.students.count_documents({
+        "agent_id": agent_id, 
+        "status": {"$in": ["pending", "verified", "coordinator_approved"]}
+    })
+    
+    # Get total incentives earned
+    total_incentives = await db.incentives.aggregate([
+        {"$match": {"agent_id": agent_id}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    total_incentive_amount = total_incentives[0]["total"] if total_incentives else 0
+    
+    # Get paid incentives
+    paid_incentives = await db.incentives.aggregate([
+        {"$match": {"agent_id": agent_id, "status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    paid_incentive_amount = paid_incentives[0]["total"] if paid_incentives else 0
+    
+    # Get top-performing courses
+    course_performance = await db.students.aggregate([
+        {"$match": {"agent_id": agent_id, "status": "approved"}},
+        {"$group": {"_id": "$course", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5}
+    ]).to_list(5)
+    
+    # Recent activity (last 10 students)
+    recent_students = await db.students.find(
+        {"agent_id": agent_id}, 
+        {"first_name": 1, "last_name": 1, "course": 1, "status": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    # Calculate achievements
+    achievements = []
+    if total_students >= 1:
+        achievements.append("first_student")
+    if total_students >= 10:
+        achievements.append("recruiter_bronze")
+    if total_students >= 25:
+        achievements.append("recruiter_silver")
+    if total_students >= 50:
+        achievements.append("recruiter_gold")
+    if approved_students >= 20:
+        achievements.append("approval_master")
+    if total_incentive_amount >= 10000:
+        achievements.append("earning_champion")
+    
+    # Calculate tenure
+    joining_date = user_doc.get("joining_date", user_doc.get("created_at"))
+    tenure_days = (datetime.utcnow() - joining_date).days if joining_date else 0
+    
+    return {
+        "profile": {
+            "id": user_doc["id"],
+            "username": user_doc["username"],
+            "email": user_doc["email"],
+            "first_name": user_doc.get("first_name"),
+            "last_name": user_doc.get("last_name"),
+            "profile_photo": user_doc.get("profile_photo"),
+            "phone": user_doc.get("phone"),
+            "address": user_doc.get("address"),
+            "experience_level": user_doc.get("experience_level"),
+            "specializations": user_doc.get("specializations", []),
+            "monthly_target": user_doc.get("monthly_target"),
+            "quarterly_target": user_doc.get("quarterly_target"),
+            "bio": user_doc.get("bio"),
+            "joining_date": joining_date,
+            "tenure_days": tenure_days
+        },
+        "performance": {
+            "total_students": total_students,
+            "approved_students": approved_students,
+            "pending_approvals": pending_approvals,
+            "total_incentive": total_incentive_amount,
+            "paid_incentive": paid_incentive_amount,
+            "pending_incentive": total_incentive_amount - paid_incentive_amount,
+            "top_courses": [{"course": item["_id"], "count": item["count"]} for item in course_performance]
+        },
+        "recent_activity": [
+            {
+                "name": f"{student['first_name']} {student['last_name']}",
+                "course": student["course"],
+                "status": student["status"],
+                "created_at": student["created_at"]
+            } for student in recent_students
+        ],
+        "achievements": achievements
+    }
+
+@api_router.put("/agent/profile")
+async def update_agent_profile(
+    profile_data: AgentProfileUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update agent profile information"""
+    if current_user.role != "agent":
+        raise HTTPException(status_code=403, detail="Agent access required")
+    
+    # Prepare update data (only include non-None values)
+    update_data = {}
+    if profile_data.profile_photo is not None:
+        update_data["profile_photo"] = profile_data.profile_photo
+    if profile_data.phone is not None:
+        update_data["phone"] = profile_data.phone
+    if profile_data.address is not None:
+        update_data["address"] = profile_data.address
+    if profile_data.experience_level is not None:
+        update_data["experience_level"] = profile_data.experience_level
+    if profile_data.specializations is not None:
+        update_data["specializations"] = profile_data.specializations
+    if profile_data.monthly_target is not None:
+        update_data["monthly_target"] = profile_data.monthly_target
+    if profile_data.quarterly_target is not None:
+        update_data["quarterly_target"] = profile_data.quarterly_target
+    if profile_data.bio is not None:
+        update_data["bio"] = profile_data.bio
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data provided for update")
+    
+    # Update user profile
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "Profile updated successfully"}
+
+@api_router.post("/agent/profile/photo")
+async def upload_profile_photo(
+    photo_data: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload agent profile photo"""
+    if current_user.role != "agent":
+        raise HTTPException(status_code=403, detail="Agent access required")
+    
+    # Update user's profile photo
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"profile_photo": photo_data}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "Profile photo updated successfully"}
+
 # Admin Final Approval Process
 @api_router.get("/admin/pending-approvals")
 async def get_pending_admin_approvals(current_user: User = Depends(get_current_user)):
