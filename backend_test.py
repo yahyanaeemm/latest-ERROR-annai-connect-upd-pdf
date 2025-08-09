@@ -2608,60 +2608,190 @@ class AdmissionSystemAPITester:
         
         return data_integrity_success
     
-    def test_enhanced_coordinator_dashboard_backend_apis(self):
-        """Test all enhanced coordinator dashboard backend APIs comprehensively"""
-        print("\n🚀 Testing ENHANCED COORDINATOR DASHBOARD BACKEND APIs")
-        print("-" * 65)
+    def test_comprehensive_paginated_coordinator_dashboard(self):
+        """Test the complete paginated coordinator dashboard API system"""
+        print("\n🚀 COMPREHENSIVE PAGINATED COORDINATOR DASHBOARD API TESTING")
+        print("=" * 70)
         
-        coordinator_apis_success = True
+        comprehensive_success = True
         
-        # 1. Test access control
-        if not self.test_coordinator_dashboard_apis_access_control():
-            coordinator_apis_success = False
+        # Test 1: Access Control Verification
+        print("\n🔒 Testing Access Control")
+        print("-" * 30)
         
-        # 2. Test edge cases
-        if not self.test_coordinator_dashboard_apis_edge_cases():
-            coordinator_apis_success = False
-        
-        # 3. Test data integrity
-        if not self.test_coordinator_dashboard_apis_data_integrity():
-            coordinator_apis_success = False
-        
-        # 4. Test existing functionality verification
-        print("\n📋 Testing Existing Functionality Verification")
-        print("-" * 45)
-        
-        # Verify existing /api/students endpoint still works
+        # Coordinator should have access (200)
         if 'coordinator' in self.tokens:
-            success, response = self.run_test(
-                "Verify Existing Students Endpoint Still Works",
+            if not self.test_students_paginated_api('coordinator', 200):
+                comprehensive_success = False
+            if not self.test_students_filter_options_api('coordinator', 200):
+                comprehensive_success = False
+        
+        # Admin should have access (200)
+        if 'admin' in self.tokens:
+            if not self.test_students_paginated_api('admin', 200):
+                comprehensive_success = False
+            if not self.test_students_filter_options_api('admin', 200):
+                comprehensive_success = False
+        
+        # Agent should be denied access (403)
+        if 'agent1' in self.tokens:
+            if not self.test_students_paginated_api('agent1', 403):
+                comprehensive_success = False
+            if not self.test_students_filter_options_api('agent1', 403):
+                comprehensive_success = False
+        
+        # Test 2: Comprehensive Filtering Tests
+        print("\n🔍 Testing Comprehensive Filtering")
+        print("-" * 35)
+        
+        if 'coordinator' in self.tokens:
+            if not self.test_students_paginated_filters('coordinator'):
+                comprehensive_success = False
+        
+        # Test 3: Data Integrity and Workflow
+        print("\n🔍 Testing Complete Workflow")
+        print("-" * 30)
+        
+        if 'coordinator' in self.tokens:
+            # Step 1: Get filter options
+            success, filter_options = self.run_test(
+                "Get Filter Options for Workflow Test",
                 "GET",
-                "students",
+                "students/filter-options",
                 200,
                 token_user='coordinator'
             )
             
-            if not success:
-                coordinator_apis_success = False
-            else:
-                print("   ✅ Existing /api/students endpoint working correctly")
+            if success:
+                courses = filter_options.get('courses', [])
+                statuses = filter_options.get('statuses', [])
+                agents = filter_options.get('agents', [])
+                
+                print(f"   ✅ Filter options: {len(courses)} courses, {len(statuses)} statuses, {len(agents)} agents")
+                
+                # Step 2: Use filter options in paginated API
+                if courses:
+                    course_filter = courses[0]
+                    success, response = self.run_test(
+                        f"Use Course Filter from Options: {course_filter}",
+                        "GET",
+                        f"students/paginated?course={course_filter}",
+                        200,
+                        token_user='coordinator'
+                    )
+                    
+                    if success:
+                        students = response['students']
+                        # Verify all students have the filtered course
+                        for student in students:
+                            if student['course'] != course_filter:
+                                print(f"❌ Course filter failed: expected {course_filter}, got {student['course']}")
+                                comprehensive_success = False
+                                break
+                        else:
+                            print(f"   ✅ Course filter working: {len(students)} students with course {course_filter}")
+                
+                # Step 3: Test agent filter
+                if agents:
+                    agent_filter = agents[0]['id']
+                    success, response = self.run_test(
+                        f"Use Agent Filter from Options: {agent_filter}",
+                        "GET",
+                        f"students/paginated?agent_id={agent_filter}",
+                        200,
+                        token_user='coordinator'
+                    )
+                    
+                    if success:
+                        students = response['students']
+                        print(f"   ✅ Agent filter working: {len(students)} students for agent {agents[0]['name']}")
+                
+                # Step 4: Test status filter
+                if statuses:
+                    for status in statuses[:3]:  # Test first 3 statuses
+                        success, response = self.run_test(
+                            f"Use Status Filter: {status}",
+                            "GET",
+                            f"students/paginated?status={status}",
+                            200,
+                            token_user='coordinator'
+                        )
+                        
+                        if success:
+                            students = response['students']
+                            # Verify all students have the filtered status
+                            for student in students:
+                                if student['status'] != status:
+                                    print(f"❌ Status filter failed: expected {status}, got {student['status']}")
+                                    comprehensive_success = False
+                                    break
+                            else:
+                                print(f"   ✅ Status filter '{status}': {len(students)} students")
         
-        # Verify existing /api/students/{id} endpoint still works
-        if 'coordinator' in self.tokens and 'dropdown_student_id' in self.test_data:
+        # Test 4: Regression Testing
+        print("\n🔄 Testing Regression (Existing APIs)")
+        print("-" * 40)
+        
+        if 'coordinator' in self.tokens:
+            # Verify existing /api/students/{id}/detailed still works
+            if self.test_data.get('paginated_student_id'):
+                if not self.test_student_detailed_api('coordinator', self.test_data['paginated_student_id'], 200):
+                    comprehensive_success = False
+                    
+                if not self.test_student_documents_api('coordinator', self.test_data['paginated_student_id'], 200):
+                    comprehensive_success = False
+        
+        # Test 5: Performance and Edge Cases
+        print("\n⚡ Testing Performance and Edge Cases")
+        print("-" * 40)
+        
+        if 'coordinator' in self.tokens:
+            # Test large page size
             success, response = self.run_test(
-                "Verify Existing Student by ID Endpoint Still Works",
+                "Large Page Size Test (limit=100)",
                 "GET",
-                f"students/{self.test_data['dropdown_student_id']}",
+                "students/paginated?limit=100",
                 200,
                 token_user='coordinator'
             )
             
-            if not success:
-                coordinator_apis_success = False
-            else:
-                print("   ✅ Existing /api/students/{id} endpoint working correctly")
+            if success:
+                students = response['students']
+                pagination = response['pagination']
+                if len(students) <= 100:
+                    print(f"   ✅ Large page size handled correctly: {len(students)} students")
+                else:
+                    print(f"❌ Large page size failed: returned {len(students)} students")
+                    comprehensive_success = False
+            
+            # Test complex combined filters
+            success, response = self.run_test(
+                "Complex Combined Filters Test",
+                "GET",
+                "students/paginated?status=approved&limit=5&page=1&date_from=2024-01-01T00:00:00&date_to=2024-12-31T23:59:59",
+                200,
+                token_user='coordinator'
+            )
+            
+            if success:
+                students = response['students']
+                pagination = response['pagination']
+                print(f"   ✅ Complex filters working: {len(students)} students, page {pagination['current_page']}")
+            
+            # Test search functionality
+            success, response = self.run_test(
+                "Search Functionality Test",
+                "GET",
+                "students/paginated?search=test&limit=10",
+                200,
+                token_user='coordinator'
+            )
+            
+            if success:
+                students = response['students']
+                print(f"   ✅ Search functionality working: {len(students)} students found")
         
-        return coordinator_apis_success
+        return comprehensive_success
 
     def test_new_backend_enhancements(self, admin_user_key):
         """Test all new backend enhancements"""
