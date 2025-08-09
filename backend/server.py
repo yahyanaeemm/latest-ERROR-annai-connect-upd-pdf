@@ -294,6 +294,10 @@ async def get_students_paginated(
     if current_user.role not in ["coordinator", "admin"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Validate and fix page number
+    if page < 1:
+        page = 1
+    
     # Build query filters
     query = {}
     
