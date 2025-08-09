@@ -88,6 +88,16 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
+class AgentProfileUpdate(BaseModel):
+    profile_photo: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    experience_level: Optional[str] = None
+    specializations: Optional[List[str]] = None
+    monthly_target: Optional[int] = None
+    quarterly_target: Optional[int] = None
+    bio: Optional[str] = None
+
 class Token(BaseModel):
     access_token: str
     token_type: str
