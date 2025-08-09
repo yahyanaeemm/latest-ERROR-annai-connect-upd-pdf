@@ -1096,6 +1096,7 @@ const AdminDashboard = () => {
     fetchPendingApprovals();
     fetchBackups();
     fetchAdminSignature();
+    fetchAllStudents();
   }, []);
 
   const fetchDashboard = async () => {
