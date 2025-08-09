@@ -129,6 +129,8 @@ class PendingUser(BaseModel):
     email: str
     role: str  # "agent", "coordinator", "admin"
     agent_id: Optional[str] = None  # For agents only
+    first_name: Optional[str] = None  # For display names
+    last_name: Optional[str] = None   # For display names
     hashed_password: str
     status: str = "pending"  # pending, approved, rejected
     created_at: datetime = Field(default_factory=datetime.utcnow)
