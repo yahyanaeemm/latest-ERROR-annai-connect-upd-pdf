@@ -510,6 +510,17 @@ const AgentDashboard = () => {
   const [incentives, setIncentives] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [courseRules, setCourseRules] = useState([]);
+  const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, profile
+  const [profileData, setProfileData] = useState(null);
+  const [profileForm, setProfileForm] = useState({
+    phone: '',
+    address: '',
+    experience_level: 'beginner',
+    specializations: [],
+    monthly_target: '',
+    quarterly_target: '',
+    bio: ''
+  });
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
