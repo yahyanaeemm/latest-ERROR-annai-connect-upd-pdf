@@ -814,6 +814,8 @@ async def approve_pending_user(
         email=pending_user_doc["email"],
         role=pending_user_doc["role"],
         agent_id=pending_user_doc.get("agent_id"),
+        first_name=pending_user_doc.get("first_name"),
+        last_name=pending_user_doc.get("last_name"),
         hashed_password=pending_user_doc["hashed_password"],
         created_at=pending_user_doc["created_at"]
     )
