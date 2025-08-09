@@ -248,7 +248,7 @@ async def create_student(
     if current_user.role != "agent":
         raise HTTPException(status_code=403, detail="Only agents can create student records")
     
-    token_number = generate_token_number()
+    token_number = await generate_token_number()
     student = Student(
         token_number=token_number,
         agent_id=current_user.agent_id or current_user.id,
