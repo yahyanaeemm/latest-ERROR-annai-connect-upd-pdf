@@ -1623,6 +1623,44 @@ async def get_date_range_leaderboard(start_date: datetime, end_date: datetime, l
         }
     }
 
+@api_router.get("/students/filter-options")
+async def get_student_filter_options(current_user: User = Depends(get_current_user)):
+    """Get available filter options for coordinator dashboard"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get unique courses
+    courses_cursor = db.students.distinct("course")
+    courses = await courses_cursor
+    
+    # Get unique statuses
+    statuses_cursor = db.students.distinct("status")
+    statuses = await statuses_cursor
+    
+    # Get agents with names
+    agents_cursor = db.users.find(
+        {"role": "agent"}, 
+        {"id": 1, "username": 1, "first_name": 1, "last_name": 1}
+    )
+    agents = await agents_cursor.to_list(1000)
+    
+    # Format agents for dropdown
+    formatted_agents = []
+    for agent in agents:
+        name = agent["username"]
+        if agent.get("first_name") and agent.get("last_name"):
+            name = f"{agent['first_name']} {agent['last_name']} ({agent['username']})"
+        formatted_agents.append({
+            "id": agent["id"],
+            "name": name
+        })
+    
+    return {
+        "courses": sorted(courses) if courses else [],
+        "statuses": sorted(statuses) if statuses else [],
+        "agents": formatted_agents
+    }
+
 # Enhanced Admin Dashboard with Fixed Admission Overview
 @api_router.get("/admin/dashboard-enhanced") 
 async def get_enhanced_admin_dashboard(current_user: User = Depends(get_current_user)):
