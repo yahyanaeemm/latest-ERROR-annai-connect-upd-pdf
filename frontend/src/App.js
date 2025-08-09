@@ -1174,6 +1174,33 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchAllUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/users`);
+      setAllUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      // Try alternative endpoint
+      try {
+        // Get users from different endpoint if available
+        const agentResponse = await axios.get(`${API}/agents`);
+        const coordinatorResponse = await axios.get(`${API}/coordinators`);
+        const adminResponse = await axios.get(`${API}/admins`);
+        
+        const allUsersData = [
+          ...agentResponse.data.map(u => ({...u, role: 'agent'})),
+          ...coordinatorResponse.data.map(u => ({...u, role: 'coordinator'})),
+          ...adminResponse.data.map(u => ({...u, role: 'admin'}))
+        ];
+        setAllUsers(allUsersData);
+      } catch (altError) {
+        console.error('Error fetching users from alternative endpoints:', altError);
+        // Set empty array if all fail
+        setAllUsers([]);
+      }
+    }
+  };
+
   const downloadAdminReceipt = async (studentId, tokenNumber) => {
     try {
       const response = await axios.get(`${API}/admin/students/${studentId}/receipt`, {
