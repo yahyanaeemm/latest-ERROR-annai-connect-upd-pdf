@@ -584,21 +584,111 @@ body {
 }
 
 /* Admin Dashboard Dialog Fixes */
-.dialog-overlay {
-  background: rgba(0, 0, 0, 0.6) !important;
-  backdrop-filter: blur(4px) !important;
-  z-index: 9998 !important;
+[data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(6px) !important;
+  z-index: 10000 !important;
+  position: fixed !important;
+  inset: 0 !important;
 }
 
-.dialog-content {
+[data-radix-dialog-content] {
   background: white !important;
   border-radius: 12px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-  border: 1px solid #e5e7eb !important;
-  z-index: 9999 !important;
-  max-width: 90vw !important;
-  max-height: 90vh !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+  border: 2px solid #e5e7eb !important;
+  z-index: 10001 !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 90vw !important;
+  max-width: 600px !important;
+  max-height: 85vh !important;
   overflow-y: auto !important;
+  padding: 0 !important;
+}
+
+.dialog-header {
+  padding: 20px 24px 16px !important;
+  border-bottom: 2px solid #f3f4f6 !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.dialog-title {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  color: white !important;
+}
+
+.dialog-body {
+  padding: 24px !important;
+  background: white !important;
+}
+
+.dialog-footer {
+  padding: 16px 24px !important;
+  border-top: 1px solid #f3f4f6 !important;
+  background: #f9fafb !important;
+  border-radius: 0 0 12px 12px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+}
+
+/* File Upload Button Fixes */
+.file-upload-wrapper {
+  position: relative !important;
+  display: inline-block !important;
+  overflow: hidden !important;
+  background: #3b82f6 !important;
+  color: white !important;
+  padding: 12px 20px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  border: none !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+}
+
+.file-upload-wrapper:hover {
+  background: #2563eb !important;
+  transform: translateY(-1px) !important;
+}
+
+.file-upload-wrapper input[type="file"] {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+}
+
+/* Close Button Enhancement */
+.dialog-close {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+  color: white !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.dialog-close:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Manage Signature Button Enhancement */
