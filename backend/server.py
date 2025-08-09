@@ -1514,6 +1514,69 @@ async def get_all_users(current_user: User = Depends(get_current_user)):
     
     return users_data
 
+# CRITICAL: Fix Incentive Generation Workflow
+@api_router.post("/admin/fix-incentives")
+async def fix_missing_incentives(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # First, create missing incentive rules for actual courses
+    courses_with_students = await db.students.distinct("course", {"status": "approved"})
+    
+    fixed_count = 0
+    created_rules = []
+    
+    # Create incentive rules for courses that don't have them
+    for course in courses_with_students:
+        existing_rule = await db.incentive_rules.find_one({"course": course, "active": True})
+        if not existing_rule:
+            # Create default incentive rule based on course type
+            if "bsc" in course.lower() or "b.sc" in course.lower():
+                amount = 4000.0
+            elif "mba" in course.lower():
+                amount = 6000.0
+            elif "nursing" in course.lower():
+                amount = 3500.0
+            else:
+                amount = 4000.0  # default
+            
+            incentive_rule = IncentiveRule(
+                course=course,
+                amount=amount
+            )
+            await db.incentive_rules.insert_one(incentive_rule.dict())
+            created_rules.append(f"{course}: ₹{amount}")
+    
+    # Get all approved students
+    approved_students = await db.students.find({"status": "approved"}).to_list(1000)
+    
+    # Get existing incentive student IDs to avoid duplicates
+    existing_incentives = await db.incentives.find({}).to_list(1000)
+    existing_student_ids = set(inc["student_id"] for inc in existing_incentives)
+    
+    # Create missing incentives
+    for student in approved_students:
+        if student["id"] not in existing_student_ids:
+            # Get incentive rule for this course
+            incentive_rule = await db.incentive_rules.find_one({"course": student["course"], "active": True})
+            if incentive_rule:
+                incentive = Incentive(
+                    agent_id=student["agent_id"],
+                    student_id=student["id"],
+                    course=student["course"],
+                    amount=incentive_rule["amount"]
+                )
+                await db.incentives.insert_one(incentive.dict())
+                fixed_count += 1
+    
+    return {
+        "message": f"Fixed {fixed_count} missing incentives",
+        "created_rules": created_rules,
+        "total_approved_students": len(approved_students),
+        "existing_incentives": len(existing_incentives),
+        "new_incentives": fixed_count
+    }
+
 @api_router.get("/agents")
 async def get_all_agents(current_user: User = Depends(get_current_user)):
     if current_user.role not in ["admin", "coordinator"]:
