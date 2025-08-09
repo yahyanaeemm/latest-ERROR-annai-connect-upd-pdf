@@ -1289,13 +1289,26 @@ async def generate_student_receipt(
     p.line(50, signature_y - 5, 500, signature_y - 5)
     signature_y -= 20
     
-    # Display digital signature if available
-    if student_doc.get('signature_data'):
+    # Display digital signature if available (coordinator signature from student doc, or admin signature)
+    coordinator_signature = student_doc.get('signature_data')
+    admin_signature = None
+    
+    # Also check for admin signature if available
+    try:
+        admin_user = await db.users.find_one({"role": "admin", "signature_data": {"$exists": True, "$ne": None}})
+        if admin_user and admin_user.get('signature_data'):
+            admin_signature = admin_user['signature_data']
+    except Exception as e:
+        print(f"Error fetching admin signature: {e}")
+    
+    # Use coordinator signature first, then admin signature as fallback
+    signature_data = coordinator_signature or admin_signature
+    signature_label = "Admission Coordinator Digital Signature" if coordinator_signature else "Admin Digital Signature"
+    
+    if signature_data:
         try:
-            # Decode base64 signature data
-            signature_data = student_doc['signature_data']
+            # Remove data URL prefix if present
             if signature_data.startswith('data:image'):
-                # Remove data URL prefix if present
                 signature_data = signature_data.split(',')[1]
             
             # Create signature image
@@ -1308,7 +1321,7 @@ async def generate_student_receipt(
             temp_signature.seek(0)
             
             # Add signature to PDF
-            p.drawString(50, signature_y, "Admission Coordinator Digital Signature:")
+            p.drawString(50, signature_y, f"{signature_label}:")
             signature_y -= 10
             
             # Draw signature image (scaled)
