@@ -359,6 +359,9 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "Implemented 3 new backend endpoints for enhanced coordinator dashboard: 1) GET /api/students/dropdown - returns simplified student list for dropdown (id, name, token_number, course, status), 2) GET /api/students/{id}/detailed - returns comprehensive student data including agent information, 3) GET /api/students/{id}/documents - returns document details with download URLs and file existence check. All endpoints restricted to coordinator/admin roles."
+      - working: "NA"
+        agent: "main"
+        comment: "🔧 CRITICAL ROUTING FIX - Fixed FastAPI routing conflict where /api/students/dropdown was being captured by /api/students/{student_id} path parameter. Researched FastAPI routing best practices and reordered endpoints so static paths are declared before path parameter routes. Moved all 3 new coordinator endpoints before the {student_id} endpoint to resolve 404 errors."
 
 frontend:
   - task: "Modern Header & Theme System"
