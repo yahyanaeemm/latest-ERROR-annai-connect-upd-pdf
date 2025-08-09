@@ -6,7 +6,7 @@ import asyncio
 import aiohttp
 import json
 
-BASE_URL = "https://e72c65bd-f622-4eb4-a409-78cd62a6b4f9.preview.emergentagent.com"
+BASE_URL = "https://f41fdfad-2ab7-4802-b49a-62d590bbc1ba.preview.emergentagent.com"
 
 async def test_complete_workflow():
     async with aiohttp.ClientSession() as session:
