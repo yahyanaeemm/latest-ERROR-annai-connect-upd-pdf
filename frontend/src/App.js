@@ -403,24 +403,47 @@ const SimpleLeaderboard = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {leaderboardData.leaderboard.map((agent) => (
-                            <TableRow key={agent.agent_id}>
+                          {leaderboardData.leaderboard.slice(0, 10).map((agent, index) => (
+                            <TableRow key={agent.agent_id} className={`
+                              ${index < 3 ? 'bg-gradient-to-r hover:shadow-lg transition-all duration-300' : ''}
+                              ${index === 0 ? 'from-yellow-50 to-yellow-100 border-l-4 border-yellow-400' : ''}
+                              ${index === 1 ? 'from-gray-50 to-gray-100 border-l-4 border-gray-400' : ''}
+                              ${index === 2 ? 'from-amber-50 to-amber-100 border-l-4 border-amber-600' : ''}
+                              ${index >= 3 ? 'hover:bg-slate-50' : ''}
+                            `}>
                               <TableCell>
-                                <Badge variant="outline">#{agent.rank}</Badge>
+                                <Badge variant="outline" className={`
+                                  ${index === 0 ? 'bg-yellow-500 text-white border-yellow-500' : ''}
+                                  ${index === 1 ? 'bg-gray-500 text-white border-gray-500' : ''}
+                                  ${index === 2 ? 'bg-amber-600 text-white border-amber-600' : ''}
+                                `}>
+                                  #{agent.rank}
+                                </Badge>
                               </TableCell>
                               <TableCell>
-                                <div>
-                                  <div className="font-semibold">{agent.full_name}</div>
-                                  <div className="text-sm text-gray-500">@{agent.username}</div>
+                                <div className="flex items-center space-x-3">
+                                  {index < 3 && (
+                                    <div className="flex-shrink-0">
+                                      {index === 0 ? <Crown className="h-5 w-5 text-yellow-500" /> :
+                                       index === 1 ? <Medal className="h-5 w-5 text-gray-500" /> :
+                                       <Award className="h-5 w-5 text-amber-600" />}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <div className={`font-semibold ${index < 3 ? 'text-lg' : ''}`}>
+                                      {agent.full_name}
+                                    </div>
+                                    <div className="text-sm text-gray-500">@{agent.username}</div>
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="text-lg font-bold text-blue-600">
+                                <div className={`font-bold text-blue-600 ${index < 3 ? 'text-xl' : 'text-lg'}`}>
                                   {activeTab === 'overall' ? agent.total_admissions : agent.period_admissions}
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="text-lg font-bold text-green-600">
+                                <div className={`font-bold text-green-600 ${index < 3 ? 'text-xl' : 'text-lg'}`}>
                                   ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0).toLocaleString('en-IN')}
                                 </div>
                               </TableCell>
