@@ -1905,28 +1905,29 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Course Form Dialog */}
+      {/* Course Form Dialog - FIXED COLOR SCHEME */}
       <Dialog open={showCourseForm} onOpenChange={setShowCourseForm}>
-        <DialogContent>
+        <DialogContent className="bg-white text-gray-900 border border-gray-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle>{editingCourse ? 'Edit Course' : 'Add New Course'}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-gray-900 text-xl font-bold">{editingCourse ? 'Edit Course' : 'Add New Course'}</DialogTitle>
+            <DialogDescription className="text-gray-600">
               {editingCourse ? 'Update course details' : 'Create a new course with incentive amount'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCourseSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="course_name">Course Name</Label>
+              <Label htmlFor="course_name" className="text-gray-700 font-medium">Course Name</Label>
               <Input
                 id="course_name"
                 value={courseForm.course}
                 onChange={(e) => setCourseForm({...courseForm, course: e.target.value})}
                 placeholder="e.g., BSc Computer Science"
+                className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="incentive_amount">Incentive Amount (₹)</Label>
+              <Label htmlFor="incentive_amount" className="text-gray-700 font-medium">Incentive Amount (₹)</Label>
               <Input
                 id="incentive_amount"
                 type="number"
@@ -1935,18 +1936,19 @@ const AdminDashboard = () => {
                 value={courseForm.amount}
                 onChange={(e) => setCourseForm({...courseForm, amount: e.target.value})}
                 placeholder="e.g., 5000"
+                className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => {
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50" onClick={() => {
                 setShowCourseForm(false);
                 setEditingCourse(null);
                 setCourseForm({ course: '', amount: '' });
               }}>
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
                 {editingCourse ? 'Update Course' : 'Create Course'}
               </Button>
             </div>
