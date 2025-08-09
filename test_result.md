@@ -348,6 +348,18 @@ backend:
         agent: "testing"
         comment: "✅ FRONTEND VERIFIED - Enhanced Excel Export UI fully functional! Data Export section contains all enhanced filters: Start Date and End Date inputs, Status dropdown with 'All statuses' default. Export Excel Report button is present and functional. All export controls are properly integrated and working correctly with the 3-tier approval system status fields."
 
+  - task: "Enhanced Coordinator Dashboard Backend APIs"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented 3 new backend endpoints for enhanced coordinator dashboard: 1) GET /api/students/dropdown - returns simplified student list for dropdown (id, name, token_number, course, status), 2) GET /api/students/{id}/detailed - returns comprehensive student data including agent information, 3) GET /api/students/{id}/documents - returns document details with download URLs and file existence check. All endpoints restricted to coordinator/admin roles."
+
 frontend:
   - task: "Modern Header & Theme System"
     implemented: true
