@@ -183,6 +183,35 @@ const LoginForm = () => {
               </div>
             )}
 
+            {!isLogin && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input
+                    id="first_name"
+                    type="text"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                    required
+                    className="mt-1"
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    type="text"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                    required
+                    className="mt-1"
+                    placeholder="Enter last name"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="password">Password</Label>
               <Input
