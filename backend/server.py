@@ -62,6 +62,18 @@ class User(BaseModel):
     signature_data: Optional[str] = None  # Admin/Coordinator signature
     signature_type: Optional[str] = None  # "draw" or "upload"
     signature_updated_at: Optional[datetime] = None
+    
+    # Agent Profile Fields
+    profile_photo: Optional[str] = None  # Profile photo URL/base64
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    experience_level: Optional[str] = None  # "beginner", "intermediate", "expert"
+    specializations: Optional[List[str]] = None  # Courses they specialize in
+    monthly_target: Optional[int] = None  # Target number of students per month
+    quarterly_target: Optional[int] = None  # Target number of students per quarter
+    bio: Optional[str] = None  # Short bio/description
+    joining_date: Optional[datetime] = None  # When they joined as agent
+    achievements: Optional[List[str]] = None  # Achievement badges earned
 
 class UserCreate(BaseModel):
     username: str
