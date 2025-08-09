@@ -3796,6 +3796,231 @@ class AdmissionSystemAPITester:
         
         return True
     
+    def test_combined_production_deployment(self, admin_user_key):
+        """Test the new combined production deployment endpoint"""
+        print("\n🚀 Testing Combined Production Deployment API")
+        print("-" * 50)
+        
+        # Test the combined deploy-production endpoint
+        success, response = self.run_test(
+            "Combined Production Deployment",
+            "POST",
+            "admin/deploy-production",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Verify comprehensive response structure
+        required_fields = ['message', 'cleanup_summary', 'production_setup', 'next_steps', 'status']
+        for field in required_fields:
+            if field not in response:
+                print(f"❌ Missing required field '{field}' in deploy-production response")
+                return False
+        
+        # Verify cleanup summary
+        cleanup_summary = response.get('cleanup_summary', {})
+        if 'deleted_records' not in cleanup_summary or 'uploads_cleared' not in cleanup_summary:
+            print("❌ Missing cleanup summary details")
+            return False
+            
+        # Verify production setup
+        production_setup = response.get('production_setup', {})
+        if 'created_users' not in production_setup or 'created_courses' not in production_setup:
+            print("❌ Missing production setup details")
+            return False
+            
+        # Verify next steps provided
+        next_steps = response.get('next_steps', [])
+        if len(next_steps) < 3:
+            print("❌ Insufficient next steps provided")
+            return False
+            
+        print("   ✅ Combined deployment completed successfully")
+        print(f"   Cleanup: {cleanup_summary['deleted_records']}")
+        print(f"   Created users: {production_setup['created_users']}")
+        print(f"   Created courses: {production_setup['created_courses']}")
+        
+        return True
+    
+    def test_deploy_production_access_control(self):
+        """Test deploy-production API access control"""
+        print("\n🔒 Testing Deploy-Production API Access Control")
+        print("-" * 50)
+        
+        # Test non-admin access to deploy-production
+        non_admin_users = ['agent1', 'coordinator']
+        
+        for user_key in non_admin_users:
+            if user_key not in self.tokens:
+                continue
+                
+            success, response = self.run_test(
+                f"Deploy Production as {user_key} (Should Fail)",
+                "POST",
+                "admin/deploy-production",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ {user_key} properly denied deploy-production access")
+        
+        return True
+    
+    def test_post_deployment_verification(self):
+        """Test system functionality after production deployment"""
+        print("\n✅ Testing Post-Deployment System Verification")
+        print("-" * 50)
+        
+        # Test production users can login
+        if not self.test_production_users_login():
+            return False
+            
+        # Test production courses are available
+        if not self.test_production_courses_availability():
+            return False
+            
+        # Test role-based access with new production users
+        if not self.test_production_role_based_access():
+            return False
+            
+        # Test student creation workflow with new production agents
+        if not self.test_production_student_workflow():
+            return False
+            
+        return True
+    
+    def test_production_role_based_access(self):
+        """Test role-based access with new production users"""
+        print("\n🎭 Testing Production Role-Based Access")
+        print("-" * 45)
+        
+        # Test admin dashboard access
+        if 'prod_admin' in self.tokens:
+            success, response = self.run_test(
+                "Production Admin Dashboard Access",
+                "GET",
+                "admin/dashboard-enhanced",
+                200,
+                token_user='prod_admin'
+            )
+            if not success:
+                return False
+            print("   ✅ Production admin can access admin dashboard")
+        
+        # Test coordinator dashboard access
+        if 'prod_coordinator' in self.tokens:
+            success, response = self.run_test(
+                "Production Coordinator Students Access",
+                "GET",
+                "students/paginated",
+                200,
+                token_user='prod_coordinator'
+            )
+            if not success:
+                return False
+            print("   ✅ Production coordinator can access coordinator dashboard")
+        
+        # Test agent dashboard access
+        if 'prod_agent' in self.tokens:
+            success, response = self.run_test(
+                "Production Agent Students Access",
+                "GET",
+                "students",
+                200,
+                token_user='prod_agent'
+            )
+            if not success:
+                return False
+            print("   ✅ Production agent can access agent dashboard")
+        
+        return True
+    
+    def test_production_student_workflow(self):
+        """Test complete student workflow with production users"""
+        print("\n👨‍🎓 Testing Production Student Creation Workflow")
+        print("-" * 50)
+        
+        # Create student with production agent
+        if 'prod_agent' not in self.tokens:
+            print("❌ Production agent token not available")
+            return False
+            
+        student_data = {
+            "first_name": "Production",
+            "last_name": "Student",
+            "email": f"prod.student.{datetime.now().strftime('%H%M%S')}@annaiconnect.com",
+            "phone": "9876543210",
+            "course": "B.Ed"  # Use production course
+        }
+        
+        success, response = self.run_test(
+            "Create Student with Production Agent",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user='prod_agent'
+        )
+        
+        if not success:
+            return False
+            
+        prod_student_id = response.get('id')
+        prod_token = response.get('token_number')
+        
+        if not prod_student_id or not prod_token:
+            print("❌ Missing student ID or token in response")
+            return False
+            
+        print(f"   ✅ Production student created: {prod_token}")
+        
+        # Test coordinator approval workflow
+        if 'prod_coordinator' in self.tokens:
+            data = {
+                'status': 'approved',
+                'notes': 'Production test approval'
+            }
+            
+            success, response = self.run_test(
+                "Production Coordinator Approval",
+                "PUT",
+                f"students/{prod_student_id}/status",
+                200,
+                data=data,
+                files={},
+                token_user='prod_coordinator'
+            )
+            
+            if not success:
+                return False
+            print("   ✅ Production coordinator approval working")
+        
+        # Test admin final approval
+        if 'prod_admin' in self.tokens:
+            data = {'notes': 'Production test final approval'}
+            
+            success, response = self.run_test(
+                "Production Admin Final Approval",
+                "PUT",
+                f"admin/approve-student/{prod_student_id}",
+                200,
+                data=data,
+                files={},
+                token_user='prod_admin'
+            )
+            
+            if not success:
+                return False
+            print("   ✅ Production admin final approval working")
+        
+        return True
+
     def test_complete_production_deployment_workflow(self, admin_user_key):
         """Test complete cleanup → setup → login workflow"""
         print("\n🚀 Testing Complete Production Deployment Workflow")
@@ -3803,47 +4028,59 @@ class AdmissionSystemAPITester:
         
         workflow_success = True
         
-        # Step 1: Test cleanup access control
+        # Step 1: Test deploy-production access control
+        if not self.test_deploy_production_access_control():
+            workflow_success = False
+            
+        # Step 2: Test combined production deployment
+        if not self.test_combined_production_deployment(admin_user_key):
+            workflow_success = False
+            
+        # Step 3: Test post-deployment verification
+        if not self.test_post_deployment_verification():
+            workflow_success = False
+        
+        # Step 4: Test cleanup access control
         if not self.test_cleanup_access_control():
             workflow_success = False
             
-        # Step 2: Test setup access control  
+        # Step 5: Test setup access control  
         if not self.test_setup_production_data_access_control():
             workflow_success = False
             
-        # Step 3: Test database cleanup
+        # Step 6: Test database cleanup
         if not self.test_database_cleanup_api(admin_user_key):
             workflow_success = False
             
-        # Step 4: Test cleanup when empty
+        # Step 7: Test cleanup when empty
         if not self.test_cleanup_when_empty(admin_user_key):
             workflow_success = False
             
-        # Step 5: Test production data setup
+        # Step 8: Test production data setup
         if not self.test_production_data_setup_api(admin_user_key):
             workflow_success = False
             
-        # Step 6: Test production users can login
+        # Step 9: Test production users can login
         if not self.test_production_users_login():
             workflow_success = False
             
-        # Step 7: Test production courses availability
+        # Step 10: Test production courses availability
         if not self.test_production_courses_availability():
             workflow_success = False
             
-        # Step 8: Test production agent functionality
+        # Step 11: Test production agent functionality
         if not self.test_production_agent_functionality():
             workflow_success = False
             
-        # Step 9: Test production coordinator functionality
+        # Step 12: Test production coordinator functionality
         if not self.test_production_coordinator_functionality():
             workflow_success = False
             
-        # Step 10: Test production admin functionality
+        # Step 13: Test production admin functionality
         if not self.test_production_admin_functionality():
             workflow_success = False
             
-        # Step 11: Test setup when data exists
+        # Step 14: Test setup when data exists
         if not self.test_setup_when_data_exists(admin_user_key):
             workflow_success = False
         
