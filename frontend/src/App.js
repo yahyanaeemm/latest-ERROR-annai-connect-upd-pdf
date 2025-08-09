@@ -688,75 +688,79 @@ const AgentDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* New Student Form Dialog */}
+      {/* New Student Form Dialog - FIXED COLOR SCHEME */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent>
+        <DialogContent className="bg-white text-gray-900 border border-gray-200 shadow-xl max-w-2xl">
           <DialogHeader>
-            <DialogTitle>New Student Admission</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-gray-900 text-xl font-bold">New Student Admission</DialogTitle>
+            <DialogDescription className="text-gray-600">
               Enter student details to create a new admission record
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="first_name">First Name</Label>
+                <Label htmlFor="first_name" className="text-gray-700 font-medium">First Name</Label>
                 <Input
                   id="first_name"
                   value={formData.first_name}
                   onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                  className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="last_name">Last Name</Label>
+                <Label htmlFor="last_name" className="text-gray-700 font-medium">Last Name</Label>
                 <Input
                   id="last_name"
                   value={formData.last_name}
                   onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                  className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-700 font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone" className="text-gray-700 font-medium">Phone</Label>
               <Input
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 required
               />
             </div>
             <div>
-              <Label htmlFor="course">Course</Label>
+              <Label htmlFor="course" className="text-gray-700 font-medium">Course</Label>
               <Select value={formData.course} onValueChange={(value) => setFormData({...formData, course: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a course" />
+                <SelectTrigger className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                  <SelectValue placeholder="Select a course" className="text-gray-500" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border border-gray-200 shadow-lg">
                   {courseRules.map((rule) => (
-                    <SelectItem key={rule.course} value={rule.course}>
+                    <SelectItem key={rule.course} value={rule.course} className="text-gray-900 hover:bg-blue-50 focus:bg-blue-50">
                       {rule.course} (₹{rule.amount} incentive)
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50" onClick={() => setShowForm(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Create Student</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Create Student</Button>
             </div>
           </form>
         </DialogContent>
