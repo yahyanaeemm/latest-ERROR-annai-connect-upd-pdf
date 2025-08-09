@@ -2561,27 +2561,34 @@ const AdminDashboard = () => {
 
       {/* Signature Manager Dialog */}
       <Dialog open={showSignatureManager} onOpenChange={setShowSignatureManager}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Manage Admin Signature</DialogTitle>
-            <DialogDescription>
-              Upload or draw your signature for official documents
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="dialog-content">
+          <div className="dialog-header">
+            <DialogTitle className="dialog-title">Manage Admin Signature</DialogTitle>
+            <button 
+              className="dialog-close"
+              onClick={() => setShowSignatureManager(false)}
+            >
+              ×
+            </button>
+          </div>
           
-          <div className="space-y-4">
+          <div className="dialog-body">
+            <div className="text-sm text-gray-600 mb-6">
+              Upload or draw your signature for official documents
+            </div>
+            
             {/* Current Signature Display */}
             {adminSignature && (
-              <div className="border rounded-lg p-4">
-                <Label className="text-sm font-medium">Current Signature</Label>
-                <div className="mt-2 border rounded bg-gray-50 p-4">
+              <div className="border-2 border-gray-200 rounded-lg p-4 mb-6 bg-gray-50">
+                <div className="text-sm font-semibold text-gray-700 mb-2">Current Signature</div>
+                <div className="border rounded bg-white p-4">
                   <img 
                     src={adminSignature.signature_data} 
                     alt="Current signature"
-                    className="max-w-full h-16 object-contain"
+                    className="max-w-full h-16 object-contain mx-auto"
                   />
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-500 mt-2">
                   Type: {adminSignature.signature_type} | 
                   Updated: {adminSignature.updated_at 
                     ? new Date(adminSignature.updated_at).toLocaleDateString() 
@@ -2592,29 +2599,26 @@ const AdminDashboard = () => {
             )}
 
             {/* Upload New Signature */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Upload New Signature</Label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      uploadSignature(event.target.result, 'upload');
-                      setShowSignatureManager(false);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-              />
+            <div className="space-y-4">
+              <div className="text-sm font-semibold text-gray-700">Upload New Signature</div>
+              <div className="file-upload-wrapper">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        uploadSignature(event.target.result, 'upload');
+                        setShowSignatureManager(false);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                Choose File
+              </div>
               
               <div className="text-center text-gray-500 text-sm">
                 or
