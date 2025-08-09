@@ -1934,6 +1934,80 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* User Management Section - NEW */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>User Management</span>
+            <Badge variant="outline" className="bg-blue-50 text-blue-600">{allUsers.length} total users</Badge>
+          </CardTitle>
+          <CardDescription>
+            Complete user list and management (Admin Console)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{allUsers.filter(u => u.role === 'agent').length}</div>
+              <div className="text-sm text-green-700">Agents</div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{allUsers.filter(u => u.role === 'coordinator').length}</div>
+              <div className="text-sm text-blue-700">Coordinators</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{allUsers.filter(u => u.role === 'admin').length}</div>
+              <div className="text-sm text-purple-700">Admins</div>
+            </div>
+          </div>
+          
+          <div className="max-h-80 overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Active</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {allUsers.map((user) => (
+                  <TableRow key={user.id || user.username}>
+                    <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell>{user.email || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Badge className={
+                        user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                        user.role === 'coordinator' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-green-50 text-green-600">
+                        Active
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500">
+                      {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {allUsers.length === 0 && (
+            <div className="text-center py-6 text-gray-500">
+              Loading users...
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Course Form Dialog - FIXED COLOR SCHEME */}
       <Dialog open={showCourseForm} onOpenChange={setShowCourseForm}>
         <DialogContent className="bg-white text-gray-900 border border-gray-200 shadow-xl">
