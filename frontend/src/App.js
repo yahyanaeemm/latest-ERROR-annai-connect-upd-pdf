@@ -104,7 +104,9 @@ const LoginForm = () => {
     password: '',
     email: '',
     role: 'agent',
-    agent_id: ''
+    agent_id: '',
+    first_name: '',
+    last_name: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
