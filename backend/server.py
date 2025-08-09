@@ -166,8 +166,29 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return User(**user_doc)
 
 def generate_token_number():
-    """Generate unique token number for student"""
-    return f"TOK{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
+    """Generate systematic unique token number for student starting with AGI"""
+    from datetime import datetime
+    
+    # Get current year and month
+    year = datetime.now().strftime('%y')  # 2-digit year
+    month = datetime.now().strftime('%m')  # 2-digit month
+    
+    # Get count of students created today to ensure uniqueness
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_count = db.students.count_documents({
+        "created_at": {"$gte": today_start}
+    }) + 1  # Add 1 for the new student
+    
+    # Format: AGI + YY + MM + 4-digit sequence number
+    # Examples: AGI2508001, AGI2508002, etc.
+    token = f"AGI{year}{month}{today_count:04d}"
+    
+    # Ensure uniqueness in case of race conditions
+    while db.students.find_one({"token_number": token}):
+        today_count += 1
+        token = f"AGI{year}{month}{today_count:04d}"
+    
+    return token
 
 # Authentication routes
 @api_router.post("/register")
