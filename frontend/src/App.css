@@ -506,3 +506,119 @@ body {
 .status-badge:hover {
   transform: scale(1.05);
 }
+
+/* Enhanced Dropdown Visibility Fixes */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+[role="listbox"],
+[data-radix-select-content] {
+  background: white !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  z-index: 9999 !important;
+  padding: 4px !important;
+}
+
+[role="option"],
+[data-radix-select-item] {
+  background: white !important;
+  color: #374151 !important;
+  padding: 12px 16px !important;
+  margin: 2px 0 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid transparent !important;
+}
+
+[role="option"]:hover,
+[data-radix-select-item]:hover,
+[data-state="highlighted"] {
+  background: #3b82f6 !important;
+  color: white !important;
+  border-color: #2563eb !important;
+}
+
+[aria-selected="true"],
+[data-state="checked"] {
+  background: #1e40af !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* Select Trigger Enhancement */
+[data-radix-select-trigger],
+.select-trigger {
+  background: white !important;
+  border: 2px solid #d1d5db !important;
+  border-radius: 6px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+[data-radix-select-trigger]:focus,
+.select-trigger:focus {
+  border-color: #3b82f6 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+[data-radix-select-trigger][data-state="open"],
+.select-trigger[data-state="open"] {
+  border-color: #3b82f6 !important;
+  background: #f8fafc !important;
+}
+
+/* Admin Dashboard Dialog Fixes */
+.dialog-overlay {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(4px) !important;
+  z-index: 9998 !important;
+}
+
+.dialog-content {
+  background: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid #e5e7eb !important;
+  z-index: 9999 !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+/* Manage Signature Button Enhancement */
+.manage-signature-btn,
+button:has-text("Manage Signature") {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.manage-signature-btn:hover,
+button:has-text("Manage Signature"):hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e3a8a 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15) !important;
+}
