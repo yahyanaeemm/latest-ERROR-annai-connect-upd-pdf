@@ -1453,6 +1453,53 @@ async def generate_admin_student_receipt(
     p.drawString(420, y_right, f"{current_user.username}")
     y_right -= 18
     
+    # Admin Digital Signature Section
+    signature_y = y - 40
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, signature_y, "ADMIN DIGITAL SIGNATURE")
+    p.line(50, signature_y - 5, 500, signature_y - 5)
+    signature_y -= 20
+    
+    # Get admin signature from current user
+    admin_user = await db.users.find_one({"id": current_user.id})
+    if admin_user and admin_user.get('signature_data'):
+        try:
+            # Decode base64 signature data
+            signature_data = admin_user['signature_data']
+            if signature_data.startswith('data:image'):
+                # Remove data URL prefix if present
+                signature_data = signature_data.split(',')[1]
+            
+            # Create signature image
+            signature_bytes = base64.b64decode(signature_data)
+            signature_img = Image.open(io.BytesIO(signature_bytes))
+            
+            # Save temporarily for ReportLab
+            temp_signature = io.BytesIO()
+            signature_img.save(temp_signature, format='PNG')
+            temp_signature.seek(0)
+            
+            # Add signature to PDF
+            p.drawString(50, signature_y, "Admin Digital Signature:")
+            signature_y -= 10
+            
+            # Draw signature image (scaled)
+            signature_width = 200
+            signature_height = 80
+            p.drawInlineImage(temp_signature, 50, signature_y - signature_height, 
+                            signature_width, signature_height)
+            signature_y -= signature_height + 10
+            
+        except Exception as e:
+            print(f"Error processing admin signature: {e}")
+            p.setFont("Helvetica-Oblique", 9)
+            p.drawString(50, signature_y, "Admin Digital Signature: [Signature processing error]")
+            signature_y -= 20
+    else:
+        p.setFont("Helvetica-Oblique", 9)
+        p.drawString(50, signature_y, "Admin Digital Signature: [No signature configured]")
+        signature_y -= 20
+    
     # Footer with important note
     p.line(50, 100, width - 50, 100)
     p.setFont("Helvetica-Oblique", 8)
