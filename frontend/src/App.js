@@ -1273,11 +1273,18 @@ const CoordinatorDashboard = () => {
               </div>
             </div>
             
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="outline" onClick={clearFilters}>
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                className="border-2 border-gray-400 hover:border-red-500 hover:bg-red-50 text-gray-700"
+              >
                 Clear Filters
               </Button>
-              <Button onClick={() => setShowFilters(false)}>
+              <Button 
+                onClick={() => setShowFilters(false)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 Apply Filters
               </Button>
             </div>
