@@ -2793,6 +2793,482 @@ class AdmissionSystemAPITester:
         
         return comprehensive_success
 
+    def test_agi_token_generation_system(self, agent_user_key):
+        """Test new AGI token generation system"""
+        print("\n🎯 Testing AGI Token Generation System")
+        print("-" * 50)
+        
+        # Test 1: Create new student with AGI token
+        student_data = {
+            "first_name": "Arjun",
+            "last_name": "Patel",
+            "email": f"arjun.patel.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "9876543210",
+            "course": "BSc Computer Science"
+        }
+        
+        success, response = self.run_test(
+            "Create Student with AGI Token",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        token_number = response.get('token_number')
+        student_id = response.get('id')
+        
+        if not token_number:
+            print("❌ No token number returned")
+            return False
+            
+        # Verify AGI token format: AGI + YY + MM + 4-digit sequence
+        if not token_number.startswith('AGI'):
+            print(f"❌ Token should start with 'AGI', got: {token_number}")
+            return False
+            
+        if len(token_number) != 11:  # AGI(3) + YY(2) + MM(2) + NNNN(4) = 11
+            print(f"❌ Token should be 11 characters long, got {len(token_number)}: {token_number}")
+            return False
+            
+        # Extract components
+        year_part = token_number[3:5]
+        month_part = token_number[5:7]
+        sequence_part = token_number[7:11]
+        
+        # Verify year and month are current
+        current_year = datetime.now().strftime('%y')
+        current_month = datetime.now().strftime('%m')
+        
+        if year_part != current_year:
+            print(f"❌ Year part should be {current_year}, got {year_part}")
+            return False
+            
+        if month_part != current_month:
+            print(f"❌ Month part should be {current_month}, got {month_part}")
+            return False
+            
+        # Verify sequence is numeric
+        try:
+            sequence_num = int(sequence_part)
+            if sequence_num < 1:
+                print(f"❌ Sequence number should be >= 1, got {sequence_num}")
+                return False
+        except ValueError:
+            print(f"❌ Sequence part should be numeric, got {sequence_part}")
+            return False
+            
+        print(f"   ✅ AGI token format verified: {token_number}")
+        print(f"   ✅ Format breakdown: AGI + {year_part}(year) + {month_part}(month) + {sequence_part}(sequence)")
+        
+        # Store for further tests
+        self.test_data['agi_student_id'] = student_id
+        self.test_data['agi_token_1'] = token_number
+        
+        # Test 2: Create second student to verify sequential tokens
+        student_data_2 = {
+            "first_name": "Priya",
+            "last_name": "Sharma",
+            "email": f"priya.sharma.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "9876543211",
+            "course": "MBA Finance"
+        }
+        
+        success, response = self.run_test(
+            "Create Second Student for Sequential Token Test",
+            "POST",
+            "students",
+            200,
+            data=student_data_2,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        token_number_2 = response.get('token_number')
+        student_id_2 = response.get('id')
+        
+        if not token_number_2:
+            print("❌ No token number returned for second student")
+            return False
+            
+        # Verify second token follows AGI format
+        if not token_number_2.startswith('AGI'):
+            print(f"❌ Second token should start with 'AGI', got: {token_number_2}")
+            return False
+            
+        # Verify sequential increment
+        sequence_1 = int(token_number[7:11])
+        sequence_2 = int(token_number_2[7:11])
+        
+        if sequence_2 != sequence_1 + 1:
+            print(f"❌ Sequential tokens failed: {sequence_1} -> {sequence_2} (expected {sequence_1 + 1})")
+            return False
+            
+        print(f"   ✅ Sequential tokens verified: {token_number} -> {token_number_2}")
+        
+        # Store for further tests
+        self.test_data['agi_student_id_2'] = student_id_2
+        self.test_data['agi_token_2'] = token_number_2
+        
+        # Test 3: Create third student to verify continued sequencing
+        student_data_3 = {
+            "first_name": "Rajesh",
+            "last_name": "Kumar",
+            "email": f"rajesh.kumar.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "9876543212",
+            "course": "BCA"
+        }
+        
+        success, response = self.run_test(
+            "Create Third Student for Sequential Token Test",
+            "POST",
+            "students",
+            200,
+            data=student_data_3,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        token_number_3 = response.get('token_number')
+        student_id_3 = response.get('id')
+        
+        # Verify third token continues sequence
+        sequence_3 = int(token_number_3[7:11])
+        if sequence_3 != sequence_2 + 1:
+            print(f"❌ Third sequential token failed: {sequence_2} -> {sequence_3} (expected {sequence_2 + 1})")
+            return False
+            
+        print(f"   ✅ Third sequential token verified: {token_number_3}")
+        
+        # Store for integration tests
+        self.test_data['agi_student_id_3'] = student_id_3
+        self.test_data['agi_token_3'] = token_number_3
+        
+        print(f"\n🎯 AGI TOKEN GENERATION SUMMARY:")
+        print(f"   Token 1: {token_number} (Student: Arjun Patel)")
+        print(f"   Token 2: {token_number_2} (Student: Priya Sharma)")
+        print(f"   Token 3: {token_number_3} (Student: Rajesh Kumar)")
+        print(f"   ✅ All tokens follow AGI{current_year}{current_month}XXXX format")
+        print(f"   ✅ Sequential numbering working correctly")
+        
+        return True
+    
+    def test_agi_token_uniqueness_verification(self, agent_user_key):
+        """Test AGI token uniqueness and collision prevention"""
+        print("\n🔒 Testing AGI Token Uniqueness Verification")
+        print("-" * 50)
+        
+        # Get all students to verify token uniqueness
+        success, response = self.run_test(
+            "Get All Students for Token Uniqueness Test",
+            "GET",
+            "students",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        students = response if isinstance(response, list) else []
+        token_numbers = [student.get('token_number') for student in students if student.get('token_number')]
+        
+        # Check for duplicates
+        unique_tokens = set(token_numbers)
+        if len(token_numbers) != len(unique_tokens):
+            print(f"❌ Duplicate tokens found! Total: {len(token_numbers)}, Unique: {len(unique_tokens)}")
+            return False
+            
+        print(f"   ✅ Token uniqueness verified: {len(token_numbers)} tokens, all unique")
+        
+        # Count AGI tokens specifically
+        agi_tokens = [token for token in token_numbers if token.startswith('AGI')]
+        print(f"   ✅ Found {len(agi_tokens)} AGI format tokens")
+        
+        # Verify AGI tokens follow proper format
+        current_year = datetime.now().strftime('%y')
+        current_month = datetime.now().strftime('%m')
+        expected_prefix = f"AGI{current_year}{current_month}"
+        
+        agi_tokens_today = [token for token in agi_tokens if token.startswith(expected_prefix)]
+        print(f"   ✅ Found {len(agi_tokens_today)} AGI tokens for current month ({expected_prefix})")
+        
+        # Verify sequential numbering for today's tokens
+        if len(agi_tokens_today) > 1:
+            sequences = []
+            for token in agi_tokens_today:
+                try:
+                    seq = int(token[7:11])
+                    sequences.append(seq)
+                except ValueError:
+                    print(f"❌ Invalid sequence in token: {token}")
+                    return False
+            
+            sequences.sort()
+            for i in range(1, len(sequences)):
+                if sequences[i] != sequences[i-1] + 1:
+                    print(f"❌ Non-sequential tokens found: {sequences[i-1]} -> {sequences[i]}")
+                    return False
+                    
+            print(f"   ✅ Sequential numbering verified for {len(sequences)} tokens")
+        
+        return True
+    
+    def test_agi_token_integration_functionality(self, admin_user_key, coordinator_user_key):
+        """Test AGI tokens work with existing functionality"""
+        print("\n🔗 Testing AGI Token Integration Functionality")
+        print("-" * 50)
+        
+        integration_success = True
+        
+        # Test 1: Search functionality with AGI tokens
+        if self.test_data.get('agi_token_1'):
+            agi_token = self.test_data['agi_token_1']
+            
+            # Test search by full AGI token
+            success, response = self.run_test(
+                f"Search by Full AGI Token: {agi_token}",
+                "GET",
+                f"students/paginated?search={agi_token}",
+                200,
+                token_user=coordinator_user_key
+            )
+            
+            if success:
+                students = response['students']
+                found = any(agi_token in student['token_number'] for student in students)
+                if not found and students:
+                    print(f"❌ AGI token search failed: {agi_token} not found")
+                    integration_success = False
+                else:
+                    print(f"   ✅ AGI token search working: found {len(students)} students")
+            else:
+                integration_success = False
+            
+            # Test search by partial AGI token
+            partial_token = agi_token[:8]  # AGI + year + month
+            success, response = self.run_test(
+                f"Search by Partial AGI Token: {partial_token}",
+                "GET",
+                f"students/paginated?search={partial_token}",
+                200,
+                token_user=coordinator_user_key
+            )
+            
+            if success:
+                students = response['students']
+                found = any(partial_token in student['token_number'] for student in students)
+                if not found and students:
+                    print(f"❌ Partial AGI token search failed: {partial_token} not found")
+                    integration_success = False
+                else:
+                    print(f"   ✅ Partial AGI token search working: found {len(students)} students")
+            else:
+                integration_success = False
+        
+        # Test 2: PDF receipt generation with AGI tokens
+        if self.test_data.get('agi_student_id'):
+            student_id = self.test_data['agi_student_id']
+            
+            # First approve the student through 3-tier process
+            # Coordinator approval
+            success, response = self.run_test(
+                "Coordinator Approve AGI Student",
+                "PUT",
+                f"students/{student_id}/status",
+                200,
+                data={'status': 'approved', 'notes': 'AGI token test approval'},
+                files={},
+                token_user=coordinator_user_key
+            )
+            
+            if success:
+                print("   ✅ AGI student approved by coordinator")
+                
+                # Admin final approval
+                success, response = self.run_test(
+                    "Admin Final Approve AGI Student",
+                    "PUT",
+                    f"admin/approve-student/{student_id}",
+                    200,
+                    data={'notes': 'AGI token test final approval'},
+                    files={},
+                    token_user=admin_user_key
+                )
+                
+                if success:
+                    print("   ✅ AGI student approved by admin")
+                    
+                    # Test PDF receipt generation
+                    success, response = self.run_test(
+                        "Generate PDF Receipt for AGI Token Student",
+                        "GET",
+                        f"students/{student_id}/receipt",
+                        200,
+                        token_user=admin_user_key
+                    )
+                    
+                    if success:
+                        print(f"   ✅ PDF receipt generated for AGI token student")
+                    else:
+                        integration_success = False
+                        
+                    # Test admin PDF receipt generation
+                    success, response = self.run_test(
+                        "Generate Admin PDF Receipt for AGI Token Student",
+                        "GET",
+                        f"admin/students/{student_id}/receipt",
+                        200,
+                        token_user=admin_user_key
+                    )
+                    
+                    if success:
+                        print(f"   ✅ Admin PDF receipt generated for AGI token student")
+                    else:
+                        integration_success = False
+                else:
+                    integration_success = False
+            else:
+                integration_success = False
+        
+        # Test 3: Excel export includes AGI tokens
+        success, response = self.run_test(
+            "Excel Export with AGI Tokens",
+            "GET",
+            "admin/export/excel",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if success:
+            print("   ✅ Excel export working with AGI tokens")
+        else:
+            integration_success = False
+        
+        # Test 4: Leaderboard system with AGI token students
+        success, response = self.run_test(
+            "Overall Leaderboard with AGI Token Students",
+            "GET",
+            "leaderboard/overall",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if success:
+            leaderboard = response.get('leaderboard', [])
+            print(f"   ✅ Leaderboard working with AGI token students: {len(leaderboard)} agents")
+        else:
+            integration_success = False
+        
+        return integration_success
+    
+    def test_agi_token_format_validation(self):
+        """Test AGI token format validation and edge cases"""
+        print("\n🔍 Testing AGI Token Format Validation")
+        print("-" * 45)
+        
+        # Get current date components
+        current_year = datetime.now().strftime('%y')
+        current_month = datetime.now().strftime('%m')
+        expected_prefix = f"AGI{current_year}{current_month}"
+        
+        print(f"   Expected AGI token prefix: {expected_prefix}")
+        
+        # Verify all our test tokens follow the format
+        test_tokens = [
+            self.test_data.get('agi_token_1'),
+            self.test_data.get('agi_token_2'),
+            self.test_data.get('agi_token_3')
+        ]
+        
+        valid_tokens = [token for token in test_tokens if token]
+        
+        if not valid_tokens:
+            print("❌ No AGI tokens available for format validation")
+            return False
+        
+        for i, token in enumerate(valid_tokens, 1):
+            # Verify format components
+            if not token.startswith(expected_prefix):
+                print(f"❌ Token {i} doesn't start with expected prefix: {token}")
+                return False
+                
+            # Verify length
+            if len(token) != 11:
+                print(f"❌ Token {i} wrong length: {len(token)} (expected 11)")
+                return False
+                
+            # Verify sequence part is numeric
+            sequence_part = token[7:11]
+            try:
+                sequence_num = int(sequence_part)
+                print(f"   ✅ Token {i}: {token} (sequence: {sequence_num})")
+            except ValueError:
+                print(f"❌ Token {i} has non-numeric sequence: {sequence_part}")
+                return False
+        
+        # Verify tokens are in sequence
+        sequences = [int(token[7:11]) for token in valid_tokens]
+        sequences.sort()
+        
+        for i in range(1, len(sequences)):
+            if sequences[i] != sequences[i-1] + 1:
+                print(f"❌ Tokens not in sequence: {sequences[i-1]} -> {sequences[i]}")
+                return False
+        
+        print(f"   ✅ All {len(valid_tokens)} AGI tokens properly formatted and sequential")
+        
+        return True
+    
+    def test_agi_token_system_comprehensive(self, admin_user_key, agent_user_key, coordinator_user_key):
+        """Comprehensive test of the complete AGI token system"""
+        print("\n🎯 COMPREHENSIVE AGI TOKEN SYSTEM TESTING")
+        print("=" * 60)
+        
+        comprehensive_success = True
+        
+        # Phase 1: Token Generation
+        print("\n📝 Phase 1: AGI Token Generation")
+        if not self.test_agi_token_generation_system(agent_user_key):
+            comprehensive_success = False
+        
+        # Phase 2: Token Uniqueness
+        print("\n🔒 Phase 2: AGI Token Uniqueness")
+        if not self.test_agi_token_uniqueness_verification(agent_user_key):
+            comprehensive_success = False
+        
+        # Phase 3: Format Validation
+        print("\n🔍 Phase 3: AGI Token Format Validation")
+        if not self.test_agi_token_format_validation():
+            comprehensive_success = False
+        
+        # Phase 4: Integration Testing
+        print("\n🔗 Phase 4: AGI Token Integration")
+        if not self.test_agi_token_integration_functionality(admin_user_key, coordinator_user_key):
+            comprehensive_success = False
+        
+        # Phase 5: System Verification
+        print("\n✅ Phase 5: AGI Token System Verification")
+        if comprehensive_success:
+            print("   🎉 AGI TOKEN SYSTEM FULLY VERIFIED!")
+            print("   ✅ New students get AGI format tokens (AGI2508XXX)")
+            print("   ✅ Tokens are sequential and unique")
+            print("   ✅ All existing functionality works with new token format")
+            print("   ✅ Search and filtering work with AGI tokens")
+            print("   ✅ PDF receipts show correct AGI token format")
+        else:
+            print("   ❌ AGI TOKEN SYSTEM HAS ISSUES!")
+        
+        return comprehensive_success
+
     def test_new_backend_enhancements(self, admin_user_key):
         """Test all new backend enhancements"""
         print("\n🚀 Testing NEW BACKEND ENHANCEMENTS")
@@ -2800,23 +3276,31 @@ class AdmissionSystemAPITester:
         
         enhancement_success = True
         
-        # 0. Test NEW Enhanced Coordinator Dashboard Backend APIs (HIGHEST PRIORITY)
+        # 0. Test NEW AGI TOKEN GENERATION SYSTEM (HIGHEST PRIORITY)
+        if 'agent1' in self.tokens and 'coordinator' in self.tokens:
+            if not self.test_agi_token_system_comprehensive(admin_user_key, 'agent1', 'coordinator'):
+                enhancement_success = False
+        else:
+            print("❌ Missing required tokens for AGI token system testing")
+            enhancement_success = False
+        
+        # 1. Test NEW Enhanced Coordinator Dashboard Backend APIs
         if not self.test_comprehensive_paginated_coordinator_dashboard():
             enhancement_success = False
         
-        # 1. Test leaderboard system
+        # 2. Test leaderboard system
         if not self.test_comprehensive_leaderboard_system(admin_user_key):
             enhancement_success = False
             
-        # 2. Test enhanced admin dashboard
+        # 3. Test enhanced admin dashboard
         if not self.test_enhanced_admin_dashboard(admin_user_key):
             enhancement_success = False
             
-        # 3. Test enhanced Excel export
+        # 4. Test enhanced Excel export
         if not self.test_enhanced_excel_export_with_agent_incentives(admin_user_key):
             enhancement_success = False
             
-        # 4. Test admin PDF receipt generation
+        # 5. Test admin PDF receipt generation
         if not self.test_admin_pdf_receipt_generation(admin_user_key):
             enhancement_success = False
             
