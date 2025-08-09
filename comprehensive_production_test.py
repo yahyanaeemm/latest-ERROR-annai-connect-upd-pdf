@@ -20,7 +20,7 @@ def comprehensive_production_test():
     print("\n🔧 Setup: Login with test admin")
     login_response = requests.post(
         f"{api_url}/login",
-        json={"username": "test_admin", "password": "test_admin_pass"}
+        json={"username": "test_admin_new", "password": "test_admin_new_pass"}
     )
     
     if login_response.status_code != 200:
