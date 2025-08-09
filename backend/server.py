@@ -2317,6 +2317,131 @@ async def setup_production_data(current_user: User = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Production setup failed: {str(e)}")
 
+@api_router.post("/admin/deploy-production")
+async def deploy_production(current_user: User = Depends(get_current_user)):
+    """Complete production deployment: cleanup all test data and setup production users/courses in one operation"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # STEP 1: Clear all collections
+        collections_to_clear = [
+            "users", "pending_users", "students", "incentives", 
+            "incentive_rules", "leaderboard_cache"
+        ]
+        
+        cleanup_results = {}
+        for collection_name in collections_to_clear:
+            collection = getattr(db, collection_name)
+            result = await collection.delete_many({})
+            cleanup_results[collection_name] = result.deleted_count
+        
+        # Clear upload directory
+        import shutil
+        upload_dir = Path("uploads")
+        if upload_dir.exists():
+            shutil.rmtree(upload_dir)
+            upload_dir.mkdir(exist_ok=True)
+        
+        # STEP 2: Create production users
+        production_users = [
+            {
+                "username": "super admin",
+                "email": "admin@annaiconnect.com",
+                "password": "Admin@annaiconnect",
+                "role": "admin",
+                "first_name": "Super",
+                "last_name": "Admin"
+            },
+            {
+                "username": "arulanantham",
+                "email": "arul@annaiconnect.com", 
+                "password": "Arul@annaiconnect",
+                "role": "coordinator",
+                "first_name": "Arulanantham",
+                "last_name": "Coordinator"
+            },
+            {
+                "username": "agent1",
+                "email": "agent1@annaiconnect.com",
+                "password": "agent@123",
+                "role": "agent",
+                "agent_id": "AG001",
+                "first_name": "Agent",
+                "last_name": "One"
+            },
+            {
+                "username": "agent2", 
+                "email": "agent2@annaiconnect.com",
+                "password": "agent@123",
+                "role": "agent",
+                "agent_id": "AG002",
+                "first_name": "Agent",
+                "last_name": "Two"
+            },
+            {
+                "username": "agent3",
+                "email": "agent3@annaiconnect.com", 
+                "password": "agent@123",
+                "role": "agent",
+                "agent_id": "AG003",
+                "first_name": "Agent", 
+                "last_name": "Three"
+            }
+        ]
+        
+        created_users = []
+        for user_data in production_users:
+            user = User(
+                username=user_data["username"],
+                email=user_data["email"],
+                role=user_data["role"],
+                agent_id=user_data.get("agent_id"),
+                first_name=user_data["first_name"],
+                last_name=user_data["last_name"],
+                hashed_password=get_password_hash(user_data["password"]),
+                joining_date=datetime.utcnow() if user_data["role"] == "agent" else None
+            )
+            await db.users.insert_one(user.dict())
+            created_users.append(f"{user_data['role']}: {user_data['username']}")
+        
+        # STEP 3: Create production courses
+        production_courses = [
+            {"course": "B.Ed", "amount": 6000.0},
+            {"course": "MBA", "amount": 2500.0}, 
+            {"course": "BNYS", "amount": 20000.0}
+        ]
+        
+        created_courses = []
+        for course_data in production_courses:
+            incentive_rule = IncentiveRule(
+                course=course_data["course"],
+                amount=course_data["amount"]
+            )
+            await db.incentive_rules.insert_one(incentive_rule.dict())
+            created_courses.append(f"{course_data['course']}: ₹{course_data['amount']}")
+        
+        return {
+            "message": "Production deployment completed successfully! Database cleaned and production data setup complete.",
+            "cleanup_summary": {
+                "deleted_records": cleanup_results,
+                "uploads_cleared": True
+            },
+            "production_setup": {
+                "created_users": created_users,
+                "created_courses": created_courses
+            },
+            "next_steps": [
+                "Login with new admin credentials: super admin / Admin@annaiconnect",
+                "Login with coordinator: arulanantham / Arul@annaiconnect", 
+                "Login with agents: agent1, agent2, agent3 / agent@123",
+                "System is ready for production use"
+            ],
+            "status": "success"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Production deployment failed: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
