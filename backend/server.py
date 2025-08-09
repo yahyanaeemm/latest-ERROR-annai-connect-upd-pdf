@@ -278,27 +278,128 @@ async def get_students(current_user: User = Depends(get_current_user)):
     return [Student(**student) for student in students]
 
 # Enhanced coordinator endpoints (must be before {student_id} route)
-@api_router.get("/students/dropdown")
-async def get_students_dropdown(current_user: User = Depends(get_current_user)):
-    """Get simplified student list for dropdown selection"""
+@api_router.get("/students/paginated")
+async def get_students_paginated(
+    page: int = 1,
+    limit: int = 20,
+    status: Optional[str] = None,
+    course: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    search: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get paginated student list with advanced filtering for coordinator dashboard"""
     if current_user.role not in ["coordinator", "admin"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    students = await db.students.find(
-        {}, 
-        {"id": 1, "first_name": 1, "last_name": 1, "token_number": 1, "course": 1, "status": 1}
-    ).to_list(1000)
+    # Build query filters
+    query = {}
     
-    return [
+    # Status filter
+    if status and status != "all":
+        query["status"] = status
+    
+    # Course filter
+    if course and course != "all":
+        query["course"] = course
+    
+    # Agent filter
+    if agent_id and agent_id != "all":
+        query["agent_id"] = agent_id
+    
+    # Search filter (name or token number)
+    if search and search.strip():
+        search_term = search.strip()
+        query["$or"] = [
+            {"first_name": {"$regex": search_term, "$options": "i"}},
+            {"last_name": {"$regex": search_term, "$options": "i"}},
+            {"token_number": {"$regex": search_term, "$options": "i"}}
+        ]
+    
+    # Date range filter
+    if date_from or date_to:
+        date_query = {}
+        if date_from:
+            try:
+                from_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                date_query["$gte"] = from_date
+            except ValueError:
+                pass
+        if date_to:
+            try:
+                to_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                date_query["$lte"] = to_date
+            except ValueError:
+                pass
+        if date_query:
+            query["created_at"] = date_query
+    
+    # Get total count for pagination
+    total_count = await db.students.count_documents(query)
+    
+    # Calculate pagination
+    skip = (page - 1) * limit
+    total_pages = (total_count + limit - 1) // limit  # Ceiling division
+    
+    # Get paginated students
+    students_cursor = db.students.find(
+        query, 
         {
+            "id": 1, "first_name": 1, "last_name": 1, "token_number": 1, 
+            "course": 1, "status": 1, "created_at": 1, "agent_id": 1,
+            "email": 1, "phone": 1, "updated_at": 1
+        }
+    ).sort("created_at", -1).skip(skip).limit(limit)
+    
+    students = await students_cursor.to_list(limit)
+    
+    # Get agent names for display
+    agent_ids = list(set(student.get("agent_id") for student in students if student.get("agent_id")))
+    agents = {}
+    if agent_ids:
+        agent_docs = await db.users.find(
+            {"id": {"$in": agent_ids}}, 
+            {"id": 1, "username": 1, "first_name": 1, "last_name": 1}
+        ).to_list(len(agent_ids))
+        agents = {agent["id"]: agent for agent in agent_docs}
+    
+    # Format response
+    formatted_students = []
+    for student in students:
+        agent_info = agents.get(student.get("agent_id"))
+        agent_name = "Unknown Agent"
+        if agent_info:
+            if agent_info.get("first_name") and agent_info.get("last_name"):
+                agent_name = f"{agent_info['first_name']} {agent_info['last_name']}"
+            else:
+                agent_name = agent_info["username"]
+        
+        formatted_students.append({
             "id": student["id"],
             "name": f"{student['first_name']} {student['last_name']}",
             "token_number": student["token_number"],
             "course": student["course"],
-            "status": student["status"]
-        } 
-        for student in students
-    ]
+            "status": student["status"],
+            "email": student["email"],
+            "phone": student["phone"],
+            "agent_name": agent_name,
+            "created_at": student["created_at"].isoformat() if student.get("created_at") else None,
+            "updated_at": student["updated_at"].isoformat() if student.get("updated_at") else None
+        })
+    
+    return {
+        "students": formatted_students,
+        "pagination": {
+            "current_page": page,
+            "total_pages": total_pages,
+            "total_count": total_count,
+            "limit": limit,
+            "has_next": page < total_pages,
+            "has_previous": page > 1
+        }
+    }
 
 @api_router.get("/students/{student_id}/detailed")
 async def get_student_detailed(student_id: str, current_user: User = Depends(get_current_user)):
