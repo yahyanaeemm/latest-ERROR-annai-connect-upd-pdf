@@ -1252,21 +1252,23 @@ const CoordinatorDashboard = () => {
 
               {/* Date From */}
               <div>
-                <Label>From Date</Label>
+                <Label className="text-gray-700 font-medium text-sm mb-1 block">From Date</Label>
                 <Input
                   type="date"
                   value={filters.date_from}
                   onChange={(e) => handleFilterChange('date_from', e.target.value)}
+                  className="border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
               {/* Date To */}
               <div>
-                <Label>To Date</Label>
+                <Label className="text-gray-700 font-medium text-sm mb-1 block">To Date</Label>
                 <Input
                   type="date"
                   value={filters.date_to}
                   onChange={(e) => handleFilterChange('date_to', e.target.value)}
+                  className="border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
             </div>
