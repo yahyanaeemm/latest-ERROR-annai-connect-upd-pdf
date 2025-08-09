@@ -2624,15 +2624,26 @@ const AdminDashboard = () => {
                 or
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => alert('Digital signature pad feature will be added in next update')}
-              >
-                <Pen className="h-4 w-4 mr-2" />
-                Draw Signature (Coming Soon)
-              </Button>
+              <div className="mt-4">
+                <button
+                  className="w-full py-3 px-4 border-2 border-gray-300 border-dashed rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200"
+                  onClick={() => alert('Digital signature pad feature will be added in next update')}
+                >
+                  <Pen className="h-4 w-4 mr-2 inline" />
+                  Draw Signature (Coming Soon)
+                </button>
+              </div>
             </div>
+          </div>
+          
+          <div className="dialog-footer">
+            <Button
+              variant="outline"
+              onClick={() => setShowSignatureManager(false)}
+              className="px-6 py-2"
+            >
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
