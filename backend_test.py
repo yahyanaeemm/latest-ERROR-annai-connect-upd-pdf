@@ -1947,12 +1947,403 @@ class AdmissionSystemAPITester:
         
         return system_success
     
+    # ENHANCED COORDINATOR DASHBOARD BACKEND API TESTS (NEW)
+    
+    def test_students_dropdown_api(self, user_key, expected_status=200):
+        """Test GET /api/students/dropdown endpoint"""
+        print(f"\n📋 Testing Students Dropdown API as {user_key}")
+        print("-" * 45)
+        
+        success, response = self.run_test(
+            f"Get Students Dropdown as {user_key}",
+            "GET",
+            "students/dropdown",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response format
+            if not isinstance(response, list):
+                print("❌ Response should be a list")
+                return False
+                
+            print(f"   ✅ Found {len(response)} students in dropdown")
+            
+            # Verify structure of dropdown items
+            if response:
+                first_student = response[0]
+                required_fields = ['id', 'name', 'token_number', 'course', 'status']
+                for field in required_fields:
+                    if field not in first_student:
+                        print(f"❌ Missing field '{field}' in dropdown item")
+                        return False
+                        
+                print(f"   ✅ Sample student: {first_student['name']} - {first_student['token_number']} - {first_student['course']} - {first_student['status']}")
+                
+                # Verify name format (should be "First Last")
+                if ' ' not in first_student['name']:
+                    print("❌ Student name should be in 'First Last' format")
+                    return False
+                    
+                print("   ✅ Student name format correct")
+                
+                # Store a student ID for detailed tests
+                self.test_data['dropdown_student_id'] = first_student['id']
+        
+        return True
+    
+    def test_student_detailed_api(self, user_key, student_id=None, expected_status=200):
+        """Test GET /api/students/{student_id}/detailed endpoint"""
+        print(f"\n👤 Testing Student Detailed API as {user_key}")
+        print("-" * 45)
+        
+        # Use stored student ID if not provided
+        if not student_id:
+            student_id = self.test_data.get('dropdown_student_id')
+            if not student_id:
+                print("❌ No student ID available for detailed test")
+                return False
+        
+        success, response = self.run_test(
+            f"Get Student Detailed Info as {user_key}",
+            "GET",
+            f"students/{student_id}/detailed",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify comprehensive student data
+            required_student_fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'course', 'status', 'token_number', 'agent_id', 'created_at']
+            for field in required_student_fields:
+                if field not in response:
+                    print(f"❌ Missing student field '{field}' in detailed response")
+                    return False
+                    
+            print(f"   ✅ Student details: {response['first_name']} {response['last_name']} - {response['course']}")
+            
+            # Verify agent information is included
+            if 'agent_info' not in response:
+                print("❌ Missing 'agent_info' field in detailed response")
+                return False
+                
+            agent_info = response['agent_info']
+            if agent_info:  # Agent info can be None if agent not found
+                required_agent_fields = ['id', 'username', 'email', 'first_name', 'last_name']
+                for field in required_agent_fields:
+                    if field not in agent_info:
+                        print(f"❌ Missing agent field '{field}' in agent_info")
+                        return False
+                        
+                print(f"   ✅ Agent info: {agent_info['username']} - {agent_info['first_name']} {agent_info['last_name']}")
+            else:
+                print("   ⚠️ Agent info is None (agent not found)")
+                
+            # Store student data for document test
+            self.test_data['detailed_student_id'] = student_id
+        
+        return True
+    
+    def test_student_documents_api(self, user_key, student_id=None, expected_status=200):
+        """Test GET /api/students/{student_id}/documents endpoint"""
+        print(f"\n📄 Testing Student Documents API as {user_key}")
+        print("-" * 45)
+        
+        # Use stored student ID if not provided
+        if not student_id:
+            student_id = self.test_data.get('detailed_student_id')
+            if not student_id:
+                print("❌ No student ID available for documents test")
+                return False
+        
+        success, response = self.run_test(
+            f"Get Student Documents as {user_key}",
+            "GET",
+            f"students/{student_id}/documents",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response structure
+            if 'student_id' not in response:
+                print("❌ Missing 'student_id' field in documents response")
+                return False
+                
+            if 'documents' not in response:
+                print("❌ Missing 'documents' field in documents response")
+                return False
+                
+            if response['student_id'] != student_id:
+                print("❌ Student ID mismatch in documents response")
+                return False
+                
+            documents = response['documents']
+            if not isinstance(documents, list):
+                print("❌ Documents should be a list")
+                return False
+                
+            print(f"   ✅ Found {len(documents)} documents for student")
+            
+            # Verify document structure if documents exist
+            if documents:
+                first_doc = documents[0]
+                required_doc_fields = ['type', 'display_name', 'file_name', 'file_path', 'download_url', 'exists']
+                for field in required_doc_fields:
+                    if field not in first_doc:
+                        print(f"❌ Missing document field '{field}'")
+                        return False
+                        
+                print(f"   ✅ Sample document: {first_doc['display_name']} - {first_doc['file_name']} - Exists: {first_doc['exists']}")
+                
+                # Verify download URL format
+                if not first_doc['download_url'].startswith('/uploads/'):
+                    print("❌ Download URL should start with '/uploads/'")
+                    return False
+                    
+                print("   ✅ Download URL format correct")
+            else:
+                print("   ✅ No documents found for student (expected for new students)")
+        
+        return True
+    
+    def test_coordinator_dashboard_apis_access_control(self):
+        """Test access control for coordinator dashboard APIs"""
+        print("\n🔒 Testing Coordinator Dashboard APIs Access Control")
+        print("-" * 55)
+        
+        access_control_success = True
+        
+        # Test coordinator access (should work)
+        if 'coordinator' in self.tokens:
+            print("\n   Testing COORDINATOR access (should work):")
+            if not self.test_students_dropdown_api('coordinator', 200):
+                access_control_success = False
+            if not self.test_student_detailed_api('coordinator', None, 200):
+                access_control_success = False
+            if not self.test_student_documents_api('coordinator', None, 200):
+                access_control_success = False
+        
+        # Test admin access (should work)
+        if 'admin' in self.tokens:
+            print("\n   Testing ADMIN access (should work):")
+            if not self.test_students_dropdown_api('admin', 200):
+                access_control_success = False
+            if not self.test_student_detailed_api('admin', None, 200):
+                access_control_success = False
+            if not self.test_student_documents_api('admin', None, 200):
+                access_control_success = False
+        
+        # Test agent access (should fail with 403)
+        if 'agent1' in self.tokens:
+            print("\n   Testing AGENT access (should fail with 403):")
+            if not self.test_students_dropdown_api('agent1', 403):
+                access_control_success = False
+            if not self.test_student_detailed_api('agent1', 'fake-student-id', 403):
+                access_control_success = False
+            if not self.test_student_documents_api('agent1', 'fake-student-id', 403):
+                access_control_success = False
+        
+        return access_control_success
+    
+    def test_coordinator_dashboard_apis_edge_cases(self):
+        """Test edge cases for coordinator dashboard APIs"""
+        print("\n🔍 Testing Coordinator Dashboard APIs Edge Cases")
+        print("-" * 50)
+        
+        edge_cases_success = True
+        
+        if 'coordinator' in self.tokens:
+            # Test with non-existent student ID
+            fake_student_id = "fake-student-id-12345"
+            
+            success, response = self.run_test(
+                "Get Non-existent Student Detailed (Should Return 404)",
+                "GET",
+                f"students/{fake_student_id}/detailed",
+                404,
+                token_user='coordinator'
+            )
+            
+            if not success:
+                edge_cases_success = False
+            else:
+                print("   ✅ Non-existent student detailed request properly returns 404")
+            
+            success, response = self.run_test(
+                "Get Non-existent Student Documents (Should Return 404)",
+                "GET",
+                f"students/{fake_student_id}/documents",
+                404,
+                token_user='coordinator'
+            )
+            
+            if not success:
+                edge_cases_success = False
+            else:
+                print("   ✅ Non-existent student documents request properly returns 404")
+        
+        return edge_cases_success
+    
+    def test_coordinator_dashboard_apis_data_integrity(self):
+        """Test data integrity for coordinator dashboard APIs"""
+        print("\n🔍 Testing Coordinator Dashboard APIs Data Integrity")
+        print("-" * 55)
+        
+        data_integrity_success = True
+        
+        if 'coordinator' in self.tokens:
+            # Get dropdown list
+            success, dropdown_response = self.run_test(
+                "Get Students Dropdown for Data Integrity Test",
+                "GET",
+                "students/dropdown",
+                200,
+                token_user='coordinator'
+            )
+            
+            if not success or not dropdown_response:
+                print("❌ Failed to get dropdown data for integrity test")
+                return False
+            
+            # Test with first student from dropdown
+            first_student = dropdown_response[0]
+            student_id = first_student['id']
+            
+            # Get detailed info for same student
+            success, detailed_response = self.run_test(
+                "Get Student Detailed for Data Integrity Test",
+                "GET",
+                f"students/{student_id}/detailed",
+                200,
+                token_user='coordinator'
+            )
+            
+            if not success:
+                data_integrity_success = False
+            else:
+                # Verify data consistency between dropdown and detailed
+                if detailed_response['id'] != first_student['id']:
+                    print("❌ Student ID mismatch between dropdown and detailed")
+                    data_integrity_success = False
+                
+                if detailed_response['token_number'] != first_student['token_number']:
+                    print("❌ Token number mismatch between dropdown and detailed")
+                    data_integrity_success = False
+                
+                if detailed_response['course'] != first_student['course']:
+                    print("❌ Course mismatch between dropdown and detailed")
+                    data_integrity_success = False
+                
+                if detailed_response['status'] != first_student['status']:
+                    print("❌ Status mismatch between dropdown and detailed")
+                    data_integrity_success = False
+                
+                # Verify name consistency
+                expected_name = f"{detailed_response['first_name']} {detailed_response['last_name']}"
+                if first_student['name'] != expected_name:
+                    print("❌ Name format mismatch between dropdown and detailed")
+                    data_integrity_success = False
+                
+                if data_integrity_success:
+                    print("   ✅ Data consistency verified between dropdown and detailed APIs")
+            
+            # Get documents for same student
+            success, documents_response = self.run_test(
+                "Get Student Documents for Data Integrity Test",
+                "GET",
+                f"students/{student_id}/documents",
+                200,
+                token_user='coordinator'
+            )
+            
+            if not success:
+                data_integrity_success = False
+            else:
+                # Verify student ID consistency
+                if documents_response['student_id'] != student_id:
+                    print("❌ Student ID mismatch in documents response")
+                    data_integrity_success = False
+                else:
+                    print("   ✅ Student ID consistency verified in documents API")
+        
+        return data_integrity_success
+    
+    def test_enhanced_coordinator_dashboard_backend_apis(self):
+        """Test all enhanced coordinator dashboard backend APIs comprehensively"""
+        print("\n🚀 Testing ENHANCED COORDINATOR DASHBOARD BACKEND APIs")
+        print("-" * 65)
+        
+        coordinator_apis_success = True
+        
+        # 1. Test access control
+        if not self.test_coordinator_dashboard_apis_access_control():
+            coordinator_apis_success = False
+        
+        # 2. Test edge cases
+        if not self.test_coordinator_dashboard_apis_edge_cases():
+            coordinator_apis_success = False
+        
+        # 3. Test data integrity
+        if not self.test_coordinator_dashboard_apis_data_integrity():
+            coordinator_apis_success = False
+        
+        # 4. Test existing functionality verification
+        print("\n📋 Testing Existing Functionality Verification")
+        print("-" * 45)
+        
+        # Verify existing /api/students endpoint still works
+        if 'coordinator' in self.tokens:
+            success, response = self.run_test(
+                "Verify Existing Students Endpoint Still Works",
+                "GET",
+                "students",
+                200,
+                token_user='coordinator'
+            )
+            
+            if not success:
+                coordinator_apis_success = False
+            else:
+                print("   ✅ Existing /api/students endpoint working correctly")
+        
+        # Verify existing /api/students/{id} endpoint still works
+        if 'coordinator' in self.tokens and 'dropdown_student_id' in self.test_data:
+            success, response = self.run_test(
+                "Verify Existing Student by ID Endpoint Still Works",
+                "GET",
+                f"students/{self.test_data['dropdown_student_id']}",
+                200,
+                token_user='coordinator'
+            )
+            
+            if not success:
+                coordinator_apis_success = False
+            else:
+                print("   ✅ Existing /api/students/{id} endpoint working correctly")
+        
+        return coordinator_apis_success
+
     def test_new_backend_enhancements(self, admin_user_key):
         """Test all new backend enhancements"""
         print("\n🚀 Testing NEW BACKEND ENHANCEMENTS")
         print("-" * 50)
         
         enhancement_success = True
+        
+        # 0. Test NEW Enhanced Coordinator Dashboard Backend APIs (HIGHEST PRIORITY)
+        if not self.test_enhanced_coordinator_dashboard_backend_apis():
+            enhancement_success = False
         
         # 1. Test leaderboard system
         if not self.test_comprehensive_leaderboard_system(admin_user_key):
