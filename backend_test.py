@@ -4347,12 +4347,12 @@ def main():
     
     tester = AdmissionSystemAPITester()
     
-    # Test credentials from the review request
+    # Test credentials - using production credentials
     test_users = {
-        'admin': {'username': 'admin', 'password': 'admin123'},
-        'coordinator': {'username': 'coordinator', 'password': 'coord123'},
-        'agent1': {'username': 'agent1', 'password': 'agent123'},
-        'agent2': {'username': 'agent2', 'password': 'agent123'}
+        'admin': {'username': 'super admin', 'password': 'Admin@annaiconnect'},
+        'coordinator': {'username': 'arulanantham', 'password': 'Arul@annaiconnect'},
+        'agent1': {'username': 'agent1', 'password': 'agent@123'},
+        'agent2': {'username': 'agent2', 'password': 'agent@123'}
     }
     
     print("\n📋 Phase 1: Authentication Tests")
