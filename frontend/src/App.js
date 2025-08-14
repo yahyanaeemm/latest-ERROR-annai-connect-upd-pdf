@@ -1316,6 +1316,15 @@ const CoordinatorDashboard = () => {
   // UI state
   const [showFilters, setShowFilters] = useState(false);
   const [selectedView, setSelectedView] = useState('list'); // 'list' or 'details'
+  const [successNotification, setSuccessNotification] = useState(null);
+
+  // Success notification function
+  const showSuccessNotification = (message) => {
+    setSuccessNotification(message);
+    setTimeout(() => {
+      setSuccessNotification(null);
+    }, 4000); // Hide after 4 seconds
+  };
 
   useEffect(() => {
     fetchFilterOptions();
