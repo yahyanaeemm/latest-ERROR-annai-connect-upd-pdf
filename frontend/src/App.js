@@ -1215,13 +1215,21 @@ const SignatureModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add E-Signature</DialogTitle>
-          <DialogDescription>
-            Draw your signature or upload an image
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="dialog-content">
+        <div className="dialog-header">
+          <DialogTitle className="dialog-title">Add E-Signature</DialogTitle>
+          <button 
+            className="dialog-close"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="dialog-body">
+          <div className="text-sm text-gray-600 mb-6">
+            Draw your signature or upload an image for student approval
+          </div>
         
         <Tabs value={signatureType} onValueChange={setSignatureType}>
           <TabsList className="grid w-full grid-cols-2">
