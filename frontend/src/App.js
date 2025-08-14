@@ -1986,6 +1986,16 @@ const CoordinatorDashboard = () => {
         onClose={() => setShowSignature(false)}
         onSave={handleSignatureSave}
       />
+
+      {/* Success Notification */}
+      {successNotification && (
+        <div className="approval-success-toast">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            {successNotification}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
