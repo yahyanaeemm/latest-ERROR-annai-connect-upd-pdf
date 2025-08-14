@@ -1215,7 +1215,8 @@ const SignatureModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="dialog-content">
+      <div className="signature-modal-overlay" />
+      <DialogContent className="signature-modal-content dialog-content">
         <div className="dialog-header">
           <DialogTitle className="dialog-title">Add E-Signature</DialogTitle>
           <button 
