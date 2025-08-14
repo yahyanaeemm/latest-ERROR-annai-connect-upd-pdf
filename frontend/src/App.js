@@ -788,7 +788,7 @@ const AgentDashboard = () => {
             <TableBody>
               {students.map((student) => (
                 <TableRow key={student.id} className={
-                  student.status === 'approved' ? 'bg-green-50 border-l-4 border-green-400' :
+                  student.status === 'approved' ? 'table-row-approved-high-contrast' :
                   student.status === 'rejected' ? 'bg-red-50 border-l-4 border-red-400' :
                   student.status === 'pending' ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''
                 }>
