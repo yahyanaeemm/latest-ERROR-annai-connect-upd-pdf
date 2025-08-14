@@ -1415,6 +1415,12 @@ const CoordinatorDashboard = () => {
       
       await axios.put(`${API}/students/${studentId}/status`, formData);
       
+      // Show immediate success feedback for approvals
+      if (status === 'approved' || status === 'coordinator_approved') {
+        showSuccessNotification(`Student ${status === 'approved' ? 'approved' : 'coordinator approved'} successfully!`);
+        setShowSignature(false); // Close signature modal immediately
+      }
+      
       // Refresh data
       fetchStudents();
       if (selectedStudent && selectedStudent.id === studentId) {
