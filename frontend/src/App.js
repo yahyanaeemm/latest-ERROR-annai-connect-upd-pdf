@@ -1489,8 +1489,8 @@ const CoordinatorDashboard = () => {
     const statusConfig = {
       pending: { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: Clock },
       verified: { color: 'bg-blue-100 text-blue-800 border-blue-300', icon: Eye },
-      coordinator_approved: { color: 'bg-purple-100 text-purple-800 border-purple-300', icon: CheckCircle },
-      approved: { color: 'bg-green-100 text-green-800 border-green-300', icon: CheckCircle },
+      coordinator_approved: { color: 'status-coordinator-approved-high-contrast', icon: CheckCircle },
+      approved: { color: 'status-approved-high-contrast', icon: CheckCircle },
       rejected: { color: 'bg-red-100 text-red-800 border-red-300', icon: XCircle }
     };
 
@@ -1500,7 +1500,9 @@ const CoordinatorDashboard = () => {
     return (
       <Badge className={`${config.color} border flex items-center gap-1`}>
         <IconComponent className="h-3 w-3" />
-        {status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1)}
+        {status === 'coordinator_approved' ? 'Coordinator Approved' : 
+         status === 'approved' ? 'APPROVED' :
+         status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1)}
       </Badge>
     );
   };
