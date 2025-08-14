@@ -1231,49 +1231,50 @@ const SignatureModal = ({ isOpen, onClose, onSave }) => {
             Draw your signature or upload an image for student approval
           </div>
         
-        <Tabs value={signatureType} onValueChange={setSignatureType}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="draw">Draw</TabsTrigger>
-            <TabsTrigger value="upload">Upload</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="draw" className="space-y-4">
-            <div className="border rounded-lg bg-white">
-              <SignatureCanvas
-                ref={sigCanvas}
-                canvasProps={{
-                  width: 400,
-                  height: 200,
-                  className: 'sigCanvas'
-                }}
-              />
-            </div>
-            <Button variant="outline" onClick={clearSignature} className="w-full">
-              Clear
-            </Button>
-          </TabsContent>
-          
-          <TabsContent value="upload" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="signature-upload">Upload Signature Image</Label>
-              <Input
-                id="signature-upload"
-                type="file"
-                accept=".png,.jpg,.jpeg"
-                onChange={handleImageUpload}
-              />
-            </div>
-            {uploadedImage && (
-              <div className="border rounded p-4">
-                <img src={uploadedImage} alt="Uploaded signature" className="max-h-32 mx-auto" />
+          <Tabs value={signatureType} onValueChange={setSignatureType}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="draw">Draw</TabsTrigger>
+              <TabsTrigger value="upload">Upload</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="draw" className="space-y-4">
+              <div className="border rounded-lg bg-white">
+                <SignatureCanvas
+                  ref={sigCanvas}
+                  canvasProps={{
+                    width: 400,
+                    height: 200,
+                    className: 'sigCanvas'
+                  }}
+                />
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              <Button variant="outline" onClick={clearSignature} className="w-full">
+                Clear
+              </Button>
+            </TabsContent>
+            
+            <TabsContent value="upload" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signature-upload">Upload Signature Image</Label>
+                <Input
+                  id="signature-upload"
+                  type="file"
+                  accept=".png,.jpg,.jpeg"
+                  onChange={handleImageUpload}
+                />
+              </div>
+              {uploadedImage && (
+                <div className="border rounded p-4">
+                  <img src={uploadedImage} alt="Uploaded signature" className="max-h-32 mx-auto" />
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
         
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={saveSignature}>Save Signature</Button>
+        <div className="dialog-footer">
+          <Button variant="outline" onClick={onClose} className="px-6 py-2">Cancel</Button>
+          <Button onClick={saveSignature} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2">Save Signature</Button>
         </div>
       </DialogContent>
     </Dialog>
