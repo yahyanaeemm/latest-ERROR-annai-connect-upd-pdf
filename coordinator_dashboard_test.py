@@ -5,7 +5,7 @@ import json
 import sys
 
 class CoordinatorDashboardTester:
-    def __init__(self, base_url="https://ab3db277-9e87-4833-abeb-9dcbf5c8a2e7.preview.emergentagent.com"):
+    def __init__(self, base_url="https://admission-status-ui.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tokens = {}
