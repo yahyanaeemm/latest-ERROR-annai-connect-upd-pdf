@@ -507,6 +507,135 @@ body {
   transform: scale(1.05);
 }
 
+/* Enhanced Signature Modal Visibility */
+.signature-modal-overlay {
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: 15000 !important;
+}
+
+.signature-modal-content {
+  background: white !important;
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+  border: 3px solid #3b82f6 !important;
+  z-index: 15001 !important;
+  max-width: 500px !important;
+  width: 95vw !important;
+}
+
+/* High-Contrast Approval Status Badge - Accessibility Compliant */
+.status-approved-high-contrast {
+  background-color: #28A745 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  border: 2px solid #1e7e34 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
+  animation: approval-pulse 0.8s ease-out !important;
+}
+
+@keyframes approval-pulse {
+  0% { 
+    transform: scale(1); 
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3); 
+  }
+  50% { 
+    transform: scale(1.05); 
+    box-shadow: 0 6px 16px rgba(40, 167, 69, 0.5); 
+  }
+  100% { 
+    transform: scale(1); 
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3); 
+  }
+}
+
+/* High-Contrast Table Row for Approved Status */
+.table-row-approved-high-contrast {
+  background-color: rgba(40, 167, 69, 0.15) !important;
+  border-left: 6px solid #28A745 !important;
+  animation: row-highlight 1s ease-out !important;
+}
+
+@keyframes row-highlight {
+  0% { background-color: rgba(40, 167, 69, 0.3); }
+  100% { background-color: rgba(40, 167, 69, 0.15); }
+}
+
+/* Coordinator Approved Status - Different from Final Approval */
+.status-coordinator-approved-high-contrast {
+  background-color: #6f42c1 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  border: 2px solid #5a2d91 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Success Notification for Immediate Feedback */
+.approval-success-toast {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  background: #28A745 !important;
+  color: white !important;
+  padding: 16px 24px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(40, 167, 69, 0.4) !important;
+  z-index: 20000 !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  animation: toast-slide-in 0.5s ease-out !important;
+}
+
+@keyframes toast-slide-in {
+  0% { 
+    transform: translateX(100%); 
+    opacity: 0; 
+  }
+  100% { 
+    transform: translateX(0); 
+    opacity: 1; 
+  }
+}
+
+/* Enhanced Signature Canvas Visibility */
+.sigCanvas {
+  border: 2px solid #3b82f6 !important;
+  border-radius: 8px !important;
+  cursor: crosshair !important;
+  background: white !important;
+}
+
+/* Accessibility - High Contrast Focus States */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+
+/* Color Vision Deficiency Support */
+@media (prefers-contrast: high) {
+  .status-approved-high-contrast {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+  }
+  
+  .table-row-approved-high-contrast {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    border-left-color: #000000 !important;
+  }
+}
+
 /* Enhanced Dropdown Visibility Fixes */
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;
