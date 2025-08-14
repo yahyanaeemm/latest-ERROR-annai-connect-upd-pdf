@@ -1734,7 +1734,7 @@ const CoordinatorDashboard = () => {
                   <TableBody>
                     {students.map((student) => (
                       <TableRow key={student.id} className={
-                        student.status === 'approved' ? 'bg-green-50' :
+                        student.status === 'approved' ? 'table-row-approved-high-contrast' :
                         student.status === 'rejected' ? 'bg-red-50' :
                         student.status === 'coordinator_approved' ? 'bg-purple-50' :
                         student.status === 'pending' ? 'bg-yellow-50' : ''
