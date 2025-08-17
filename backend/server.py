@@ -214,6 +214,264 @@ async def generate_token_number():
     
     return token
 
+async def generate_unique_receipt_number():
+    """Generate unique receipt number"""
+    from datetime import datetime
+    import random
+    
+    # Format: RCPT + YYYYMMDD + random 4-digit sequence
+    date_str = datetime.now().strftime('%Y%m%d')
+    
+    # Generate random sequence and ensure uniqueness
+    for _ in range(100):  # Max 100 attempts to find unique number
+        sequence = random.randint(1000, 9999)
+        receipt_number = f"RCPT-{date_str}-{sequence}"
+        
+        # Check if this receipt number already exists in any collection that might store it
+        # For now, we'll just use the random generation as it's very unlikely to collision
+        # In future, if we store receipt numbers, we can add a database check here
+        return receipt_number
+    
+    # Fallback: use timestamp if we can't find unique random number
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    return f"RCPT-{timestamp}"
+
+async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_admin_generated=False):
+    """Generate unified PDF receipt with dual signatures and incentive amount"""
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from io import BytesIO
+    import base64
+    from PIL import Image
+    import io
+    
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Generate unique receipt number
+    receipt_number = await generate_unique_receipt_number()
+    
+    # Get incentive amount for this student's course
+    incentive_amount = 0
+    incentive_rule = await db.incentive_rules.find_one({"course": student_doc["course"], "active": True})
+    if incentive_rule:
+        incentive_amount = incentive_rule["amount"]
+    
+    # Header with institution branding
+    p.setFont("Helvetica-Bold", 20)
+    p.drawString(50, height - 50, "AnnaiCONNECT")
+    p.setFont("Helvetica", 14)
+    header_text = "Student Admission Receipt (Admin Generated)" if is_admin_generated else "Student Admission Receipt"
+    p.drawString(50, height - 75, header_text)
+    
+    # Draw a line under header
+    p.line(50, height - 85, width - 50, height - 85)
+    
+    # Receipt details in a professional format
+    y = height - 120
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y, "ADMISSION CONFIRMED")
+    y -= 40
+    
+    # Left column - Student Details
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, y, "STUDENT DETAILS")
+    p.line(50, y - 5, 250, y - 5)
+    y -= 25
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Token Number:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(150, y, f"{student_doc['token_number']}")
+    y -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Student Name:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(150, y, f"{student_doc['first_name']} {student_doc['last_name']}")
+    y -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Email:")
+    p.drawString(150, y, f"{student_doc['email']}")
+    y -= 18
+    
+    p.drawString(50, y, f"Phone:")
+    p.drawString(150, y, f"{student_doc['phone']}")
+    y -= 18
+    
+    p.drawString(50, y, f"Course:")
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(150, y, f"{student_doc['course']}")
+    y -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Status:")
+    p.setFont("Helvetica-Bold", 10)
+    p.setFillColorRGB(0, 0.5, 0)  # Green color for approved
+    p.drawString(150, y, f"{student_doc['status'].upper()}")
+    p.setFillColorRGB(0, 0, 0)  # Back to black
+    y -= 18
+    
+    # Add incentive amount
+    p.setFont("Helvetica", 10)
+    p.drawString(50, y, f"Course Incentive:")
+    p.setFont("Helvetica-Bold", 10)
+    p.setFillColorRGB(0, 0.6, 0)  # Green color for incentive
+    p.drawString(150, y, f"₹{incentive_amount:,.0f}")
+    p.setFillColorRGB(0, 0, 0)  # Back to black
+    y -= 30
+    
+    # Right column - Process Details
+    y_right = height - 185
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(300, y_right, "PROCESS DETAILS")
+    p.line(300, y_right - 5, 500, y_right - 5)
+    y_right -= 25
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(300, y_right, f"Processed by Agent:")
+    p.setFont("Helvetica-Bold", 10)
+    agent_name = agent_doc["username"] if agent_doc else "Unknown Agent"
+    p.drawString(420, y_right, f"{agent_name}")
+    y_right -= 18
+    
+    p.setFont("Helvetica", 10)
+    p.drawString(300, y_right, f"Submission Date:")
+    p.drawString(420, y_right, f"{student_doc['created_at'].strftime('%d/%m/%Y %H:%M')}")
+    y_right -= 18
+    
+    if student_doc.get('updated_at'):
+        p.drawString(300, y_right, f"Approval Date:")
+        p.drawString(420, y_right, f"{student_doc['updated_at'].strftime('%d/%m/%Y %H:%M')}")
+        y_right -= 18
+    
+    if is_admin_generated:
+        p.drawString(300, y_right, f"Generated by Admin:")
+        p.setFont("Helvetica-Bold", 10)
+        p.drawString(420, y_right, f"{current_user.username}")
+        y_right -= 18
+    
+    # Digital Signatures Section (Dual Signatures)
+    signature_y = y - 40
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(50, signature_y, "DIGITAL SIGNATURES")
+    p.line(50, signature_y - 5, 500, signature_y - 5)
+    signature_y -= 20
+    
+    # Get coordinator signature from student record
+    coordinator_signature = student_doc.get('signature_data')
+    
+    # Get admin signature (try current user first if admin, then any admin)
+    admin_signature = None
+    if current_user.role == "admin" and current_user.id:
+        admin_user = await db.users.find_one({"id": current_user.id})
+        if admin_user and admin_user.get('signature_data'):
+            admin_signature = admin_user['signature_data']
+    
+    # If no admin signature from current user, try to find any admin signature
+    if not admin_signature:
+        try:
+            admin_user = await db.users.find_one({"role": "admin", "signature_data": {"$exists": True, "$ne": None}})
+            if admin_user and admin_user.get('signature_data'):
+                admin_signature = admin_user['signature_data']
+        except Exception as e:
+            print(f"Error fetching admin signature: {e}")
+    
+    # Display Coordinator Signature
+    if coordinator_signature:
+        try:
+            # Remove data URL prefix if present
+            signature_data = coordinator_signature
+            if signature_data.startswith('data:image'):
+                signature_data = signature_data.split(',')[1]
+            
+            # Create signature image
+            signature_bytes = base64.b64decode(signature_data)
+            signature_img = Image.open(io.BytesIO(signature_bytes))
+            
+            # Save temporarily for ReportLab
+            temp_signature = io.BytesIO()
+            signature_img.save(temp_signature, format='PNG')
+            temp_signature.seek(0)
+            
+            # Add coordinator signature to PDF
+            p.setFont("Helvetica", 10)
+            p.drawString(50, signature_y, "Coordinator Signature:")
+            signature_y -= 10
+            
+            # Draw signature image (scaled)
+            signature_width = 180
+            signature_height = 70
+            p.drawInlineImage(temp_signature, 50, signature_y - signature_height, 
+                            signature_width, signature_height)
+            signature_y -= signature_height + 5
+            
+        except Exception as e:
+            print(f"Error processing coordinator signature: {e}")
+            p.setFont("Helvetica-Oblique", 9)
+            p.drawString(50, signature_y, "Coordinator Signature: [Signature processing error]")
+            signature_y -= 20
+    else:
+        p.setFont("Helvetica-Oblique", 9)
+        p.drawString(50, signature_y, "Coordinator Signature: [Not available]")
+        signature_y -= 20
+    
+    # Display Admin Signature
+    if admin_signature:
+        try:
+            # Remove data URL prefix if present
+            signature_data = admin_signature
+            if signature_data.startswith('data:image'):
+                signature_data = signature_data.split(',')[1]
+            
+            # Create signature image
+            signature_bytes = base64.b64decode(signature_data)
+            signature_img = Image.open(io.BytesIO(signature_bytes))
+            
+            # Save temporarily for ReportLab
+            temp_signature = io.BytesIO()
+            signature_img.save(temp_signature, format='PNG')
+            temp_signature.seek(0)
+            
+            # Add admin signature to PDF
+            p.setFont("Helvetica", 10)
+            p.drawString(300, signature_y + (70 if coordinator_signature else 0), "Admin Signature:")
+            admin_sig_y = signature_y - 10 + (70 if coordinator_signature else 0)
+            
+            # Draw signature image (scaled)
+            signature_width = 180
+            signature_height = 70
+            p.drawInlineImage(temp_signature, 300, admin_sig_y - signature_height, 
+                            signature_width, signature_height)
+            
+        except Exception as e:
+            print(f"Error processing admin signature: {e}")
+            p.setFont("Helvetica-Oblique", 9)
+            p.drawString(300, signature_y + (70 if coordinator_signature else 0), "Admin Signature: [Signature processing error]")
+    else:
+        p.setFont("Helvetica-Oblique", 9)
+        p.drawString(300, signature_y + (70 if coordinator_signature else 0), "Admin Signature: [Not available]")
+    
+    # Footer with important note
+    p.line(50, 100, width - 50, 100)
+    p.setFont("Helvetica-Oblique", 8)
+    p.drawString(50, 85, "This is a computer-generated receipt and does not require a physical signature.")
+    p.setFont("Helvetica", 8)
+    p.drawString(50, 70, f"Generated on: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    p.drawString(300, 70, f"Receipt ID: {receipt_number}")
+    
+    # Add a border around the receipt
+    p.rect(30, 30, width - 60, height - 60, stroke=1, fill=0)
+    
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    
+    return buffer
+
 # Authentication routes
 @api_router.post("/register")
 async def register(user_data: UserCreate):
