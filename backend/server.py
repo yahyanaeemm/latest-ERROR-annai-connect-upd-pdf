@@ -355,11 +355,10 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
         y_right -= 18
     
     # Digital Signatures Section (Dual Signatures)
-    signature_y = y - 40
+    signature_start_y = y - 40
     p.setFont("Helvetica-Bold", 11)
-    p.drawString(50, signature_y, "DIGITAL SIGNATURES")
-    p.line(50, signature_y - 5, 500, signature_y - 5)
-    signature_y -= 20
+    p.drawString(50, signature_start_y, "DIGITAL SIGNATURES")
+    p.line(50, signature_start_y - 5, 500, signature_start_y - 5)
     
     # Get coordinator signature from student record
     coordinator_signature = student_doc.get('signature_data')
@@ -380,80 +379,83 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
         except Exception as e:
             print(f"Error fetching admin signature: {e}")
     
-    # Display Coordinator Signature
-    if coordinator_signature:
-        try:
-            # Remove data URL prefix if present
-            signature_data = coordinator_signature
-            if signature_data.startswith('data:image'):
-                signature_data = signature_data.split(',')[1]
-            
-            # Create signature image
-            signature_bytes = base64.b64decode(signature_data)
-            signature_img = Image.open(io.BytesIO(signature_bytes))
-            
-            # Save temporarily for ReportLab
-            temp_signature = io.BytesIO()
-            signature_img.save(temp_signature, format='PNG')
-            temp_signature.seek(0)
-            
-            # Add coordinator signature to PDF
-            p.setFont("Helvetica", 10)
-            p.drawString(50, signature_y, "Coordinator Signature:")
-            signature_y -= 10
-            
-            # Draw signature image (scaled)
-            signature_width = 180
-            signature_height = 70
-            p.drawInlineImage(temp_signature, 50, signature_y - signature_height, 
-                            signature_width, signature_height)
-            signature_y -= signature_height + 5
-            
-        except Exception as e:
-            print(f"Error processing coordinator signature: {e}")
-            p.setFont("Helvetica-Oblique", 9)
-            p.drawString(50, signature_y, "Coordinator Signature: [Signature processing error]")
-            signature_y -= 20
-    else:
-        p.setFont("Helvetica-Oblique", 9)
-        p.drawString(50, signature_y, "Coordinator Signature: [Not available]")
-        signature_y -= 20
+    # Calculate signature positioning for better layout
+    signature_width = 180
+    signature_height = 70
+    coord_x = 50
+    admin_x = 300
+    signature_y = signature_start_y - 30
     
-    # Display Admin Signature
-    if admin_signature:
+    def process_and_draw_signature(signature_data, x, y, label):
+        """Process and draw signature with improved error handling"""
         try:
+            if not signature_data:
+                return False
+                
             # Remove data URL prefix if present
-            signature_data = admin_signature
             if signature_data.startswith('data:image'):
                 signature_data = signature_data.split(',')[1]
             
-            # Create signature image
-            signature_bytes = base64.b64decode(signature_data)
-            signature_img = Image.open(io.BytesIO(signature_bytes))
+            # Validate base64 data
+            try:
+                signature_bytes = base64.b64decode(signature_data, validate=True)
+            except Exception as e:
+                print(f"Base64 decode error for {label}: {e}")
+                return False
             
-            # Save temporarily for ReportLab
-            temp_signature = io.BytesIO()
-            signature_img.save(temp_signature, format='PNG')
-            temp_signature.seek(0)
-            
-            # Add admin signature to PDF
-            p.setFont("Helvetica", 10)
-            p.drawString(300, signature_y + (70 if coordinator_signature else 0), "Admin Signature:")
-            admin_sig_y = signature_y - 10 + (70 if coordinator_signature else 0)
-            
-            # Draw signature image (scaled)
-            signature_width = 180
-            signature_height = 70
-            p.drawInlineImage(temp_signature, 300, admin_sig_y - signature_height, 
-                            signature_width, signature_height)
-            
+            # Create and process image
+            try:
+                signature_img = Image.open(io.BytesIO(signature_bytes))
+                
+                # Convert to RGB if needed
+                if signature_img.mode != 'RGB':
+                    signature_img = signature_img.convert('RGB')
+                
+                # Create temporary buffer for ReportLab
+                temp_signature = io.BytesIO()
+                signature_img.save(temp_signature, format='PNG')
+                temp_signature.seek(0)
+                
+                # Draw signature label and image
+                p.setFont("Helvetica", 10)
+                p.drawString(x, y + 10, f"{label}:")
+                
+                # Draw signature image with proper positioning
+                p.drawInlineImage(temp_signature, x, y - signature_height, 
+                                signature_width, signature_height)
+                return True
+                
+            except Exception as e:
+                print(f"Image processing error for {label}: {e}")
+                return False
+                
         except Exception as e:
-            print(f"Error processing admin signature: {e}")
-            p.setFont("Helvetica-Oblique", 9)
-            p.drawString(300, signature_y + (70 if coordinator_signature else 0), "Admin Signature: [Signature processing error]")
-    else:
+            print(f"Signature processing error for {label}: {e}")
+            return False
+    
+    # Process Coordinator Signature
+    coord_success = process_and_draw_signature(coordinator_signature, coord_x, signature_y, "Coordinator Signature")
+    
+    if not coord_success:
         p.setFont("Helvetica-Oblique", 9)
-        p.drawString(300, signature_y + (70 if coordinator_signature else 0), "Admin Signature: [Not available]")
+        if coordinator_signature:
+            p.drawString(coord_x, signature_y + 10, "Coordinator Signature:")
+            p.drawString(coord_x, signature_y - 5, "[Processing unavailable]")
+        else:
+            p.drawString(coord_x, signature_y + 10, "Coordinator Signature:")
+            p.drawString(coord_x, signature_y - 5, "[Not available]")
+    
+    # Process Admin Signature (same vertical level as coordinator for better alignment)
+    admin_success = process_and_draw_signature(admin_signature, admin_x, signature_y, "Admin Signature")
+    
+    if not admin_success:
+        p.setFont("Helvetica-Oblique", 9)
+        if admin_signature:
+            p.drawString(admin_x, signature_y + 10, "Admin Signature:")
+            p.drawString(admin_x, signature_y - 5, "[Processing unavailable]")
+        else:
+            p.drawString(admin_x, signature_y + 10, "Admin Signature:")
+            p.drawString(admin_x, signature_y - 5, "[Not available]")
     
     # Footer with important note
     p.line(50, 100, width - 50, 100)
