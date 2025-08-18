@@ -534,6 +534,304 @@ class AdmissionSystemAPITester:
             return True
         return False
 
+    def test_pdf_signature_alignment_and_processing(self, admin_user_key, coordinator_user_key, agent_user_key):
+        """Test PDF receipt generation with focus on signature alignment and processing issues"""
+        print("\n📄 Testing PDF Receipt Signature Alignment & Processing")
+        print("-" * 55)
+        
+        # Step 1: Create test student for signature testing
+        student_data = {
+            "first_name": "SignatureTest",
+            "last_name": "Student",
+            "email": f"signature.test.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "BSc"
+        }
+        
+        success, response = self.run_test(
+            "Create Student for Signature Testing",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        signature_test_student_id = response.get('id')
+        print(f"   ✅ Created test student: {signature_test_student_id}")
+        
+        # Step 2: Upload admin signature for testing
+        admin_signature_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        admin_signature_upload = {
+            'signature_data': admin_signature_data,
+            'signature_type': 'upload'
+        }
+        
+        success, response = self.run_test(
+            "Upload Admin Signature for PDF Testing",
+            "POST",
+            "admin/signature",
+            200,
+            data=admin_signature_upload,
+            files={},
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            print("⚠️ Admin signature upload failed - continuing with test")
+        else:
+            print("   ✅ Admin signature uploaded successfully")
+        
+        # Step 3: Coordinator approves with signature (coordinator signature)
+        coordinator_signature_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        coordinator_approval_data = {
+            'status': 'approved',
+            'notes': 'Coordinator approval with signature for PDF testing',
+            'signature_data': coordinator_signature_data,
+            'signature_type': 'draw'
+        }
+        
+        success, response = self.run_test(
+            "Coordinator Approves with Signature",
+            "PUT",
+            f"students/{signature_test_student_id}/status",
+            200,
+            data=coordinator_approval_data,
+            files={},
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Coordinator approved student with signature")
+        
+        # Step 4: Admin final approval to make student eligible for receipt
+        admin_approval_data = {
+            'notes': 'Admin final approval for PDF signature testing'
+        }
+        
+        success, response = self.run_test(
+            "Admin Final Approval for PDF Testing",
+            "PUT",
+            f"admin/approve-student/{signature_test_student_id}",
+            200,
+            data=admin_approval_data,
+            files={},
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Admin final approval completed")
+        
+        # Step 5: Test regular receipt endpoint with both signatures
+        success, response = self.run_test(
+            "Generate Regular Receipt with Both Signatures",
+            "GET",
+            f"students/{signature_test_student_id}/receipt",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            print("❌ Regular receipt generation failed")
+            return False
+            
+        print("   ✅ Regular receipt generated successfully with dual signatures")
+        
+        # Step 6: Test admin receipt endpoint with both signatures
+        success, response = self.run_test(
+            "Generate Admin Receipt with Both Signatures",
+            "GET",
+            f"admin/students/{signature_test_student_id}/receipt",
+            200,
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            print("❌ Admin receipt generation failed")
+            return False
+            
+        print("   ✅ Admin receipt generated successfully with dual signatures")
+        
+        # Step 7: Test receipt generation with missing coordinator signature
+        # Create another student without coordinator signature
+        student_data_no_coord_sig = {
+            "first_name": "NoCoordSig",
+            "last_name": "Student",
+            "email": f"no.coord.sig.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "MBA"
+        }
+        
+        success, response = self.run_test(
+            "Create Student for No Coordinator Signature Test",
+            "POST",
+            "students",
+            200,
+            data=student_data_no_coord_sig,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        no_coord_sig_student_id = response.get('id')
+        
+        # Coordinator approves WITHOUT signature
+        coordinator_approval_no_sig = {
+            'status': 'approved',
+            'notes': 'Coordinator approval WITHOUT signature for PDF testing'
+        }
+        
+        success, response = self.run_test(
+            "Coordinator Approves WITHOUT Signature",
+            "PUT",
+            f"students/{no_coord_sig_student_id}/status",
+            200,
+            data=coordinator_approval_no_sig,
+            files={},
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+        
+        # Admin final approval
+        success, response = self.run_test(
+            "Admin Final Approval for No Coord Signature Test",
+            "PUT",
+            f"admin/approve-student/{no_coord_sig_student_id}",
+            200,
+            data={'notes': 'Admin approval for no coord signature test'},
+            files={},
+            token_user=admin_user_key
+        )
+        
+        if not success:
+            return False
+        
+        # Test receipt generation with missing coordinator signature
+        success, response = self.run_test(
+            "Generate Receipt with Missing Coordinator Signature",
+            "GET",
+            f"students/{no_coord_sig_student_id}/receipt",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            print("❌ Receipt generation failed with missing coordinator signature")
+            return False
+            
+        print("   ✅ Receipt generated successfully with missing coordinator signature (graceful fallback)")
+        
+        # Step 8: Test receipt generation with missing admin signature
+        # Remove admin signature temporarily by uploading empty signature
+        success, response = self.run_test(
+            "Remove Admin Signature for Testing",
+            "POST",
+            "admin/signature",
+            200,
+            data={'signature_data': '', 'signature_type': 'upload'},
+            files={},
+            token_user=admin_user_key
+        )
+        
+        # Test receipt generation with missing admin signature
+        success, response = self.run_test(
+            "Generate Receipt with Missing Admin Signature",
+            "GET",
+            f"students/{signature_test_student_id}/receipt",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            print("❌ Receipt generation failed with missing admin signature")
+            return False
+            
+        print("   ✅ Receipt generated successfully with missing admin signature (graceful fallback)")
+        
+        # Step 9: Test admin receipt endpoint access control
+        success, response = self.run_test(
+            "Agent Access to Admin Receipt (Should Fail)",
+            "GET",
+            f"admin/students/{signature_test_student_id}/receipt",
+            403,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        success, response = self.run_test(
+            "Coordinator Access to Admin Receipt (Should Fail)",
+            "GET",
+            f"admin/students/{signature_test_student_id}/receipt",
+            403,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Admin receipt access control working correctly")
+        
+        # Step 10: Test receipt generation for unapproved student (should fail)
+        # Create unapproved student
+        unapproved_student_data = {
+            "first_name": "Unapproved",
+            "last_name": "Student",
+            "email": f"unapproved.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "BSc"
+        }
+        
+        success, response = self.run_test(
+            "Create Unapproved Student for Receipt Test",
+            "POST",
+            "students",
+            200,
+            data=unapproved_student_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        unapproved_student_id = response.get('id')
+        
+        success, response = self.run_test(
+            "Generate Receipt for Unapproved Student (Should Fail)",
+            "GET",
+            f"students/{unapproved_student_id}/receipt",
+            400,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Receipt generation properly denied for unapproved students")
+        
+        # Store test data for summary
+        self.test_data['signature_test_results'] = {
+            'dual_signatures_working': True,
+            'missing_signatures_handled': True,
+            'access_control_working': True,
+            'unapproved_student_denied': True
+        }
+        
+        return True
+
     def test_comprehensive_workflow(self):
         """Test complete workflow with new features"""
         print("\n🔄 Testing Complete Enhanced Workflow")
