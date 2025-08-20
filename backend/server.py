@@ -237,18 +237,25 @@ async def generate_unique_receipt_number():
     return f"RCPT-{timestamp}"
 
 async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_admin_generated=False):
-    """Generate unified PDF receipt with dual signatures and incentive amount"""
+    """Generate unified PDF receipt with professional A5 layout and dual signatures"""
     from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.pagesizes import A5
     from reportlab.lib.units import inch
+    from reportlab.lib.colors import HexColor, white, black
     from io import BytesIO
     import base64
     from PIL import Image
     import io
     
     buffer = BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
+    p = canvas.Canvas(buffer, pagesize=A5)
+    width, height = A5  # A5 size: 420 x 595 points
+    
+    # Professional color palette
+    primary_color = HexColor('#1e40af')  # Blue
+    success_color = HexColor('#16a34a')  # Green
+    light_gray = HexColor('#f8fafc')     # Light background
+    dark_gray = HexColor('#374151')      # Dark text
     
     # Generate unique receipt number
     receipt_number = await generate_unique_receipt_number()
@@ -259,118 +266,121 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
     if incentive_rule:
         incentive_amount = incentive_rule["amount"]
     
-    # Header with institution branding
-    p.setFont("Helvetica-Bold", 20)
-    p.drawString(50, height - 50, "AnnaiCONNECT")
-    p.setFont("Helvetica", 14)
-    header_text = "Student Admission Receipt (Admin Generated)" if is_admin_generated else "Student Admission Receipt"
-    p.drawString(50, height - 75, header_text)
+    # Helper function to draw rounded rectangle
+    def draw_rounded_rect(x, y, width, height, fill_color=None, stroke_color=black):
+        if fill_color:
+            p.setFillColor(fill_color)
+            p.setStrokeColor(stroke_color)
+            p.rect(x, y, width, height, fill=1, stroke=1)
+        else:
+            p.setStrokeColor(stroke_color)
+            p.rect(x, y, width, height, fill=0, stroke=1)
     
-    # Draw a line under header
-    p.line(50, height - 85, width - 50, height - 85)
+    # 1. HEADER SECTION (Top)
+    # Logo and title - centered
+    p.setFillColor(primary_color)
+    p.setFont("Helvetica-Bold", 18)
+    logo_text = "AnnaiCONNECT"
+    logo_width = p.stringWidth(logo_text, "Helvetica-Bold", 18)
+    p.drawString((width - logo_width) / 2, height - 40, logo_text)
     
-    # Receipt details in a professional format
-    y = height - 120
+    # Title
+    p.setFillColor(dark_gray)
+    p.setFont("Helvetica-Bold", 12)
+    title_text = "Admission Incentive Receipt (Admin Generated)" if is_admin_generated else "Admission Incentive Receipt"
+    title_width = p.stringWidth(title_text, "Helvetica-Bold", 12)
+    p.drawString((width - title_width) / 2, height - 58, title_text)
+    
+    # Divider line
+    p.setStrokeColor(primary_color)
+    p.setLineWidth(1)
+    p.line(30, height - 75, width - 30, height - 75)
+    
+    # 2. ADMISSION STATUS BLOCK (Highlighted)
+    status_y = height - 105
+    draw_rounded_rect(30, status_y - 20, width - 60, 25, fill_color=success_color)
+    p.setFillColor(white)
     p.setFont("Helvetica-Bold", 14)
-    p.drawString(50, y, "ADMISSION CONFIRMED")
-    y -= 40
+    status_text = "ADMISSION CONFIRMED"
+    status_width = p.stringWidth(status_text, "Helvetica-Bold", 14)
+    p.drawString((width - status_width) / 2, status_y - 12, status_text)
     
-    # Left column - Student Details
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(50, y, "STUDENT DETAILS")
-    p.line(50, y - 5, 250, y - 5)
-    y -= 25
+    # 3. STUDENT DETAILS (Two-Column Grid)
+    details_start_y = status_y - 45
+    p.setFillColor(light_gray)
+    draw_rounded_rect(30, details_start_y - 80, width - 60, 80, fill_color=light_gray)
     
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Token Number:")
+    # Grid details
+    p.setFillColor(dark_gray)
+    p.setFont("Helvetica", 9)
+    left_col_x = 40
+    right_col_x = width / 2 + 10
+    row_height = 12
+    
+    current_y = details_start_y - 15
+    
+    # Row 1
+    p.drawString(left_col_x, current_y, f"Token Number: {student_doc['token_number']}")
+    p.drawString(right_col_x, current_y, f"Student Name: {student_doc['first_name']} {student_doc['last_name']}")
+    current_y -= row_height
+    
+    # Row 2
+    p.drawString(left_col_x, current_y, f"Email: {student_doc['email']}")
+    p.drawString(right_col_x, current_y, f"Phone: {student_doc['phone']}")
+    current_y -= row_height
+    
+    # Row 3
+    p.drawString(left_col_x, current_y, f"Course: {student_doc['course']}")
+    p.setFont("Helvetica-Bold", 9)
+    p.setFillColor(success_color)
+    p.drawString(right_col_x, current_y, f"Status: {student_doc['status'].upper()}")
+    current_y -= row_height
+    
+    # Row 4
+    p.setFont("Helvetica", 9)
+    p.setFillColor(dark_gray)
+    p.drawString(left_col_x, current_y, f"Course Incentive: ₹{incentive_amount:,.0f}")
+    
+    # 4. PROCESS DETAILS (Card Style Box)
+    process_start_y = details_start_y - 110
+    draw_rounded_rect(30, process_start_y - 60, width - 60, 60, fill_color=white, stroke_color=primary_color)
+    
+    p.setFillColor(primary_color)
     p.setFont("Helvetica-Bold", 10)
-    p.drawString(150, y, f"{student_doc['token_number']}")
-    y -= 18
+    p.drawString(40, process_start_y - 12, "Process Details")
     
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Student Name:")
-    p.setFont("Helvetica-Bold", 10)
-    p.drawString(150, y, f"{student_doc['first_name']} {student_doc['last_name']}")
-    y -= 18
+    p.setFillColor(dark_gray)
+    p.setFont("Helvetica", 8)
+    process_y = process_start_y - 25
     
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Email:")
-    p.drawString(150, y, f"{student_doc['email']}")
-    y -= 18
-    
-    p.drawString(50, y, f"Phone:")
-    p.drawString(150, y, f"{student_doc['phone']}")
-    y -= 18
-    
-    p.drawString(50, y, f"Course:")
-    p.setFont("Helvetica-Bold", 10)
-    p.drawString(150, y, f"{student_doc['course']}")
-    y -= 18
-    
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Status:")
-    p.setFont("Helvetica-Bold", 10)
-    p.setFillColorRGB(0, 0.5, 0)  # Green color for approved
-    p.drawString(150, y, f"{student_doc['status'].upper()}")
-    p.setFillColorRGB(0, 0, 0)  # Back to black
-    y -= 18
-    
-    # Add incentive amount
-    p.setFont("Helvetica", 10)
-    p.drawString(50, y, f"Course Incentive:")
-    p.setFont("Helvetica-Bold", 10)
-    p.setFillColorRGB(0, 0.6, 0)  # Green color for incentive
-    p.drawString(150, y, f"₹{incentive_amount:,.0f}")
-    p.setFillColorRGB(0, 0, 0)  # Back to black
-    y -= 30
-    
-    # Right column - Process Details
-    y_right = height - 185
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(300, y_right, "PROCESS DETAILS")
-    p.line(300, y_right - 5, 500, y_right - 5)
-    y_right -= 25
-    
-    p.setFont("Helvetica", 10)
-    p.drawString(300, y_right, f"Processed by Agent:")
-    p.setFont("Helvetica-Bold", 10)
     agent_name = agent_doc["username"] if agent_doc else "Unknown Agent"
-    p.drawString(420, y_right, f"{agent_name}")
-    y_right -= 18
+    p.drawString(40, process_y, f"Processed by Agent: {agent_name}")
+    process_y -= 10
     
-    p.setFont("Helvetica", 10)
-    p.drawString(300, y_right, f"Submission Date:")
-    p.drawString(420, y_right, f"{student_doc['created_at'].strftime('%d/%m/%Y %H:%M')}")
-    y_right -= 18
+    p.drawString(40, process_y, f"Submission Date: {student_doc['created_at'].strftime('%d/%m/%Y %H:%M')}")
+    process_y -= 10
     
     if student_doc.get('updated_at'):
-        p.drawString(300, y_right, f"Approval Date:")
-        p.drawString(420, y_right, f"{student_doc['updated_at'].strftime('%d/%m/%Y %H:%M')}")
-        y_right -= 18
+        p.drawString(40, process_y, f"Approval Date: {student_doc['updated_at'].strftime('%d/%m/%Y %H:%M')}")
+        process_y -= 10
     
     if is_admin_generated:
-        p.drawString(300, y_right, f"Generated by Admin:")
-        p.setFont("Helvetica-Bold", 10)
-        p.drawString(420, y_right, f"{current_user.username}")
-        y_right -= 18
+        p.drawString(40, process_y, f"Generated by Admin: {current_user.username}")
     
-    # Digital Signatures Section (Dual Signatures)
-    signature_start_y = y - 40
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(50, signature_start_y, "DIGITAL SIGNATURES")
-    p.line(50, signature_start_y - 5, 500, signature_start_y - 5)
+    # 5. DIGITAL SIGNATURES (Dual Box Alignment)
+    signature_start_y = process_start_y - 80
+    signature_box_width = (width - 80) / 2
+    signature_box_height = 70
     
-    # Get coordinator signature from student record
+    # Get signatures
     coordinator_signature = student_doc.get('signature_data')
-    
-    # Get admin signature (try current user first if admin, then any admin)
     admin_signature = None
+    
     if current_user.role == "admin" and current_user.id:
         admin_user = await db.users.find_one({"id": current_user.id})
         if admin_user and admin_user.get('signature_data'):
             admin_signature = admin_user['signature_data']
     
-    # If no admin signature from current user, try to find any admin signature
     if not admin_signature:
         try:
             admin_user = await db.users.find_one({"role": "admin", "signature_data": {"$exists": True, "$ne": None}})
@@ -379,32 +389,26 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
         except Exception as e:
             print(f"Error fetching admin signature: {e}")
     
-    # Calculate signature positioning for better layout
-    signature_width = 180
-    signature_height = 70
-    coord_x = 50
-    admin_x = 300
-    signature_y = signature_start_y - 30
-    
-    def process_and_draw_signature(signature_data, x, y, label):
-        """Process and draw signature with improved error handling"""
-        try:
-            if not signature_data:
-                return False
+    def draw_signature_box(x, y, width, height, signature_data, label):
+        """Draw signature box with proper handling"""
+        # Draw box border
+        draw_rounded_rect(x, y - height, width, height, fill_color=white, stroke_color=dark_gray)
+        
+        # Draw label
+        p.setFillColor(dark_gray)
+        p.setFont("Helvetica-Bold", 8)
+        label_width = p.stringWidth(label, "Helvetica-Bold", 8)
+        p.drawString(x + (width - label_width) / 2, y - 10, label)
+        
+        # Process and draw signature
+        if signature_data:
+            try:
+                # Remove data URL prefix if present
+                if signature_data.startswith('data:image'):
+                    signature_data = signature_data.split(',')[1]
                 
-            # Remove data URL prefix if present
-            if signature_data.startswith('data:image'):
-                signature_data = signature_data.split(',')[1]
-            
-            # Validate base64 data
-            try:
+                # Validate base64 data
                 signature_bytes = base64.b64decode(signature_data, validate=True)
-            except Exception as e:
-                print(f"Base64 decode error for {label}: {e}")
-                return False
-            
-            # Create and process image
-            try:
                 signature_img = Image.open(io.BytesIO(signature_bytes))
                 
                 # Convert to RGB if needed
@@ -416,57 +420,56 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
                 signature_img.save(temp_signature, format='PNG')
                 temp_signature.seek(0)
                 
-                # Draw signature label and image
-                p.setFont("Helvetica", 10)
-                p.drawString(x, y + 10, f"{label}:")
-                
-                # Draw signature image with proper positioning
-                p.drawInlineImage(temp_signature, x, y - signature_height, 
-                                signature_width, signature_height)
-                return True
+                # Draw signature image centered in box
+                sig_width = width - 10
+                sig_height = height - 25
+                p.drawInlineImage(temp_signature, x + 5, y - height + 5, sig_width, sig_height)
                 
             except Exception as e:
-                print(f"Image processing error for {label}: {e}")
-                return False
-                
-        except Exception as e:
-            print(f"Signature processing error for {label}: {e}")
-            return False
-    
-    # Process Coordinator Signature
-    coord_success = process_and_draw_signature(coordinator_signature, coord_x, signature_y, "Coordinator Signature")
-    
-    if not coord_success:
-        p.setFont("Helvetica-Oblique", 9)
-        if coordinator_signature:
-            p.drawString(coord_x, signature_y + 10, "Coordinator Signature:")
-            p.drawString(coord_x, signature_y - 5, "[Processing unavailable]")
+                print(f"Signature processing error for {label}: {e}")
+                p.setFillColor(HexColor('#dc2626'))  # Red color for error
+                p.setFont("Helvetica-Oblique", 7)
+                error_text = "Processing Error"
+                error_width = p.stringWidth(error_text, "Helvetica-Oblique", 7)
+                p.drawString(x + (width - error_width) / 2, y - height / 2, error_text)
         else:
-            p.drawString(coord_x, signature_y + 10, "Coordinator Signature:")
-            p.drawString(coord_x, signature_y - 5, "[Not available]")
+            p.setFillColor(HexColor('#6b7280'))  # Gray for not available
+            p.setFont("Helvetica-Oblique", 7)
+            na_text = "Not Available"
+            na_width = p.stringWidth(na_text, "Helvetica-Oblique", 7)
+            p.drawString(x + (na_width) / 2, y - height / 2, na_text)
     
-    # Process Admin Signature (same vertical level as coordinator for better alignment)
-    admin_success = process_and_draw_signature(admin_signature, admin_x, signature_y, "Admin Signature")
+    # Draw signature boxes
+    coord_box_x = 30
+    admin_box_x = 30 + signature_box_width + 20
     
-    if not admin_success:
-        p.setFont("Helvetica-Oblique", 9)
-        if admin_signature:
-            p.drawString(admin_x, signature_y + 10, "Admin Signature:")
-            p.drawString(admin_x, signature_y - 5, "[Processing unavailable]")
-        else:
-            p.drawString(admin_x, signature_y + 10, "Admin Signature:")
-            p.drawString(admin_x, signature_y - 5, "[Not available]")
+    draw_signature_box(coord_box_x, signature_start_y, signature_box_width, signature_box_height, 
+                      coordinator_signature, "Coordinator Signature")
+    draw_signature_box(admin_box_x, signature_start_y, signature_box_width, signature_box_height, 
+                      admin_signature, "Admin Signature")
     
-    # Footer with important note
-    p.line(50, 100, width - 50, 100)
-    p.setFont("Helvetica-Oblique", 8)
-    p.drawString(50, 85, "This is a computer-generated receipt and does not require a physical signature.")
-    p.setFont("Helvetica", 8)
-    p.drawString(50, 70, f"Generated on: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    p.drawString(300, 70, f"Receipt ID: {receipt_number}")
+    # 6. FOOTER
+    footer_y = 50
     
-    # Add a border around the receipt
-    p.rect(30, 30, width - 60, height - 60, stroke=1, fill=0)
+    # Footer background
+    draw_rounded_rect(30, footer_y - 30, width - 60, 30, fill_color=light_gray)
+    
+    p.setFillColor(dark_gray)
+    p.setFont("Helvetica", 7)
+    
+    # Receipt ID and generation date
+    p.drawString(40, footer_y - 8, f"Receipt ID: {receipt_number}")
+    p.drawString(40, footer_y - 18, f"Generated on: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    
+    # Disclaimer
+    p.setFont("Helvetica-Oblique", 6)
+    disclaimer = "This is a computer-generated receipt and does not require a physical signature."
+    p.drawString(40, footer_y - 26, disclaimer)
+    
+    # Add professional border around entire receipt
+    p.setStrokeColor(primary_color)
+    p.setLineWidth(2)
+    p.rect(20, 20, width - 40, height - 40, fill=0, stroke=1)
     
     p.showPage()
     p.save()
