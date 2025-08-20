@@ -5471,7 +5471,7 @@ class AdmissionSystemAPITester:
         print("-" * 45)
         
         # Test non-admin access to deploy-production endpoint
-        non_admin_users = ['agent1', 'coordinator']
+        non_admin_users = ['prod_agent1', 'prod_coordinator']
         
         for user_key in non_admin_users:
             if user_key not in self.tokens:
