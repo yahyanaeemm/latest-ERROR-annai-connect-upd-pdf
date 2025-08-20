@@ -390,7 +390,7 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
             print(f"Error fetching admin signature: {e}")
     
     def draw_signature_box(x, y, width, height, signature_data, label):
-        """Draw signature box with proper handling"""
+        """Draw signature box with clean presentation"""
         # Draw box border
         draw_rounded_rect(x, y - height, width, height, fill_color=white, stroke_color=dark_gray)
         
@@ -427,17 +427,19 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
                 
             except Exception as e:
                 print(f"Signature processing error for {label}: {e}")
-                p.setFillColor(HexColor('#dc2626'))  # Red color for error
-                p.setFont("Helvetica-Oblique", 7)
-                error_text = "Processing Error"
-                error_width = p.stringWidth(error_text, "Helvetica-Oblique", 7)
-                p.drawString(x + (width - error_width) / 2, y - height / 2, error_text)
+                # Show "Not Available" for any processing errors
+                p.setFillColor(HexColor('#6b7280'))  # Gray for not available
+                p.setFont("Helvetica-Oblique", 8)
+                na_text = "Not Available"
+                na_width = p.stringWidth(na_text, "Helvetica-Oblique", 8)
+                p.drawString(x + (width - na_width) / 2, y - height / 2, na_text)
         else:
+            # Show "Not Available" for missing signatures
             p.setFillColor(HexColor('#6b7280'))  # Gray for not available
-            p.setFont("Helvetica-Oblique", 7)
+            p.setFont("Helvetica-Oblique", 8)
             na_text = "Not Available"
-            na_width = p.stringWidth(na_text, "Helvetica-Oblique", 7)
-            p.drawString(x + (na_width) / 2, y - height / 2, na_text)
+            na_width = p.stringWidth(na_text, "Helvetica-Oblique", 8)
+            p.drawString(x + (width - na_width) / 2, y - height / 2, na_text)
     
     # Draw signature boxes
     coord_box_x = 30
