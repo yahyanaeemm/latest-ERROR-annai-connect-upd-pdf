@@ -339,7 +339,7 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
     # Row 4
     p.setFont("Helvetica", 9)
     p.setFillColor(dark_gray)
-    p.drawString(left_col_x, current_y, f"Course Incentive: ₹{incentive_amount:,.0f}")
+    p.drawString(left_col_x, current_y, f"Course Incentive: Rs. {incentive_amount:,.0f}")
     
     # 4. PROCESS DETAILS (Card Style Box)
     process_start_y = details_start_y - 110
