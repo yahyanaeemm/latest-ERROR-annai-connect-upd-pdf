@@ -470,12 +470,14 @@ async def generate_unified_receipt_pdf(student_doc, current_user, agent_doc, is_
     disclaimer = "This is a computer-generated receipt and does not require a physical signature."
     p.drawString(40, footer_y - 18, disclaimer)
     
-    # Professional border around entire receipt - adjusted for new compact size
+    # Professional border around entire receipt - adjusted for compact layout
     border_margin = 15  # Reduced border margin
     p.setStrokeColor(primary_color)
     p.setLineWidth(1.5)
-    p.rect(border_margin, border_margin, width - (2 * border_margin), 
-           footer_y - footer_y + height - (2 * border_margin), fill=0, stroke=1)
+    # Calculate actual content height for proper border
+    content_height = height - (footer_y - 25) - border_margin
+    p.rect(border_margin, footer_y - 25, width - (2 * border_margin), 
+           content_height, fill=0, stroke=1)
     
     p.showPage()
     p.save()
