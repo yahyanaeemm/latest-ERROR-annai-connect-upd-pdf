@@ -148,6 +148,14 @@ const LoginForm = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl border-0">
         <CardHeader className="text-center pb-2">
+          {/* New Annai Connect Logo */}
+          <div className="flex justify-center mb-4">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_approval-workflow-1/artifacts/q4cxb6mb_ANNAI%20%281%29.png"
+              alt="Annai Connect Logo" 
+              className="h-20 w-auto object-contain drop-shadow-lg"
+            />
+          </div>
           <CardTitle className="text-2xl font-bold text-slate-800">
             {isLogin ? 'Login' : 'Register'}
           </CardTitle>
