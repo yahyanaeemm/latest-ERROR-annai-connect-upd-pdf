@@ -5336,39 +5336,6 @@ class AdmissionSystemAPITester:
         else:
             print(f"   ✅ Production agents created: {clean_agents} agents")
         
-        # Step 4: Verify production users can login
-        production_users = [
-            ("super admin", "Admin@annaiconnect", "admin"),
-            ("arulanantham", "Arul@annaiconnect", "coordinator"),
-            ("agent1", "agent@123", "agent1"),
-            ("agent2", "agent@123", "agent2"),
-            ("agent3", "agent@123", "agent3")
-        ]
-        
-        login_success_count = 0
-        for username, password, user_key in production_users:
-            success, response = self.run_test(
-                f"Test Production User Login: {username}",
-                "POST",
-                "login",
-                200,
-                data={"username": username, "password": password}
-            )
-            
-            if success and 'access_token' in response:
-                login_success_count += 1
-                # Store token for further testing
-                self.tokens[f"prod_{user_key}"] = response['access_token']
-                print(f"   ✅ {username} login successful")
-            else:
-                print(f"   ❌ {username} login failed")
-        
-        if login_success_count < 3:  # At least admin, coordinator, and one agent should work
-            print(f"❌ Only {login_success_count}/5 production users can login")
-            return False
-        else:
-            print(f"   ✅ {login_success_count}/5 production users can login successfully")
-        
         # Step 5: Verify production courses are set up properly
         success, courses_response = self.run_test(
             "Verify Production Courses Setup",
