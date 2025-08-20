@@ -5522,6 +5522,9 @@ class AdmissionSystemAPITester:
 def main():
     print("🚀 Starting Database Cleanup for Fresh Deployment Tests")
     print("=" * 60)
+def main():
+    print("🚀 Starting Database Cleanup for Fresh Deployment Tests")
+    print("=" * 60)
     
     tester = AdmissionSystemAPITester()
     
@@ -5529,8 +5532,7 @@ def main():
     test_users = {
         'admin': {'username': 'super admin', 'password': 'Admin@annaiconnect'},
         'coordinator': {'username': 'arulanantham', 'password': 'Arul@annaiconnect'},
-        'agent1': {'username': 'agent1', 'password': 'agent@123'},
-        'agent2': {'username': 'agent2', 'password': 'agent@123'}
+        'agent1': {'username': 'agent1', 'password': 'agent@123'}
     }
     
     print("\n📋 Phase 1: Authentication Tests")
@@ -5551,26 +5553,103 @@ def main():
     for user_key in tester.tokens.keys():
         tester.test_user_info(user_key)
     
-    print("\n📋 Phase 2: PROFESSIONAL A5 PDF RECEIPT FORMAT TESTING (FOCUS)")
-    print("-" * 70)
+    print("\n📋 Phase 2: DATABASE CLEANUP FOR FRESH DEPLOYMENT (PRIORITY)")
+    print("-" * 65)
     
-    # Test the new professional A5 PDF receipt format
-    if all(user in tester.tokens for user in ['admin', 'coordinator', 'agent1']):
-        if not tester.test_professional_a5_pdf_receipt_format('admin', 'coordinator', 'agent1'):
-            print("❌ Professional A5 PDF receipt format testing failed")
+    # Test the database cleanup and fresh deployment workflow
+    if 'admin' in tester.tokens:
+        if not tester.test_fresh_deployment_complete_workflow('admin'):
+            print("❌ Fresh deployment workflow testing failed")
+            return 1
         else:
-            print("🎉 Professional A5 PDF receipt format testing completed successfully!")
+            print("🎉 Fresh deployment workflow testing completed successfully!")
     else:
-        print("❌ Missing required user tokens for A5 PDF receipt format tests")
+        print("❌ Missing admin token for fresh deployment tests")
+        return 1
+    
+    print("\n📋 Phase 3: Basic Functionality Tests with Production Users")
+    print("-" * 60)
+    
+    # Test basic functionality with production users
+    if 'prod_agent1' in tester.tokens:
+        # Test student creation with production agent
+        student_data = {
+            "first_name": "FinalTest",
+            "last_name": "Student",
+            "email": f"final.test.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "B.Ed"
+        }
+        
+        success, response = tester.run_test(
+            "Create Student with Production Agent",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user='prod_agent1'
+        )
+        
+        if success:
+            print("   ✅ Production agent can create students")
+            final_student_id = response.get('id')
+            final_token = response.get('token_number')
+            print(f"   ✅ Student created with AGI token: {final_token}")
+            
+            # Test coordinator approval
+            if 'prod_coordinator' in tester.tokens:
+                success, response = tester.run_test(
+                    "Production Coordinator Approval",
+                    "PUT",
+                    f"students/{final_student_id}/status",
+                    200,
+                    data={'status': 'approved', 'notes': 'Final test approval'},
+                    files={},
+                    token_user='prod_coordinator'
+                )
+                
+                if success:
+                    print("   ✅ Production coordinator can approve students")
+                    
+                    # Test admin final approval
+                    if 'prod_admin' in tester.tokens:
+                        success, response = tester.run_test(
+                            "Production Admin Final Approval",
+                            "PUT",
+                            f"admin/approve-student/{final_student_id}",
+                            200,
+                            data={'notes': 'Final test admin approval'},
+                            files={},
+                            token_user='prod_admin'
+                        )
+                        
+                        if success:
+                            print("   ✅ Production admin can perform final approvals")
+                            
+                            # Test PDF receipt generation
+                            success, response = tester.run_test(
+                                "Production PDF Receipt Generation",
+                                "GET",
+                                f"students/{final_student_id}/receipt",
+                                200,
+                                token_user='prod_agent1'
+                            )
+                            
+                            if success:
+                                print("   ✅ Production PDF receipt generation working")
+                            else:
+                                print("   ❌ Production PDF receipt generation failed")
     
     print("\n" + "=" * 60)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if tester.tests_passed == tester.tests_run:
-        print("🎉 All A5 PDF receipt format tests passed!")
+        print("🎉 ALL DATABASE CLEANUP AND FRESH DEPLOYMENT TESTS PASSED!")
+        print("🚀 System is ready for production deployment!")
         return 0
     else:
         print(f"⚠️  {tester.tests_run - tester.tests_passed} tests failed")
+        print("❌ Please review failures before production deployment")
         return 1
 
 if __name__ == "__main__":
