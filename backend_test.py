@@ -5448,7 +5448,7 @@ class AdmissionSystemAPITester:
             "GET",
             "admin/dashboard",
             200,
-            token_user=admin_user_key
+            token_user='prod_admin'
         )
         
         if success:
