@@ -940,7 +940,9 @@ const AgentDashboard = () => {
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 shadow-lg">
                   {courseRules.map((rule) => (
-                    <SelectItem key={rule.course} value={rule.course} className="text-gray-900 hover:bg-blue-50 focus:bg-blue-50">
+                    <SelectItem key={rule.course} value={rule.course} className="text-gray-900 hover:bg-teal-50 focus:bg-teal-50" style={{
+                      '--hover-bg': 'rgba(78, 205, 196, 0.1)'
+                    }}>
                       {rule.course} (₹{rule.amount} incentive)
                     </SelectItem>
                   ))}
