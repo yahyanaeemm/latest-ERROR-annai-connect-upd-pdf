@@ -462,14 +462,16 @@ const SimpleLeaderboard = () => {
                           </div>
                           <div className="text-xs text-blue-600">Total Students</div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-green-700">
-                            ₹{leaderboardData.leaderboard.reduce((sum, agent) => 
-                              sum + (activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0), 0
-                            ).toLocaleString('en-IN')}
+                        {showIncentives && (
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-green-700">
+                              ₹{leaderboardData.leaderboard.reduce((sum, agent) => 
+                                sum + (activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0), 0
+                              ).toLocaleString('en-IN')}
+                            </div>
+                            <div className="text-xs text-green-600">Total Incentives</div>
                           </div>
-                          <div className="text-xs text-green-600">Total Incentives</div>
-                        </div>
+                        )}
                         <div className="text-center">
                           <div className="text-lg font-bold text-purple-700">{leaderboardData.total_agents}</div>
                           <div className="text-xs text-purple-600">Active Agents</div>
