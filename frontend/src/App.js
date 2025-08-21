@@ -300,34 +300,47 @@ const Header = () => {
   const { user, logout } = useAuth();
 
   return (
-    <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white p-4 shadow-2xl border-b border-blue-800/30">
+    <header className="header-brand-gradient text-white p-4 shadow-2xl border-b border-teal-400/30" style={{
+      background: 'linear-gradient(135deg, #1B5BA0 0%, #164a87 100%)'
+    }}>
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <div className="relative">
             <img 
-              src="/annaiconnect-logo.png" 
+              src="https://customer-assets.emergentagent.com/job_pdf-receipt-hub/artifacts/y895x7ww_Untitled%20design%20%282%29.png" 
               alt="AnnaiCONNECT Logo" 
               className="h-12 w-12 object-contain drop-shadow-lg"
             />
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-teal-400 rounded-full animate-pulse" style={{
+              backgroundColor: '#4ECDC4'
+            }}></div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-300 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold title-brand-teal" style={{
+              background: 'linear-gradient(135deg, #4ECDC4 0%, #7FDBDB 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
               AnnaiCONNECT
             </h1>
-            <p className="text-xs text-slate-300 hidden sm:block">Student Admission Management</p>
+            <p className="text-xs text-slate-200 hidden sm:block">Student Admission Management</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-4">
           {/* User Info */}
           <div className="flex items-center space-x-3">
-            <Badge variant="outline" className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 border-yellow-400 font-semibold px-3 py-1 shadow-lg">
+            <Badge variant="outline" className="badge-brand-teal font-semibold px-3 py-1 shadow-lg" style={{
+              background: 'linear-gradient(135deg, #4ECDC4 0%, #7FDBDB 100%)',
+              color: '#164a87',
+              border: '2px solid #4ECDC4'
+            }}>
               {user?.role?.toUpperCase()}
             </Badge>
             <div className="hidden sm:block text-right">
               <div className="text-sm font-medium">Welcome back!</div>
-              <div className="text-xs text-slate-300">{user?.username}</div>
+              <div className="text-xs text-slate-200">{user?.username}</div>
             </div>
           </div>
           
