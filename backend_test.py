@@ -6451,5 +6451,5 @@ def main_focused_image_test():
         return 1
 
 if __name__ == "__main__":
-    # Run focused image viewing test as requested in review
-    sys.exit(main_focused_image_test())
+    # Run authentication header fix test as requested in review
+    main()
