@@ -9,7 +9,7 @@ from datetime import datetime
 
 def test_combined_production_deployment():
     """Test the combined production deployment system"""
-    base_url = "https://pdf-receipt-pro.preview.emergentagent.com"
+    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🚀 COMBINED PRODUCTION DEPLOYMENT SYSTEM TEST")

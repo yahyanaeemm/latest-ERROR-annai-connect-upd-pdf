@@ -14,7 +14,7 @@ from datetime import datetime
 
 def try_register_admin():
     """Try to register an admin user"""
-    base_url = "https://pdf-receipt-pro.preview.emergentagent.com"
+    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔐 Attempting to register admin user...")
@@ -52,7 +52,7 @@ def try_register_admin():
 
 def try_register_coordinator():
     """Try to register a coordinator user"""
-    base_url = "https://pdf-receipt-pro.preview.emergentagent.com"
+    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔐 Attempting to register coordinator user...")
@@ -90,7 +90,7 @@ def try_register_coordinator():
 
 def try_register_agent():
     """Try to register an agent user"""
-    base_url = "https://pdf-receipt-pro.preview.emergentagent.com"
+    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔐 Attempting to register agent user...")
@@ -129,7 +129,7 @@ def try_register_agent():
 
 def test_existing_logins():
     """Test if any existing users can login"""
-    base_url = "https://pdf-receipt-pro.preview.emergentagent.com"
+    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔍 Testing existing user logins...")
