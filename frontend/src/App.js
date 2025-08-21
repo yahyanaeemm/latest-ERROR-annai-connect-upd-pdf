@@ -513,10 +513,14 @@ const SimpleLeaderboard = () => {
                               {activeTab === 'overall' ? agent.total_admissions : agent.period_admissions}
                             </div>
                             <div className="text-sm text-gray-600">Students</div>
-                            <div className="text-lg font-semibold text-green-600">
-                              ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0).toLocaleString('en-IN')}
-                            </div>
-                            <div className="text-xs text-gray-500">Incentives</div>
+                            {showIncentives && (
+                              <>
+                                <div className="text-lg font-semibold text-green-600">
+                                  ₹{(activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0).toLocaleString('en-IN')}
+                                </div>
+                                <div className="text-xs text-gray-500">Incentives</div>
+                              </>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
