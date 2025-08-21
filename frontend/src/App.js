@@ -1793,6 +1793,65 @@ const CoordinatorDashboard = () => {
     );
   };
 
+  // Badge Management Functions
+  const fetchAgents = async () => {
+    try {
+      const response = await axios.get(`${API}/coordinator/agents`);
+      setAgents(response.data);
+    } catch (error) {
+      console.error('Error fetching agents:', error);
+    }
+  };
+
+  const fetchBadgeTemplates = async () => {
+    try {
+      const response = await axios.get(`${API}/badge-templates`);
+      setBadgeTemplates(response.data);
+    } catch (error) {
+      console.error('Error fetching badge templates:', error);
+    }
+  };
+
+  const assignBadge = async () => {
+    if (!selectedAgent) return;
+    
+    try {
+      const badgeData = selectedBadgeTemplate || customBadge;
+      const formData = new FormData();
+      formData.append('badge_type', badgeData.type || 'custom');
+      formData.append('badge_title', badgeData.title);
+      formData.append('badge_description', badgeData.description);
+      formData.append('badge_color', badgeData.color);
+
+      await axios.post(`${API}/coordinator/agents/${selectedAgent.id}/badges`, formData);
+      
+      // Refresh agents list
+      fetchAgents();
+      
+      // Reset form
+      setShowBadgeModal(false);
+      setSelectedAgent(null);
+      setSelectedBadgeTemplate(null);
+      setCustomBadge({ title: '', description: '', color: 'blue' });
+      
+      alert('Badge assigned successfully!');
+    } catch (error) {
+      console.error('Error assigning badge:', error);
+      alert('Error assigning badge. Please try again.');
+    }
+  };
+
+  const removeBadge = async (agentId, badgeId) => {
+    try {
+      await axios.delete(`${API}/coordinator/agents/${agentId}/badges/${badgeId}`);
+      fetchAgents(); // Refresh the list
+      alert('Badge removed successfully!');
+    } catch (error) {
+      console.error('Error removing badge:', error);
+      alert('Error removing badge. Please try again.');
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
