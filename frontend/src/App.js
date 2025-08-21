@@ -555,7 +555,17 @@ const SimpleLeaderboard = () => {
               ) : (
                 <div className="text-center py-12">
                   <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No leaderboard data available</p>
+                  <div className="space-y-2">
+                    <p className="text-lg font-semibold text-gray-600">No Performance Data Yet</p>
+                    <p className="text-gray-500">Leaderboard will populate automatically as agents submit and get students approved</p>
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-center space-x-2 text-blue-700">
+                        <Activity className="h-4 w-4" />
+                        <span className="text-sm font-medium">Live Data Connected</span>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-1">Rankings update automatically when students are approved</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
