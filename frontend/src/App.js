@@ -1553,19 +1553,30 @@ const CoordinatorDashboard = () => {
 
   const downloadDocument = async (downloadUrl, fileName) => {
     try {
+      // Always fetch the file with proper authentication first
+      const response = await axios.get(`${BACKEND_URL}${downloadUrl}`, {
+        responseType: 'blob'
+      });
+      
       // Check if it's an image file
       const isImage = fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/);
       
       if (isImage) {
-        // For images, open in new tab for viewing
-        const fullUrl = `${BACKEND_URL}${downloadUrl}`;
-        window.open(fullUrl, '_blank');
+        // For images, create blob URL and open in new tab for viewing
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const newWindow = window.open(url, '_blank');
+        
+        // Clean up the blob URL after a delay to allow the image to load
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 5000);
+        
+        // Check if new window opened successfully
+        if (!newWindow) {
+          alert('Pop-up blocked. Please allow pop-ups for this site to view images.');
+        }
       } else {
         // For PDFs and other files, download as before
-        const response = await axios.get(`${BACKEND_URL}${downloadUrl}`, {
-          responseType: 'blob'
-        });
-        
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -1577,7 +1588,13 @@ const CoordinatorDashboard = () => {
       }
     } catch (error) {
       console.error('Error accessing document:', error);
-      alert('Error accessing document. Please try again.');
+      if (error.response?.status === 403) {
+        alert('Access denied. You do not have permission to view this document.');
+      } else if (error.response?.status === 404) {
+        alert('Document not found. The file may have been moved or deleted.');
+      } else {
+        alert('Error accessing document. Please try again.');
+      }
     }
   };
 
