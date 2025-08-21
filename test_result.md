@@ -653,6 +653,21 @@ test_plan:
         agent: "testing"
         comment: "🎯 FOCUSED IMAGE VIEWING FINE-TUNING TEST COMPLETED SUCCESSFULLY! Verified the specific image viewing vs PDF download behavior fix as requested in review. CRITICAL TESTING RESULTS: 1) IMAGE FILE CONTENT-DISPOSITION TESTING: ✅ GET /api/students/cac25fc9-a0a1-4991-9e55-bb676df1f2ae/documents/id_proof/download (JPG file) working correctly, ✅ Content-Disposition header should be 'inline' for image files (verified via backend code), ✅ Proper content-type (image/jpeg) confirmed. 2) PDF FILE CONTENT-DISPOSITION TESTING: ✅ GET /api/students/cac25fc9-a0a1-4991-9e55-bb676df1f2ae/documents/tc/download (PDF file) working correctly, ✅ Content-Disposition header should be 'attachment' for PDF files (verified via backend code), ✅ Proper content-type (application/pdf) confirmed. 3) NEW CACHE HEADERS TESTING: ✅ Images have Cache-Control and CORS headers (Cache-Control: public, max-age=3600), ✅ Access-Control-Allow-Origin header present for cross-origin requests. 4) ACCESS CONTROL VERIFICATION: ✅ Coordinator authentication successful with arulanantham/Arul@annaiconnect credentials, ✅ Document endpoints properly secured (coordinators/admins get 200, agents get 403). 5) DOCUMENT STRUCTURE VERIFICATION: ✅ Found 4 documents for test student, ✅ All download URLs properly formatted with /api prefix for correct Kubernetes routing. The image viewing fine-tuning fix is working correctly - JPG files display inline in browser while PDF files download as attachments, with proper cache headers and CORS support for images."
 
+  - task: "Authentication Header Fix for Image Viewing"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Quick verification test for Authentication Header Fix for Image Viewing requested in review. Need to test specifically: 1) Document Authentication Test - GET /api/students/cac25fc9-a0a1-4991-9e55-bb676df1f2ae/documents/id_proof/download with proper coordinator authentication, 2) Access Control Verification - same endpoint without authentication should fail with 401/403, 3) Content Type Verification - proper Content-Type: image/jpeg header and CORS headers present. Using coordinator credentials: arulanantham / Arul@annaiconnect"
+      - working: true
+        agent: "testing"
+        comment: "✅ AUTHENTICATION HEADER FIX FOR IMAGE VIEWING - PASSED! All 3 tests completed successfully with 100% success rate. VERIFIED FUNCTIONALITY: 1) DOCUMENT AUTHENTICATION TEST: ✅ GET /api/students/cac25fc9-a0a1-4991-9e55-bb676df1f2ae/documents/id_proof/download with coordinator authentication works (HTTP 200), ✅ Document download with authentication successful. 2) ACCESS CONTROL VERIFICATION: ✅ Same endpoint without authentication properly denied (HTTP 403 Forbidden), ✅ Access control working - properly denied without authentication. 3) CONTENT TYPE & HEADERS VERIFICATION: ✅ Proper Content-Type header: image/jpeg, ✅ Content-Disposition: inline header present for images, ✅ CORS header present: * (Access-Control-Allow-Origin). The authentication header fix is working correctly - coordinator authentication enables document access, unauthenticated requests are properly blocked, and all required headers are present for image viewing functionality."
+
 agent_communication:
   - agent: "main"
     message: "🚨 AGENT UPLOAD & COORDINATOR DOWNLOAD ISSUE INVESTIGATION - Identified critical problems affecting document workflow: 1) AGENT UPLOAD VISIBILITY: File inputs are hidden with badge-triggered uploads (lines 829-840), making it unclear to agents how to upload documents. 2) DOCUMENT DOWNLOAD ROUTING ERROR: Coordinator download fails because frontend requests ${BACKEND_URL}/uploads/... but Kubernetes ingress rules only route /api/* to backend port 8001. Non-/api routes go to frontend port 3000, causing 'Error downloading document' message. Files exist in backend/uploads and are properly stored but routing is incorrect. Need to: A) Improve agent upload UI visibility, B) Fix document download URL to use /api prefix for proper routing."
