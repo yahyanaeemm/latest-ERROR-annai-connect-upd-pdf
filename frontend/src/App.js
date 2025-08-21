@@ -2114,6 +2114,50 @@ const CoordinatorDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Image Modal for Document Viewing */}
+      <Dialog open={imageModal.isOpen} onOpenChange={(open) => !open && closeImageModal()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg font-semibold text-gray-800">
+              Document Viewer: {imageModal.fileName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center items-center p-4 bg-gray-50 rounded-lg">
+            {imageModal.imageUrl && (
+              <img 
+                src={imageModal.imageUrl} 
+                alt={imageModal.fileName}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                onError={() => {
+                  alert('Error loading image. Please try again.');
+                  closeImageModal();
+                }}
+              />
+            )}
+          </div>
+          <div className="flex justify-center space-x-4 pt-4">
+            <Button variant="outline" onClick={closeImageModal}>
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                // Download option in modal
+                const link = document.createElement('a');
+                link.href = imageModal.imageUrl;
+                link.setAttribute('download', imageModal.fileName);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
