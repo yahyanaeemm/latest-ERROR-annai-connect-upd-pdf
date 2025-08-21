@@ -1393,6 +1393,23 @@ const SignatureModal = ({ isOpen, onClose, onSave, notes, setNotes }) => {
           <div className="text-sm text-gray-600 mb-6">
             Draw your signature or upload an image for student approval
           </div>
+          
+          {/* Notes Section */}
+          <div className="mb-6 space-y-2">
+            <Label htmlFor="approval-notes" className="text-sm font-medium text-gray-700">
+              Approval Notes (Optional)
+            </Label>
+            <Textarea
+              id="approval-notes"
+              placeholder="Add any notes about this approval..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="min-h-[80px] resize-none"
+            />
+            <div className="text-xs text-gray-500">
+              These notes will be recorded with the approval decision
+            </div>
+          </div>
         
           <Tabs value={signatureType} onValueChange={setSignatureType}>
             <TabsList className="grid w-full grid-cols-2">
