@@ -74,6 +74,7 @@ class User(BaseModel):
     bio: Optional[str] = None  # Short bio/description
     joining_date: Optional[datetime] = None  # When they joined as agent
     achievements: Optional[List[str]] = None  # Achievement badges earned
+    badges: Optional[List[dict]] = None  # Coordinator-assigned badges with metadata
 
 class UserCreate(BaseModel):
     username: str
