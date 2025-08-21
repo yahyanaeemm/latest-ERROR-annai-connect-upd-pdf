@@ -832,6 +832,171 @@ class AdmissionSystemAPITester:
         
         return True
 
+    def test_document_download_unicode_issue(self, coordinator_user_key):
+        """Test document download endpoint with problematic Unicode filenames (U+202F issue)"""
+        print("\n🚨 Testing Document Download Unicode Issue (U+202F)")
+        print("-" * 55)
+        
+        # Step 1: Create a test student for document testing
+        student_data = {
+            "first_name": "DocumentTest",
+            "last_name": "Student",
+            "email": f"doctest.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "BSc"
+        }
+        
+        success, response = self.run_test(
+            "Create Student for Document Testing",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user='agent1' if 'agent1' in self.tokens else coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        doc_test_student_id = response.get('id')
+        print(f"   ✅ Created test student: {doc_test_student_id}")
+        
+        # Step 2: Upload image with problematic filename containing U+202F
+        # Create a test image file with U+202F character in filename
+        problematic_filename = "Screenshot 2025-08-20 at 11.34.49 AM.png"  # Contains U+202F before AM
+        
+        # Create a minimal PNG file
+        import base64
+        # 1x1 transparent PNG
+        png_data = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWNgAAIAAAUAAY27m/MAAAAASUVORK5CYII=')
+        
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.png', delete=False) as f:
+            f.write(png_data)
+            temp_file_path = f.name
+        
+        try:
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': (problematic_filename, f, 'image/png')}
+                data = {'document_type': 'tc'}
+                
+                success, response = self.run_test(
+                    "Upload Image with Problematic Filename (U+202F)",
+                    "POST",
+                    f"students/{doc_test_student_id}/upload",
+                    200,
+                    data=data,
+                    files=files,
+                    token_user=coordinator_user_key
+                )
+        finally:
+            os.unlink(temp_file_path)
+            
+        if not success:
+            print("❌ Failed to upload document with problematic filename")
+            return False
+            
+        print("   ✅ Document with problematic filename uploaded successfully")
+        
+        # Step 3: Test GET /api/students/{id}/documents to retrieve metadata
+        success, response = self.run_test(
+            "Get Student Documents Metadata",
+            "GET",
+            f"students/{doc_test_student_id}/documents",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        documents = response.get('documents', [])
+        if not documents:
+            print("❌ No documents found in metadata")
+            return False
+            
+        tc_document = None
+        for doc in documents:
+            if doc.get('type') == 'tc':
+                tc_document = doc
+                break
+                
+        if not tc_document:
+            print("❌ TC document not found in metadata")
+            return False
+            
+        print(f"   ✅ Document metadata retrieved: {tc_document.get('file_name')}")
+        print(f"   Download URL: {tc_document.get('download_url')}")
+        
+        # Step 4: Test download endpoint - this should currently return 500 due to UnicodeEncodeError
+        print("\n   🔍 Testing problematic download endpoint...")
+        success, response = self.run_test(
+            "Download Document with Problematic Filename (Expected 500)",
+            "GET",
+            f"students/{doc_test_student_id}/documents/tc/download",
+            500,  # Expecting 500 error due to Unicode issue
+            token_user=coordinator_user_key
+        )
+        
+        if success:
+            print("   ✅ CONFIRMED: Download endpoint returns 500 error as expected")
+            print("   📋 This confirms the UnicodeEncodeError issue with U+202F character")
+        else:
+            print("   ⚠️ UNEXPECTED: Download endpoint did not return 500 error")
+            print("   📋 The Unicode issue may have been fixed or filename was sanitized")
+        
+        # Step 5: Upload a safe ASCII-only filename image to confirm it works
+        safe_filename = "test_document_safe.png"
+        
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.png', delete=False) as f:
+            f.write(png_data)
+            temp_file_path = f.name
+        
+        try:
+            with open(temp_file_path, 'rb') as f:
+                files = {'file': (safe_filename, f, 'image/png')}
+                data = {'document_type': 'marksheet'}
+                
+                success, response = self.run_test(
+                    "Upload Image with Safe ASCII Filename",
+                    "POST",
+                    f"students/{doc_test_student_id}/upload",
+                    200,
+                    data=data,
+                    files=files,
+                    token_user=coordinator_user_key
+                )
+        finally:
+            os.unlink(temp_file_path)
+            
+        if not success:
+            return False
+            
+        print("   ✅ Document with safe filename uploaded successfully")
+        
+        # Step 6: Test download of safe filename document - should work
+        success, response = self.run_test(
+            "Download Document with Safe ASCII Filename (Should Work)",
+            "GET",
+            f"students/{doc_test_student_id}/documents/marksheet/download",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if success:
+            print("   ✅ CONFIRMED: Download works fine with ASCII-only filename")
+        else:
+            print("   ❌ UNEXPECTED: Download failed even with safe filename")
+            
+        # Store test results for summary
+        self.test_data['unicode_download_test'] = {
+            'problematic_filename_uploaded': True,
+            'metadata_retrieval_works': True,
+            'problematic_download_fails': success,  # This should be False if 500 error occurred
+            'safe_download_works': success
+        }
+        
+        return True
+
     def test_comprehensive_workflow(self):
         """Test complete workflow with new features"""
         print("\n🔄 Testing Complete Enhanced Workflow")
