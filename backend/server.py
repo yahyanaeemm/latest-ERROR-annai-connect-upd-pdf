@@ -833,8 +833,21 @@ async def download_student_document(
         with open(file_path, "rb") as file:
             yield from file
     
+    # Prepare ASCII-safe filename for Content-Disposition and RFC 5987 UTF-8 version
+    original_name = file_path.name
+    # Normalize and strip non-ASCII for the plain filename parameter
+    normalized = unicodedata.normalize('NFKD', original_name)
+    ascii_name = ''.join(c for c in normalized if ord(c) < 128)
+    # Fallback if stripping leads to empty string
+    if not ascii_name:
+        ascii_name = f"document{file_path.suffix.lower()}"
+    # Remove problematic characters for headers
+    ascii_name = ascii_name.replace('\r', '').replace('\n', '').replace('"', '\'')
+    # RFC 5987 encoded filename*
+    encoded_name = urllib.parse.quote(original_name, safe="")
+
     headers = {
-        'Content-Disposition': f'{disposition}; filename="{file_path.name}"',
+        'Content-Disposition': f"{disposition}; filename=\"{ascii_name}\"; filename*=UTF-8''{encoded_name}",
         'Cache-Control': 'public, max-age=3600',  # Cache images for better performance
         'Access-Control-Allow-Origin': '*'  # Allow cross-origin requests for images
     }
