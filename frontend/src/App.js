@@ -932,7 +932,10 @@ const AgentDashboard = () => {
             <div>
               <Label htmlFor="course" className="text-gray-700 font-medium">Course</Label>
               <Select value={formData.course} onValueChange={(value) => setFormData({...formData, course: value})}>
-                <SelectTrigger className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                <SelectTrigger className="form-input-brand bg-white text-gray-900 border-gray-300"
+                  style={{
+                    '--focus-border-color': '#1B5BA0'
+                  }}>
                   <SelectValue placeholder="Select a course" className="text-gray-500" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 shadow-lg">
