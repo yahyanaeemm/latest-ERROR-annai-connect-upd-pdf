@@ -6,7 +6,7 @@ import os
 import tempfile
 
 class AdmissionSystemAPITester:
-    def __init__(self, base_url="https://approval-workflow-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://pdf-receipt-hub.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tokens = {}  # Store tokens for different users
