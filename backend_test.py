@@ -7547,28 +7547,28 @@ def main_focused_image_test():
         print("=" * 70)
 
 if __name__ == "__main__":
-    # Run focused leaderboard system testing after frontend enhancements
+    # Run badge management system testing
     tester = AdmissionSystemAPITester()
-    leaderboard_success = tester.run_leaderboard_focused_tests()
+    badge_success = tester.run_badge_management_tests()
     
     # Print final summary
     print("\n" + "="*80)
-    print("🎯 FINAL LEADERBOARD TESTING SUMMARY")
+    print("🎯 FINAL BADGE MANAGEMENT TESTING SUMMARY")
     print("="*80)
     print(f"Total tests run: {tester.tests_run}")
     print(f"Tests passed: {tester.tests_passed}")
     print(f"Tests failed: {tester.tests_run - tester.tests_passed}")
     print(f"Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
     
-    if leaderboard_success:
-        print("🎉 LEADERBOARD SYSTEM TESTING PASSED!")
-        print("✅ All leaderboard APIs working correctly after frontend enhancements")
-        print("✅ Data consistency verified - leaderboard shows dynamic data")
-        print("✅ Response structure validated for all endpoints")
-        print("✅ Ranking and sorting logic working properly")
-        print("✅ System ready for production with live data updates")
+    if badge_success:
+        print("🎉 BADGE MANAGEMENT SYSTEM TESTING PASSED!")
+        print("✅ All badge management APIs working correctly")
+        print("✅ Coordinator can assign and remove badges from agents")
+        print("✅ Agent profiles include badge information")
+        print("✅ Access control working properly")
+        print("✅ Integration with student approval process maintained")
+        print("✅ System ready for production use")
         sys.exit(0)
     else:
-        print("❌ Leaderboard system testing failed")
-        sys.exit(1)
+        print("❌ Badge management system testing failed")
         sys.exit(1)
