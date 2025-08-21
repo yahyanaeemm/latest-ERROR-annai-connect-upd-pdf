@@ -3035,7 +3035,10 @@ const AdminDashboard = () => {
                 value={courseForm.amount}
                 onChange={(e) => setCourseForm({...courseForm, amount: e.target.value})}
                 placeholder="e.g., 5000"
-                className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                className="form-input-brand bg-white text-gray-900 border-gray-300"
+                style={{
+                  '--focus-border-color': '#1B5BA0'
+                }}
                 required
               />
             </div>
