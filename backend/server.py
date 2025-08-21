@@ -1356,7 +1356,8 @@ async def get_agent_profile(current_user: User = Depends(get_current_user)):
                 "created_at": student["created_at"]
             } for student in recent_students
         ],
-        "achievements": achievements
+        "achievements": achievements,
+        "badges": user_doc.get("badges", [])  # Include coordinator-assigned badges
     }
 
 @api_router.put("/agent/profile")
