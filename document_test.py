@@ -483,9 +483,21 @@ class DocumentAPITester:
             print("❌ Failed to login as agent")
             login_success = False
         
-        # Login as admin (try super admin)
-        if not self.test_login("super admin", "admin@123", "admin"):
-            print("❌ Failed to login as admin")
+        # Login as admin (try different admin credentials)
+        admin_login_success = False
+        admin_credentials = [
+            ("super admin", "admin@123"),
+            ("admin", "admin@123"),
+            ("superadmin", "admin@123")
+        ]
+        
+        for username, password in admin_credentials:
+            if self.test_login(username, password, "admin"):
+                admin_login_success = True
+                break
+        
+        if not admin_login_success:
+            print("❌ Failed to login as admin with any credentials")
             login_success = False
         
         if not login_success:
