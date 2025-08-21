@@ -1662,7 +1662,10 @@ const CoordinatorDashboard = () => {
 
       {/* Filters */}
       {showFilters && (
-        <Card className="border-2 border-blue-200 bg-blue-50/50 shadow-lg">
+        <Card className="border-2 shadow-lg" style={{
+          borderColor: 'rgba(78, 205, 196, 0.5)',
+          backgroundColor: 'rgba(78, 205, 196, 0.1)'
+        }}>
           <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
             <CardTitle className="text-lg font-semibold">Filter Students</CardTitle>
           </CardHeader>
