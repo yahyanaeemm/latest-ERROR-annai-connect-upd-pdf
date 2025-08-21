@@ -525,7 +525,7 @@ class StudentDataCleanupTester:
         
         # Test production users
         production_users = [
-            ("super", "Admin@annaiconnect", "admin"),
+            ("super admin", "Admin@annaiconnect", "admin"),
             ("arulanantham", "Arul@annaiconnect", "coordinator"), 
             ("agent1", "agent@123", "agent1")
         ]
