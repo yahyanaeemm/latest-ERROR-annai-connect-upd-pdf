@@ -145,7 +145,9 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-teal-600 to-blue-800 flex items-center justify-center p-4" style={{
+      background: 'linear-gradient(135deg, #1B5BA0 0%, #4ECDC4 50%, #164a87 100%)'
+    }}>
       <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl border-0">
         <CardHeader className="text-center pb-2">
           {/* New Annai Connect Logo */}
