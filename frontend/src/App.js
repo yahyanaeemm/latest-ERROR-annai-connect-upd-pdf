@@ -994,7 +994,6 @@ const AgentDashboard = () => {
                     accept="image/*" 
                     className="hidden" 
                     id="photo-upload"
-                    ref={(input) => { this.photoUploadRef = input; }}
                     onChange={(e) => e.target.files[0] && uploadProfilePhoto(e.target.files[0])}
                   />
                   <Button 
