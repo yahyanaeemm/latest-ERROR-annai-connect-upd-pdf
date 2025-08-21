@@ -2432,15 +2432,15 @@ const CoordinatorDashboard = () => {
 
       {/* Badge Assignment Modal */}
       <Dialog open={showBadgeModal} onOpenChange={setShowBadgeModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Assign Badge to Agent</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-2xl bg-white border shadow-2xl">
+          <DialogHeader className="bg-gradient-to-r from-blue-50 to-teal-50 -mx-6 -mt-6 px-6 py-4 border-b">
+            <DialogTitle className="text-xl font-bold text-gray-800">Assign Badge to Agent</DialogTitle>
+            <DialogDescription className="text-gray-600">
               Select an agent and choose a badge to assign as recognition for their performance
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6 py-4">
             {/* Agent Selection */}
             <div>
               <Label className="text-sm font-medium">Select Agent</Label>
