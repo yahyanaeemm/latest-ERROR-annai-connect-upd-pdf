@@ -1713,18 +1713,14 @@ const CoordinatorDashboard = () => {
   const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '', fileName: '' });
 
   const downloadDocument = async (downloadUrl, fileName) => {
-    console.log('downloadDocument called:', { downloadUrl, fileName });
     try {
       // The downloadUrl already includes /api prefix from backend, so use BACKEND_URL directly
       const response = await axios.get(`${BACKEND_URL}${downloadUrl}`, {
         responseType: 'blob'
       });
       
-      console.log('API response received:', response.status);
-      
       // Check if it's an image file
       const isImage = fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/);
-      console.log('Is image file:', isImage);
       
       if (isImage) {
         // For images, show in inline modal first (most reliable)
@@ -1733,8 +1729,6 @@ const CoordinatorDashboard = () => {
           type: response.headers['content-type'] || 'image/jpeg' 
         });
         const url = window.URL.createObjectURL(blob);
-        console.log('Created blob URL:', url);
-        console.log('Setting image modal state...');
         setImageModal({ isOpen: true, imageUrl: url, fileName });
       } else {
         // For PDFs and other files, download as before
