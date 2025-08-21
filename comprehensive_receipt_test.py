@@ -8,7 +8,7 @@ import base64
 import pdfplumber
 
 class ComprehensiveReceiptTester:
-    def __init__(self, base_url="https://educonnect-46.preview.emergentagent.com"):
+    def __init__(self, base_url="https://admissions-hub-4.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tokens = {}

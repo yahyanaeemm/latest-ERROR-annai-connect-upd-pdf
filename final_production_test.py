@@ -8,7 +8,7 @@ import json
 
 def final_production_test():
     """Final comprehensive test"""
-    base_url = "https://educonnect-46.preview.emergentagent.com"
+    base_url = "https://admissions-hub-4.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🚀 FINAL PRODUCTION DEPLOYMENT VERIFICATION")

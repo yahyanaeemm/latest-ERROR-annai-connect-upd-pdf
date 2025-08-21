@@ -1,78 +1,104 @@
 <analysis>
-The AI engineer's trajectory demonstrates a comprehensive journey from an MVP to a more robust application. It began with critical UI and status display fixes, followed by a significant backend refactor to unify PDF receipt generation, ensuring dual signatures, incentive display, and A5 invoice-style layouts. A major branding overhaul was successfully implemented, standardizing the UI with new logos and a Deep Blue/Bright Teal color scheme. Subsequently, a targeted database cleanup endpoint was developed to prepare for public launch by clearing student data while preserving courses. The most recent phase involved debugging critical frontend issues: a non-functional agent profile photo upload (fixed by correctly linking the button to the file input) and, more extensively, the coordinator's inability to view agent-uploaded documents. This latter issue evolved through several discoveries: initially, agents' upload fields were hidden, then a frontend URL construction error for downloads (missing  prefix), and finally, an authentication issue preventing direct browser viewing of image files, which was addressed by fetching content with authentication and rendering it via a Blob URL or inline modal. The trajectory concludes with all identified issues resolved and backend tests passing.
+The trajectory details an AI engineer's work on an existing MVP application, moving through several phases of development and bug fixing. Initially, the AI addressed UI/status fixes, refactored PDF generation for consistency and dual signatures, implemented a significant branding overhaul, and developed a database cleanup endpoint. A recurring challenge involved debugging document viewing for coordinators, specifically for image files, which required fixes for hidden upload fields, incorrect API URL prefixes, and authentication for direct browser image display.
+
+Subsequent work focused on enhancing the application. The AI debugged a static leaderboard, identifying that it displayed dynamic data but with zero values, leading to UI enhancements for clarity. Following this, it implemented role-based masking of incentive data on the leaderboard for agents. A major feature addition included coordinator notes for student approvals and a comprehensive agent badge management system with associated backend APIs and frontend UI. Finally, the AI tackled critical regressions: a re-occurrence of the document download issue (traced to an erroneous double  prefix in the frontend URL construction) and a visibility bug in the new badge assignment modal, along with a  library incompatibility in the backend causing login failures. The trajectory concludes with all identified issues resolved and backend functionality validated.
 </analysis>
 
 <product_requirements>
-The application's initial development focused on critical UI enhancements, including fixing a  visibility bug and ensuring Approve Student status displayed prominently in green. A core requirement was to unify PDF receipt generation for both Admin and Coordinator roles into a single, consistent A5 invoice-style format. This unified PDF needed to support dual digital signatures, incorporate course incentive amounts, and generate unique receipt numbers, while resolving prior layout, alignment, and Rupee symbol display issues.
+The application's core purpose is to streamline student admissions and agent management. Initial requirements included critical UI fixes like  visibility and Approve Student status display. A key feature was the unification of PDF receipt generation for Admin and Coordinator roles into a consistent A5 invoice-style format, including dual digital signatures, course incentives, and unique numbering, while resolving prior formatting issues.
 
-A significant UI branding update followed, requiring the replacement of the Annai Connect logo and a complete color scheme overhaul. This involved applying a consistent brand palette (Deep Blue: #1B5BA0, Bright Teal: #4ECDC4, Dark Blue: #164a87, Light Teal: #7FDBDB) across the login screen (gradient), header, buttons, form elements, and other interactive components, all without breaking existing functionality.
+A significant UI branding update was mandated, involving a new Annai Connect logo and a complete color scheme overhaul (Deep Blue: #1B5BA0, Bright Teal: #4ECDC4, Dark Blue: #164a87, Light Teal: #7FDBDB) applied across the login, header, buttons, and form elements.
 
-More recently, the user requested a database cleanup to prepare for a public launch, specifically clearing all admitted student-related data while preserving course information. Subsequent bug reports included agents being unable to upload profile photos due to a non-functional button, and coordinators being unable to view documents uploaded by agents when clicking the eye icon in the student details view, particularly for image files (PNG/JPEG).
+Recent user requests focused on:
+1.  **Database Cleanup**: Clearing admitted student-related data while preserving course information for public launch.
+2.  **Agent Profile Photo Upload Fix**: Rectifying a non-functional upload button for agent profile photos.
+3.  **Coordinator Document Viewing Fix**: Addressing the inability of coordinators to view agent-uploaded documents, particularly image files (PNG/JPEG), due to authentication issues and incorrect URL construction.
+4.  **Leaderboard Enhancements**: Addressing a static leaderboard by clarifying dynamic data display and later implementing confidentiality by masking incentive amounts for agents.
+5.  **New Coordinator Features**:
+    *   **Notes on Student Approval**: Allowing coordinators to add notes during student admission approval.
+    *   **Agent Badge System**: Enabling coordinators to assign performance-based badges (e.g., Super Agent, Star Agent) that reflect in agent profiles.
 </product_requirements>
 
 <key_technical_concepts>
-- React: Frontend framework for dynamic UI components.
-- FastAPI: Python backend framework for building robust APIs.
-- MongoDB: NoSQL database used for data storage.
-- Tailwind CSS: Utility-first CSS framework for styling.
-- Radix UI Dialog: Library for building accessible dialog components.
-- Supervisor: Process control system for managing application services.
-- Kubernetes Ingress Rules: Handles API routing, specifically requiring  prefix for backend endpoints.
+- React: Frontend framework for dynamic UI and component-based development.
+- FastAPI: Python backend for API creation, handling data, and file serving.
+- MongoDB: NoSQL database for flexible data storage.
+- Tailwind CSS: Utility-first CSS for efficient styling and branding.
+- Radix UI Dialog: Library for accessible modal components.
+- Supervisor: Process manager ensuring continuous service operation.
+- Kubernetes Ingress Rules: Governs external API routing, requiring  prefix for backend endpoints.
+- : Python library used for password hashing and security.
+- Blob URL: Client-side technique for displaying binary data (like images) directly in the browser.
 </key_technical_concepts>
 
 <code_architecture>
-The application follows a standard full-stack architecture:
+The application uses a standard full-stack architecture with a React frontend and a FastAPI backend.
+
 
 
 -   ****:
-    -   *Summary of Importance*: This is the core React application component, handling routing, state management, API interactions, and rendering of key UI components like , , and .
+    -   *Summary of Importance*: This is the main React component managing application state, user authentication, routing, API interactions, and rendering of all dashboards (Agent, Coordinator) and modals (, ).
     -   *Summary of Changes*:
-        -   Initial UI fixes for  visibility and approved status display.
-        -   Extensive UI branding updates: new login logo, header styling, and application of brand colors to various  components and form focus states.
-        -   **Agent Profile Photo Upload Fix**: Corrected the agent profile section's photo upload by ensuring the Upload Photo button correctly triggers the hidden file input, resolving a non-functional button issue (lines 990-1010).
-        -   **Document Upload UI Visibility**: Removed  from agent document upload inputs (lines 829-840) to make them visible and user-friendly. Added upload success feedback.
-        -   **Document Download/View Fix**: Modified  function (lines 1539-1557) to correctly handle document retrieval. Initially fixed  prefix issue, then addressed image viewing authentication by fetching with  and creating a blob URL for inline display. Added an  component for displaying images within the same page to circumvent browser security issues (added around line 2090 and in  rendering). Updated button labels to View for images and Download for PDFs.
+        -   **UI & Branding:** Initial fixes for  visibility, approved status display. Extensive branding updates for login, header, buttons, and form elements with new color scheme.
+        -   **Agent Profile Photo Upload**: Fixed button to correctly trigger file input.
+        -   **Document Upload UI**: Removed  class from agent document upload inputs and added success feedback.
+        -   **Document Download/View**:
+            -   Modified  to correctly use  and handle  fetching for images, creating blob URLs for inline display.
+            -   Corrected URL construction from  to  to prevent double  prefix when backend URLs already include it, fixing recurring 404 errors for image viewing.
+            -   Added an  component for displaying images directly within the application.
+            -   Updated button labels to View for images and Download for PDFs.
+        -   **Leaderboard Enhancements**: Added visual indicators for live data, refresh functionality.
+        -   **Leaderboard Confidentiality**: Implemented role-based logic to mask incentive amounts from agent view while preserving for Admin/Coordinators.
+        -   **Coordinator Notes**: Integrated an input field into  to allow coordinators to add notes during student approval.
+        -   **Agent Badge System**:
+            -   Added state management,  hooks for fetching agents and badge templates.
+            -   Implemented functions (, , , ).
+            -   Introduced a new Agent Badges tab in  with UI for viewing agents, assigning badges via a modal (with predefined templates and custom option), and displaying assigned badges in agent profiles.
+            -   Corrected placement of badge management functions within  to resolve linting errors.
+        -   **Badge Modal Visibility**: Applied extensive styling changes (white background, gradient header, enhanced form elements, improved card visibility) to the badge assignment modal for better readability and user experience.
 
 -   ****:
-    -   *Summary of Importance*: Defines global and component-specific styles, including the application's color scheme and layout.
-    -   *Summary of Changes*: Comprehensive UI branding overhaul: implementation of new brand colors (Deep Blue , Bright Teal , Dark Blue , Light Teal ), gradient backgrounds for login and header, and consistent styling for buttons, form focus states, badges, and loading spinners.
+    -   *Summary of Importance*: Contains global styles and defines the application's visual theme.
+    -   *Summary of Changes*: Implemented new brand colors (Deep Blue, Bright Teal, Dark Blue, Light Teal), gradient backgrounds for login/header, and consistent styling for buttons, form focus states, badges, and loading spinners as part of the branding overhaul. Also contributed to the enhanced visual appearance of the badge assignment modal.
 
 -   ****:
-    -   *Summary of Importance*: The FastAPI backend, responsible for defining API routes, interacting with MongoDB, and handling file operations (PDF generation, document serving).
+    -   *Summary of Importance*: The FastAPI backend, serving API routes, interacting with MongoDB for data storage, and handling file operations including PDF generation and document serving.
     -   *Summary of Changes*:
-        -   **Unified PDF Generation**: Implemented  to centralize PDF logic, improving efficiency and consistency. Updated  and  to use this function, adding dual signatures, course incentives, unique receipt numbering, and A5 invoice-style formatting with correct Rupee symbol.
-        -   **Student Data Cleanup Endpoint**: Added a new  endpoint to clear , , ,  collections, preserving  and user data.
-        -   **Document Retrieval and Download**: The existing  was examined and confirmed to be functionally correct for listing documents. A new endpoint, , was added (around line 795) to specifically handle authenticated document downloads/views. This endpoint now serves files with  for PDFs and  for images (JPEG, PNG) based on file type.
+        -   **PDF Generation**: Centralized PDF logic into , updating existing  and  endpoints to use it, adding dual signatures, incentives, unique numbering, and A5 invoice-style formatting with Rupee symbol.
+        -   **Student Data Cleanup**: Added  endpoint to clear specific collections (, , , ) while preserving  and user data.
+        -   **Document Retrieval**: Added  endpoint to serve files, dynamically setting  to  for PDFs and  for images (JPEG, PNG). This endpoint now correctly generates URLs including the  prefix.
+        -   **Leaderboard APIs**: APIs for fetching leaderboard data (, , , ) were confirmed to be correctly returning dynamic data.
+        -   **Coordinator Notes**: Confirmed existing support for notes in student status update ().
+        -   **Agent Badge System**:
+            -   Added new API endpoints:  (list agents),  (get predefined badges),  (assign badge), and  (remove badge).
+            -   Updated  to include  (badges) in the agent's profile data.
+            -   Verified  import.
 
 -   ****:
-    -   *Summary of Importance*: Serves as the primary log for problem statements, testing data, protocols, and communication between the AI engineer and sub-agents, providing a historical record of development and debugging efforts.
-    -   *Summary of Changes*: Continuously updated to document successful backend and frontend tests for all features implemented, including PDF generation, UI branding, data cleanup, agent profile photo upload, and crucially, detailed findings and fixes for the coordinator's document viewing/downloading issues, including the agent upload UI and image viewing authentication.
+    -   *Summary of Importance*: Defines Python dependencies for the backend.
+    -   *Summary of Changes*: Pinned  version to  to resolve  due to version incompatibility with .
+
+-   ****:
+    -   *Summary of Importance*: Primary log for problem statements, testing data, protocols, and communication. Vital for tracking development and debugging efforts.
+    -   *Summary of Changes*: Continuously updated to document test results for all implemented features and bug fixes, including detailed findings and resolutions for leaderboard behavior, branding, data cleanup, document viewing/downloading (with specific details on URL prefix and authentication issues), coordinator notes, and agent badge management.
 </code_architecture>
 
 <pending_tasks>
-All explicit tasks described within the trajectory, including UI fixes, PDF unification, UI branding, student data cleanup, agent photo upload, agent document upload UI visibility, and coordinator document viewing/downloading for both PDFs and images, have been addressed and validated by backend tests by the end of the trajectory.
+All explicit tasks and reported bugs mentioned in the trajectory (UI fixes, PDF unification, UI branding, student data cleanup, agent photo upload, agent document upload UI visibility, coordinator document viewing/downloading for both PDFs and images, leaderboard enhancements, coordinator notes on student approval, agent badge system, bcrypt error, and badge modal visibility) have been addressed and validated by backend tests and screenshots by the end of the trajectory. There are no explicit pending tasks.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was addressing a user-reported bug where documents uploaded by agents were unable to view by coordinator on clicking the eye icon, specifically for image files showing an error on view.
+Immediately prior to this summary, the AI engineer was engaged in debugging two critical issues reported by the user:
+1.  **Document Viewing/Downloading for Images (JPEG/PNG) Not Working for Coordinators**: This was a re-occurrence of a previously fixed issue. The user explicitly stated it worked for PDFs but not images and provided a reference summary of the prior fix.
+    *   **Diagnosis**: The AI discovered that the frontend's  function was constructing URLs like  instead of . This was because the backend was already returning  with the  prefix (e.g., ), and the frontend was mistakenly adding another  prefix via the  constant.
+    *   **Fix**: Modified the  function in  to use  instead of , effectively removing the redundant  prefix from the frontend's side.
+2.  ** Authentication Error**: Discovered from backend logs, this error () was causing authentication failures.
+    *   **Diagnosis**: Identified as a version incompatibility between  and  libraries.
+    *   **Fix**: Updated  to pin the  version to  to ensure compatibility. The backend service was then restarted.
 
-The investigation revealed several layers of issues:
-1.  **Agent Upload UI:** Initially, agents' file upload inputs in  were  (lines 829-840), preventing easy document uploads. This was fixed by removing the  class and adding feedback.
-2.  **Backend Document Serving URL:** The frontend's  function (lines 1539-1557 in ) was constructing URLs like . However, Kubernetes ingress rules require backend API routes to be prefixed with . This meant direct  routes were not reaching the backend service.
-3.  **Authentication for Image Viewing:** Even after fixing the  prefix, direct  for image files resulted in an authentication error (CORS/403 Forbidden). This was because the new browser tab did not carry the necessary authorization headers.
-
-The AI engineer's solution involved:
-*   **Backend Changes ():**
-    *   Added a new API endpoint  (around line 795) to serve documents. This endpoint dynamically sets  to  for PDFs and  for images (JPEG, PNG), allowing browsers to display images directly.
-*   **Frontend Changes ():**
-    *   Modified  (lines 1539-1557) to fetch image files using  with proper authentication headers.
-    *   Upon successful fetch, a  URL is created and opened, ensuring authentication is handled.
-    *   An  component was added to  (around line 2090 and in rendering) to display images within the application, providing a more robust fallback and avoiding popup blockers.
-    *   Button labels were updated to View for images and Download for PDFs.
-
-The backend was restarted, and successful tests confirmed the new API endpoint works and serves files correctly with appropriate headers. The trajectory concludes with backend validation of the image viewing fix passing, indicating the issues are resolved.
+Additionally, a 404 login error was observed but determined to be a symptom of the  URL construction issue, which was resolved by the document viewing fix. The agent had also previously addressed the visibility issues with the new agent badge assignment modal, changing its transparent theme to a solid white popup with improved styling and contrast, which was verified via screenshot. The login flow was also re-tested and confirmed to be working correctly after the bcrypt fix.
 </current_work>
 
 <optional_next_step>
-The immediate tasks identified in the trajectory have been concluded. The next step would be to await user feedback or new requirements for further development.
+Await user feedback on the resolved document viewing and login issues.
 </optional_next_step>
