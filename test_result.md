@@ -630,8 +630,8 @@ test_plan:
   test_priority: "high_first"
 
   - task: "Agent Document Upload Visibility & Coordinator Document Download Fix"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/frontend/src/App.js, /app/backend/server.py"
     stuck_count: 0
     priority: "high"
@@ -643,6 +643,9 @@ test_plan:
       - working: false
         agent: "main"
         comment: "🔍 ROOT CAUSE ANALYSIS COMPLETED - Agent upload UI uses hidden file inputs triggered by badge clicks (lines 829-840 App.js), which may not be intuitive. Document download fails because frontend constructs URLs as ${BACKEND_URL}/uploads/... but Kubernetes ingress only routes /api/* to backend port 8001. Non-/api routes go to frontend port 3000 which doesn't have uploaded files. Files exist in backend/uploads directory and backend can serve them at localhost:8001/uploads/... but external routing fails."
+      - working: true
+        agent: "main"
+        comment: "✅ COMPREHENSIVE FIXES IMPLEMENTED - 1) AGENT UPLOAD UI ENHANCEMENT: Replaced hidden badge-triggered uploads with clear, visible 'Upload' buttons for each document type. When documents are uploaded, they show green checkmark badges. Added success/error feedback alerts for upload operations. 2) DOCUMENT DOWNLOAD ROUTING FIX: Created new API endpoint GET /api/students/{student_id}/documents/{document_type}/download with proper authentication and file streaming. Updated document info endpoint to return /api/* download URLs. All downloads now route correctly through backend port 8001. 3) BACKEND IMPROVEMENTS: Added proper content-type detection, file existence validation, and streaming response with correct headers. 4) TESTING VERIFIED: New download API tested successfully, returns HTTP 200 with proper content-disposition headers for PDF and image files."
 
 agent_communication:
   - agent: "main"
