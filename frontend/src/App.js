@@ -1716,7 +1716,10 @@ const CoordinatorDashboard = () => {
     try {
       // Always fetch the file with proper authentication first
       const response = await axios.get(`${API}${downloadUrl}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
       // Check if it's an image file
@@ -1724,11 +1727,18 @@ const CoordinatorDashboard = () => {
       
       if (isImage) {
         // For images, show in inline modal first (most reliable)
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        // Create blob URL with correct response data handling
+        const blob = new Blob([response.data], { 
+          type: response.headers['content-type'] || 'image/jpeg' 
+        });
+        const url = window.URL.createObjectURL(blob);
         setImageModal({ isOpen: true, imageUrl: url, fileName });
       } else {
         // For PDFs and other files, download as before
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const blob = new Blob([response.data], { 
+          type: response.headers['content-type'] || 'application/pdf' 
+        });
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', fileName);
