@@ -1548,9 +1548,9 @@ const CoordinatorDashboard = () => {
     }
   };
 
-  const downloadDocument = async (documentPath, fileName) => {
+  const downloadDocument = async (downloadUrl, fileName) => {
     try {
-      const response = await axios.get(`${BACKEND_URL}${documentPath}`, {
+      const response = await axios.get(`${BACKEND_URL}${downloadUrl}`, {
         responseType: 'blob'
       });
       
