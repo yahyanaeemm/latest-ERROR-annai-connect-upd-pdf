@@ -3510,6 +3510,85 @@ class AdmissionSystemAPITester:
         
         return True
 
+    def test_document_authentication_header_fix(self, coordinator_user_key):
+        """Test Authentication Header Fix for Image Viewing - Specific Review Request"""
+        print("\n🔍 Testing Authentication Header Fix for Image Viewing")
+        print("-" * 55)
+        
+        # Test specific student ID from review request
+        student_id = "cac25fc9-a0a1-4991-9e55-bb676df1f2ae"
+        document_type = "id_proof"
+        
+        # Test 1: Document Authentication Test with proper coordinator authentication
+        success, response = self.run_test(
+            "Document Download with Coordinator Authentication",
+            "GET",
+            f"students/{student_id}/documents/{document_type}/download",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            print("❌ Document download with authentication failed")
+            return False
+            
+        print("   ✅ Document download with authentication successful")
+        
+        # Test 2: Access Control Verification - without authentication (should fail)
+        success, response = self.run_test(
+            "Document Download without Authentication (Should Fail)",
+            "GET", 
+            f"students/{student_id}/documents/{document_type}/download",
+            401,  # Expecting 401 Unauthorized
+            token_user=None
+        )
+        
+        if not success:
+            print("❌ Access control test failed - should return 401 without auth")
+            return False
+            
+        print("   ✅ Access control working - properly denied without authentication")
+        
+        # Test 3: Content Type and Headers Verification
+        # Make authenticated request and check response headers
+        url = f"{self.api_url}/students/{student_id}/documents/{document_type}/download"
+        headers = {'Authorization': f'Bearer {self.tokens[coordinator_user_key]}'}
+        
+        try:
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code == 200:
+                # Check Content-Type header
+                content_type = response.headers.get('Content-Type', '')
+                if 'image/jpeg' in content_type or 'image/png' in content_type:
+                    print(f"   ✅ Proper Content-Type header: {content_type}")
+                else:
+                    print(f"   ⚠️ Content-Type: {content_type} (may not be image)")
+                
+                # Check Content-Disposition header
+                content_disposition = response.headers.get('Content-Disposition', '')
+                if 'inline' in content_disposition:
+                    print(f"   ✅ Content-Disposition: inline header present")
+                else:
+                    print(f"   ⚠️ Content-Disposition: {content_disposition}")
+                
+                # Check CORS headers
+                cors_header = response.headers.get('Access-Control-Allow-Origin', '')
+                if cors_header:
+                    print(f"   ✅ CORS header present: {cors_header}")
+                else:
+                    print("   ⚠️ CORS header not found")
+                    
+                print("   ✅ Content Type and Headers verification completed")
+                return True
+            else:
+                print(f"   ❌ Expected 200 status, got {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"   ❌ Error during header verification: {str(e)}")
+            return False
+
     def test_comprehensive_paginated_coordinator_dashboard(self):
         """Test the complete paginated coordinator dashboard API system"""
         print("\n🚀 COMPREHENSIVE PAGINATED COORDINATOR DASHBOARD API TESTING")
