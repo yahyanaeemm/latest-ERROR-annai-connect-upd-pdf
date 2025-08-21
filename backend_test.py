@@ -6198,4 +6198,5 @@ def main_focused_image_test():
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Run focused image viewing test as requested in review
+    sys.exit(main_focused_image_test())
