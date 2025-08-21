@@ -432,11 +432,11 @@ backend:
 
   - task: "Document Viewing Functionality for Coordinators"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "testing"
@@ -447,6 +447,12 @@ backend:
       - working: false
         agent: "main"
         comment: "RCA from logs: UnicodeEncodeError in StreamingResponse headers due to non-ASCII character U+202F in filename (e.g., 'Screenshot ... 11.34.49 AM.png'). Starlette encodes headers as latin-1; Content-Disposition with original filename causes 500. Plan: sanitize filename to ASCII for filename= and add RFC5987 filename* with UTF-8 urlencoded original; keep behavior for PDFs/images unchanged. Set needs_retesting true and proceed with backend tests after fix."
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-FIX VERIFICATION: JPEG/PNG downloads now return 200 OK with proper headers. Content-Disposition contains ASCII fallback filename and RFC5987 filename* UTF-8 parameter. Images served inline with correct Content-Type. No UnicodeEncodeError in logs. PDFs unaffected."
+      - working: true
+        agent: "user"
+        comment: "User confirmed: 'its working.'"
   - task: "Badge Management System for Agent Recognition"
     implemented: true
     working: true
