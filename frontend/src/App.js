@@ -1742,7 +1742,12 @@ const CoordinatorDashboard = () => {
               </Button>
               <Button 
                 onClick={() => setShowFilters(false)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="btn-brand-primary"
+                style={{
+                  backgroundColor: '#1B5BA0',
+                  borderColor: '#1B5BA0',
+                  color: 'white'
+                }}
               >
                 Apply Filters
               </Button>
