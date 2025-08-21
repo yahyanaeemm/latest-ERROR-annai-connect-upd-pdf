@@ -1815,6 +1815,395 @@ class AdmissionSystemAPITester:
         
         return True
     
+    # AGENT PROFILE PHOTO UPLOAD FUNCTIONALITY TESTS
+    
+    def test_agent_profile_photo_upload_comprehensive(self, agent_user_key):
+        """Test agent profile photo upload functionality end-to-end"""
+        print("\n📸 Testing Agent Profile Photo Upload Functionality")
+        print("-" * 55)
+        
+        # Test 1: Get initial agent profile (should work without photo)
+        success, response = self.run_test(
+            "Get Agent Profile (Initial State)",
+            "GET",
+            "agent/profile",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        # Verify profile structure
+        if 'profile' not in response:
+            print("❌ Profile section missing from response")
+            return False
+            
+        profile = response['profile']
+        initial_photo = profile.get('profile_photo')
+        print(f"   ✅ Initial profile photo state: {initial_photo or 'None'}")
+        
+        # Test 2: Upload profile photo with valid base64 data
+        # Create a small valid base64 image (1x1 pixel PNG)
+        valid_photo_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        upload_data = {
+            'photo_data': valid_photo_data
+        }
+        
+        success, response = self.run_test(
+            "Upload Agent Profile Photo (Valid Data)",
+            "POST",
+            "agent/profile/photo",
+            200,
+            data=upload_data,
+            files={},  # Form data mode
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if 'successfully' not in response.get('message', '').lower():
+            print(f"❌ Expected success message, got: {response.get('message')}")
+            return False
+            
+        print("   ✅ Profile photo uploaded successfully")
+        
+        # Test 3: Verify photo is stored and retrievable
+        success, response = self.run_test(
+            "Get Agent Profile After Photo Upload",
+            "GET",
+            "agent/profile",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        updated_profile = response.get('profile', {})
+        stored_photo = updated_profile.get('profile_photo')
+        
+        if not stored_photo:
+            print("❌ Profile photo not found after upload")
+            return False
+            
+        if stored_photo != valid_photo_data:
+            print("❌ Stored photo data doesn't match uploaded data")
+            return False
+            
+        print("   ✅ Profile photo correctly stored and retrieved")
+        
+        # Test 4: Update profile photo with different data
+        updated_photo_data = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
+        
+        update_data = {
+            'photo_data': updated_photo_data
+        }
+        
+        success, response = self.run_test(
+            "Update Agent Profile Photo (Different Data)",
+            "POST",
+            "agent/profile/photo",
+            200,
+            data=update_data,
+            files={},  # Form data mode
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Profile photo updated successfully")
+        
+        # Test 5: Verify updated photo is stored
+        success, response = self.run_test(
+            "Get Agent Profile After Photo Update",
+            "GET",
+            "agent/profile",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        final_profile = response.get('profile', {})
+        final_photo = final_profile.get('profile_photo')
+        
+        if final_photo != updated_photo_data:
+            print("❌ Updated photo data doesn't match")
+            return False
+            
+        print("   ✅ Updated profile photo correctly stored")
+        
+        return True
+    
+    def test_agent_profile_photo_validation(self, agent_user_key):
+        """Test agent profile photo upload validation and error handling"""
+        print("\n🔍 Testing Agent Profile Photo Upload Validation")
+        print("-" * 50)
+        
+        # Test 1: Upload with invalid base64 data
+        invalid_data_tests = [
+            {
+                'name': 'Invalid Base64 Data',
+                'data': {'photo_data': 'invalid-base64-data'},
+                'expected_status': 200  # Backend should handle gracefully
+            },
+            {
+                'name': 'Empty Photo Data',
+                'data': {'photo_data': ''},
+                'expected_status': 200  # Backend should handle gracefully
+            },
+            {
+                'name': 'Missing Photo Data',
+                'data': {},
+                'expected_status': 422  # FastAPI validation error
+            }
+        ]
+        
+        for test_case in invalid_data_tests:
+            success, response = self.run_test(
+                f"Upload Photo - {test_case['name']}",
+                "POST",
+                "agent/profile/photo",
+                test_case['expected_status'],
+                data=test_case['data'],
+                files={},
+                token_user=agent_user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ {test_case['name']} handled correctly")
+        
+        # Test 2: Upload with very large base64 data (simulate large image)
+        # Create a larger base64 string to test size handling
+        large_photo_data = "data:image/png;base64," + "A" * 10000  # 10KB of A's
+        
+        success, response = self.run_test(
+            "Upload Large Photo Data",
+            "POST",
+            "agent/profile/photo",
+            200,  # Should work but may have size limits in production
+            data={'photo_data': large_photo_data},
+            files={},
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Large photo data handled correctly")
+        
+        return True
+    
+    def test_agent_profile_photo_access_control(self):
+        """Test access control for agent profile photo upload"""
+        print("\n🔒 Testing Agent Profile Photo Upload Access Control")
+        print("-" * 55)
+        
+        valid_photo_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        # Test 1: Non-agent users should be denied access
+        non_agent_users = [
+            ('coordinator', 'Coordinator'),
+            ('admin', 'Admin')
+        ]
+        
+        for user_key, user_type in non_agent_users:
+            if user_key not in self.tokens:
+                continue
+                
+            # Test photo upload access
+            success, response = self.run_test(
+                f"{user_type} Access to Photo Upload (Should Fail)",
+                "POST",
+                "agent/profile/photo",
+                403,
+                data={'photo_data': valid_photo_data},
+                files={},
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            # Test profile access
+            success, response = self.run_test(
+                f"{user_type} Access to Agent Profile (Should Fail)",
+                "GET",
+                "agent/profile",
+                403,
+                token_user=user_key
+            )
+            
+            if not success:
+                return False
+                
+            print(f"   ✅ {user_type} properly denied access to agent profile features")
+        
+        # Test 2: Unauthenticated access should fail
+        success, response = self.run_test(
+            "Unauthenticated Photo Upload (Should Fail)",
+            "POST",
+            "agent/profile/photo",
+            401,  # Unauthorized
+            data={'photo_data': valid_photo_data},
+            files={}
+            # No token_user parameter = unauthenticated
+        )
+        
+        if not success:
+            return False
+            
+        success, response = self.run_test(
+            "Unauthenticated Profile Access (Should Fail)",
+            "GET",
+            "agent/profile",
+            401  # Unauthorized
+            # No token_user parameter = unauthenticated
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Unauthenticated access properly denied")
+        
+        return True
+    
+    def test_agent_profile_photo_integration_workflow(self, agent_user_key):
+        """Test complete agent profile photo integration workflow"""
+        print("\n🔄 Testing Agent Profile Photo Integration Workflow")
+        print("-" * 55)
+        
+        # Step 1: Get initial profile state
+        success, response = self.run_test(
+            "Get Initial Agent Profile State",
+            "GET",
+            "agent/profile",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        initial_profile = response.get('profile', {})
+        print(f"   ✅ Initial profile loaded - Username: {initial_profile.get('username')}")
+        
+        # Step 2: Upload profile photo
+        test_photo_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        success, response = self.run_test(
+            "Upload Profile Photo in Workflow",
+            "POST",
+            "agent/profile/photo",
+            200,
+            data={'photo_data': test_photo_data},
+            files={},
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Profile photo uploaded in workflow")
+        
+        # Step 3: Verify photo appears in profile
+        success, response = self.run_test(
+            "Verify Photo in Profile After Upload",
+            "GET",
+            "agent/profile",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        updated_profile = response.get('profile', {})
+        if updated_profile.get('profile_photo') != test_photo_data:
+            print("❌ Profile photo not correctly integrated in profile response")
+            return False
+            
+        print("   ✅ Profile photo correctly integrated in profile response")
+        
+        # Step 4: Test profile update with other fields (ensure photo persists)
+        profile_update_data = {
+            'phone': '9876543210',
+            'bio': 'Updated bio for testing profile photo persistence'
+        }
+        
+        success, response = self.run_test(
+            "Update Other Profile Fields",
+            "PUT",
+            "agent/profile",
+            200,
+            data=profile_update_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Other profile fields updated")
+        
+        # Step 5: Verify photo persists after other profile updates
+        success, response = self.run_test(
+            "Verify Photo Persists After Profile Update",
+            "GET",
+            "agent/profile",
+            200,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        final_profile = response.get('profile', {})
+        if final_profile.get('profile_photo') != test_photo_data:
+            print("❌ Profile photo lost after other profile updates")
+            return False
+            
+        if final_profile.get('phone') != profile_update_data['phone']:
+            print("❌ Other profile updates not persisted")
+            return False
+            
+        print("   ✅ Profile photo persists after other profile updates")
+        print(f"   ✅ Updated phone: {final_profile.get('phone')}")
+        print(f"   ✅ Updated bio: {final_profile.get('bio')}")
+        
+        return True
+    
+    def test_agent_profile_comprehensive_workflow(self, agent_user_key):
+        """Test comprehensive agent profile photo upload workflow"""
+        print("\n🎯 Testing Comprehensive Agent Profile Photo Upload Workflow")
+        print("-" * 65)
+        
+        workflow_success = True
+        
+        # 1. Test basic photo upload functionality
+        if not self.test_agent_profile_photo_upload_comprehensive(agent_user_key):
+            workflow_success = False
+            
+        # 2. Test validation and error handling
+        if not self.test_agent_profile_photo_validation(agent_user_key):
+            workflow_success = False
+            
+        # 3. Test access control
+        if not self.test_agent_profile_photo_access_control():
+            workflow_success = False
+            
+        # 4. Test integration workflow
+        if not self.test_agent_profile_photo_integration_workflow(agent_user_key):
+            workflow_success = False
+        
+        return workflow_success
+
     def test_production_readiness_workflow(self, admin_user_key, coordinator_user_key, agent_user_key):
         """Test complete production readiness workflow"""
         print("\n🚀 Testing Complete Production Readiness Workflow")
