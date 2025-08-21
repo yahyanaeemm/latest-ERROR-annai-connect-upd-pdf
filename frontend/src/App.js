@@ -2468,10 +2468,10 @@ const CoordinatorDashboard = () => {
                 {badgeTemplates.map((template) => (
                   <Card 
                     key={template.type}
-                    className={`cursor-pointer border-2 transition-all ${
+                    className={`cursor-pointer border-2 transition-all bg-white hover:shadow-md ${
                       selectedBadgeTemplate?.type === template.type
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500 bg-blue-50 shadow-lg'
+                        : 'border-gray-300 hover:border-blue-400'
                     }`}
                     onClick={() => {
                       setSelectedBadgeTemplate(template);
@@ -2482,8 +2482,8 @@ const CoordinatorDashboard = () => {
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">{template.icon}</span>
                         <div>
-                          <div className="font-medium text-sm">{template.title}</div>
-                          <div className="text-xs text-gray-500">{template.description}</div>
+                          <div className="font-semibold text-sm text-gray-800">{template.title}</div>
+                          <div className="text-xs text-gray-600">{template.description}</div>
                         </div>
                       </div>
                     </CardContent>
