@@ -432,16 +432,21 @@ backend:
 
   - task: "Document Viewing Functionality for Coordinators"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: true
         agent: "testing"
         comment: "✅ COMPREHENSIVE DOCUMENT VIEWING FUNCTIONALITY TESTING COMPLETED SUCCESSFULLY! Investigated coordinator document viewing issues with 'Fresh Start' student (AGI25080001) and verified all functionality is working correctly. CRITICAL FINDINGS: 1) STUDENT DATA VERIFICATION: ✅ Fresh Start student found in database with ID cac25fc9-a0a1-4991-9e55-bb676df1f2ae, ✅ Initially had empty documents field (explaining 'No documents uploaded' message), ✅ After document upload test, documents field properly updated with file path. 2) DOCUMENT UPLOAD FUNCTIONALITY: ✅ Document upload API working correctly (/api/students/{id}/upload), ✅ Files properly stored in backend/uploads/{student_id}/ directory, ✅ Database updated with correct file paths, ✅ File existence checking working properly. 3) COORDINATOR DOCUMENT RETRIEVAL API: ✅ GET /api/students/{id}/documents endpoint working perfectly, ✅ Coordinator authentication successful with 'arulanantham' credentials, ✅ API returns proper document structure with all required fields (type, display_name, file_name, file_path, download_url, exists), ✅ File existence verification working correctly. 4) ACCESS CONTROL TESTING: ✅ Coordinators can access documents endpoint (200 status), ✅ Admins can access documents endpoint (200 status), ✅ Agents properly denied access (403 status), ✅ Non-existent students return 404 status. 5) DOCUMENT STORAGE INVESTIGATION: ✅ Uploads directory structure working correctly, ✅ Files stored in /app/backend/uploads/{student_id}/ as expected, ✅ Download URLs properly formatted and accessible, ✅ File path resolution working correctly. ROOT CAUSE IDENTIFIED: The 'No documents uploaded' issue was caused by Fresh Start student having no actual documents uploaded initially. Once documents are uploaded via the proper API, coordinators can view them successfully. The document viewing functionality is working as designed - coordinators see 'No documents uploaded' only when students genuinely have no documents, which is the correct behavior."
-
+      - working: false
+        agent: "user"
+        comment: "500 Internal Server Error when downloading JPEG/PNG in coordinator module. Request URL like /api/students/{student_id}/documents/tc/download fails. PDFs work. UI shows 'Error accessing document / files moved or deleted'."
+      - working: false
+        agent: "main"
+        comment: "RCA from logs: UnicodeEncodeError in StreamingResponse headers due to non-ASCII character U+202F in filename (e.g., 'Screenshot ... 11.34.49 AM.png'). Starlette encodes headers as latin-1; Content-Disposition with original filename causes 500. Plan: sanitize filename to ASCII for filename= and add RFC5987 filename* with UTF-8 urlencoded original; keep behavior for PDFs/images unchanged. Set needs_retesting true and proceed with backend tests after fix."
   - task: "Badge Management System for Agent Recognition"
     implemented: true
     working: true
