@@ -10,7 +10,7 @@ from datetime import datetime
 
 def comprehensive_production_test():
     """Comprehensive test of production deployment system"""
-    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
+    base_url = "https://educonnect-46.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🚀 COMPREHENSIVE PRODUCTION DEPLOYMENT VERIFICATION")

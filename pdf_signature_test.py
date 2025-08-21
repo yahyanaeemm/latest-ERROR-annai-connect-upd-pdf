@@ -14,7 +14,7 @@ import os
 import tempfile
 
 class PDFSignatureAlignmentTester:
-    def __init__(self, base_url="https://admin-portal-revamp.preview.emergentagent.com"):
+    def __init__(self, base_url="https://educonnect-46.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tokens = {}
@@ -429,7 +429,7 @@ def main():
     print("=" * 60)
     
     # Get backend URL from environment
-    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://admin-portal-revamp.preview.emergentagent.com')
+    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'https://educonnect-46.preview.emergentagent.com')
     print(f"Backend URL: {backend_url}")
     
     tester = PDFSignatureAlignmentTester(backend_url)

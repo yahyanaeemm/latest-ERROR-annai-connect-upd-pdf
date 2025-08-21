@@ -12,7 +12,7 @@ import json
 
 def setup_production():
     """Setup production environment"""
-    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
+    base_url = "https://educonnect-46.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🚀 Setting up production environment...")
@@ -63,7 +63,7 @@ def setup_production():
 
 def test_login_after_setup():
     """Test login with production credentials"""
-    base_url = "https://admin-portal-revamp.preview.emergentagent.com"
+    base_url = "https://educonnect-46.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("\n🔐 Testing login with production credentials...")
