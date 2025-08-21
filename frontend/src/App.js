@@ -628,8 +628,11 @@ const AgentDashboard = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       fetchStudents();
+      // Show success feedback
+      alert(`${documentType.replace('_', ' ').toUpperCase()} uploaded successfully!`);
     } catch (error) {
       console.error('Error uploading file:', error);
+      alert(`Error uploading ${documentType.replace('_', ' ')}. Please try again.`);
     }
   };
 
