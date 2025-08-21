@@ -2442,18 +2442,18 @@ const CoordinatorDashboard = () => {
           
           <div className="space-y-6 py-4">
             {/* Agent Selection */}
-            <div>
-              <Label className="text-sm font-medium">Select Agent</Label>
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <Label className="text-sm font-semibold text-gray-700 mb-3 block">Select Agent</Label>
               <Select 
                 value={selectedAgent?.id || ''} 
                 onValueChange={(value) => setSelectedAgent(agents.find(a => a.id === value))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white border-2 border-gray-300 text-gray-900">
                   <SelectValue placeholder="Choose an agent..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border border-gray-300 shadow-lg">
                   {agents.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id}>
+                    <SelectItem key={agent.id} value={agent.id} className="text-gray-900 hover:bg-gray-100">
                       {agent.full_name} (@{agent.username})
                     </SelectItem>
                   ))}
@@ -2462,9 +2462,9 @@ const CoordinatorDashboard = () => {
             </div>
 
             {/* Badge Template Selection */}
-            <div>
-              <Label className="text-sm font-medium">Badge Template</Label>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <Label className="text-sm font-semibold text-gray-700 mb-3 block">Badge Template</Label>
+              <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg">
                 {badgeTemplates.map((template) => (
                   <Card 
                     key={template.type}
