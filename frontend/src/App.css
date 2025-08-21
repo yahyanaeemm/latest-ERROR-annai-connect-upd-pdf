@@ -280,7 +280,7 @@ textarea:focus-visible {
 }
 
 .App-header {
-  background: linear-gradient(135deg, #002147 0%, #1e3a8a 100%);
+  background: var(--gradient-header);
   padding: 2rem;
   color: white;
   text-align: center;
@@ -290,6 +290,21 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
+}
+
+/* Brand Header Gradient */
+.header-brand-gradient {
+  background: var(--gradient-header);
+  color: white;
+}
+
+/* Brand Title with Teal Accent */
+.title-brand-teal {
+  background: linear-gradient(135deg, var(--brand-bright-teal) 0%, var(--brand-light-teal) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
 }
 
 .App-link {
