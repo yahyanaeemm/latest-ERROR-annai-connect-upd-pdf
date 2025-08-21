@@ -1580,6 +1580,8 @@ const CoordinatorDashboard = () => {
   useEffect(() => {
     fetchFilterOptions();
     fetchStudents();
+    fetchAgents();
+    fetchBadgeTemplates();
   }, []);
 
   useEffect(() => {
