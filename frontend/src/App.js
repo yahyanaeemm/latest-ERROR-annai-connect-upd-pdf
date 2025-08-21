@@ -2940,7 +2940,10 @@ const AdminDashboard = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>User Management</span>
-            <Badge variant="outline" className="bg-blue-50 text-blue-600">{allUsers.length} total users</Badge>
+            <Badge variant="outline" className="text-blue-600" style={{
+              backgroundColor: 'rgba(78, 205, 196, 0.1)',
+              borderColor: 'rgba(27, 91, 160, 0.3)'
+            }}>{allUsers.length} total users</Badge>
           </CardTitle>
           <CardDescription>
             Complete user list and management (Admin Console)
