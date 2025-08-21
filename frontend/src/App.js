@@ -539,7 +539,7 @@ const SimpleLeaderboard = () => {
                             <TableHead>Rank</TableHead>
                             <TableHead>Agent</TableHead>
                             <TableHead>Students</TableHead>
-                            <TableHead>Incentives</TableHead>
+                            {showIncentives && <TableHead>Incentives</TableHead>}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
