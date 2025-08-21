@@ -2493,9 +2493,9 @@ const CoordinatorDashboard = () => {
             </div>
 
             {/* Custom Badge Option */}
-            <div>
-              <Label className="text-sm font-medium">Or Create Custom Badge</Label>
-              <div className="space-y-3 p-3 border rounded-lg">
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <Label className="text-sm font-semibold text-gray-700 mb-3 block">Or Create Custom Badge</Label>
+              <div className="space-y-3 p-4 bg-gray-50 border border-gray-300 rounded-lg">
                 <Input
                   placeholder="Badge Title"
                   value={customBadge.title}
@@ -2503,6 +2503,7 @@ const CoordinatorDashboard = () => {
                     setCustomBadge({ ...customBadge, title: e.target.value });
                     setSelectedBadgeTemplate(null);
                   }}
+                  className="bg-white border-2 border-gray-300 text-gray-900"
                 />
                 <Textarea
                   placeholder="Badge Description"
@@ -2511,7 +2512,7 @@ const CoordinatorDashboard = () => {
                     setCustomBadge({ ...customBadge, description: e.target.value });
                     setSelectedBadgeTemplate(null);
                   }}
-                  className="min-h-[60px] resize-none"
+                  className="min-h-[60px] resize-none bg-white border-2 border-gray-300 text-gray-900"
                 />
                 <Select
                   value={customBadge.color}
@@ -2520,10 +2521,10 @@ const CoordinatorDashboard = () => {
                     setSelectedBadgeTemplate(null);
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white border-2 border-gray-300 text-gray-900">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white border border-gray-300 shadow-lg">
                     <SelectItem value="blue">Blue</SelectItem>
                     <SelectItem value="green">Green</SelectItem>
                     <SelectItem value="yellow">Yellow</SelectItem>
