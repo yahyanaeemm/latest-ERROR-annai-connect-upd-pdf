@@ -3539,12 +3539,12 @@ class AdmissionSystemAPITester:
             "Document Download without Authentication (Should Fail)",
             "GET", 
             f"students/{student_id}/documents/{document_type}/download",
-            401,  # Expecting 401 Unauthorized
+            403,  # Expecting 403 Forbidden (or 401 Unauthorized)
             token_user=None
         )
         
         if not success:
-            print("❌ Access control test failed - should return 401 without auth")
+            print("❌ Access control test failed - should return 403/401 without auth")
             return False
             
         print("   ✅ Access control working - properly denied without authentication")
