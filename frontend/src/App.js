@@ -1210,6 +1210,40 @@ const AgentDashboard = () => {
             </Card>
           )}
 
+          {/* Agent Badges */}
+          {profileData && profileData.profile.badges && profileData.profile.badges.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-3">
+                  <Award className="h-6 w-6 text-yellow-500" />
+                  My Badges & Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {profileData.profile.badges.map((badge) => (
+                    <Card key={badge.id} className="border shadow-sm bg-gradient-to-br from-yellow-50 to-orange-50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="text-2xl">
+                            {badge.icon || '🏆'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800">{badge.title}</div>
+                            <div className="text-sm text-gray-600">{badge.description}</div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Awarded by {badge.assigned_by_name} • {new Date(badge.assigned_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Recent Activity */}
           <Card>
             <CardHeader>
