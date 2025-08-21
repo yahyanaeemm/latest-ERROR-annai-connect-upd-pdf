@@ -2539,15 +2539,20 @@ const CoordinatorDashboard = () => {
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button variant="outline" onClick={() => setShowBadgeModal(false)}>
+          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 bg-gray-50 -mx-6 -mb-6 px-6 py-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBadgeModal(false)}
+              className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
               Cancel
             </Button>
             <Button 
               onClick={assignBadge}
               disabled={!selectedAgent || (!selectedBadgeTemplate && !customBadge.title)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white disabled:opacity-50"
             >
+              <Award className="h-4 w-4 mr-2" />
               Assign Badge
             </Button>
           </div>
