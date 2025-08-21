@@ -360,10 +360,14 @@ const Header = () => {
 
 // Simple Working Leaderboard Component
 const SimpleLeaderboard = () => {
+  const { user } = useAuth();
   const [leaderboardData, setLeaderboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overall');
   const [lastUpdated, setLastUpdated] = useState(null);
+  
+  // Hide incentive data for agents to maintain confidentiality
+  const showIncentives = user?.role !== 'agent';
 
   const fetchLeaderboard = async (type = 'overall') => {
     setLoading(true);
