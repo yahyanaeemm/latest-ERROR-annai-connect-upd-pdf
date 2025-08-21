@@ -1,30 +1,37 @@
-/* Modern 2025 Design System - Light Mode Only */
+/* Modern 2025 Design System - Annai Connect Brand Theme */
 :root {
-  /* Light theme colors */
+  /* Annai Connect Brand Colors */
+  --brand-deep-blue: #1B5BA0;
+  --brand-bright-teal: #4ECDC4;
+  --brand-dark-blue: #164a87;
+  --brand-light-teal: #7FDBDB;
+  
+  /* Light theme colors updated with brand palette */
   --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #0f172a;
+  --primary: var(--brand-deep-blue);
   --primary-foreground: #f8fafc;
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
+  --accent: var(--brand-bright-teal);
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #f8fafc;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #0f172a;
+  --ring: var(--brand-deep-blue);
   --radius: 0.5rem;
   
-  /* Custom gradient colors */
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  /* Custom gradient colors - Brand focused */
+  --gradient-primary: linear-gradient(135deg, var(--brand-deep-blue) 0%, var(--brand-bright-teal) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--brand-bright-teal) 0%, var(--brand-light-teal) 100%);
+  --gradient-header: linear-gradient(135deg, var(--brand-deep-blue) 0%, var(--brand-dark-blue) 100%);
   --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   --gradient-warning: linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%);
   
