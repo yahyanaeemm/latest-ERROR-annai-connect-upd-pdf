@@ -629,9 +629,24 @@ test_plan:
   test_all: false
   test_priority: "high_first"
 
+  - task: "Agent Document Upload Visibility & Coordinator Document Download Fix"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js, /app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "🚨 CRITICAL ISSUES IDENTIFIED - User reported two problems: 1) Agent document upload inputs are hidden/not visible, preventing agents from easily uploading documents. 2) Coordinator document download shows 'Error downloading document. Please try again.' when clicking download button. Investigation revealed: Agent upload badges are clickable but not obviously so, and coordinator download fails due to URL routing issue - /uploads routes are directed to frontend port 3000 instead of backend port 8001 due to missing /api prefix in Kubernetes ingress rules."
+      - working: false
+        agent: "main"
+        comment: "🔍 ROOT CAUSE ANALYSIS COMPLETED - Agent upload UI uses hidden file inputs triggered by badge clicks (lines 829-840 App.js), which may not be intuitive. Document download fails because frontend constructs URLs as ${BACKEND_URL}/uploads/... but Kubernetes ingress only routes /api/* to backend port 8001. Non-/api routes go to frontend port 3000 which doesn't have uploaded files. Files exist in backend/uploads directory and backend can serve them at localhost:8001/uploads/... but external routing fails."
+
 agent_communication:
   - agent: "main"
-    message: "🚀 PRODUCTION DEPLOYMENT PREPARATION IMPLEMENTED - Created comprehensive database cleanup and production setup system to finalize app for deployment. Two critical admin-only endpoints added: 1) POST /api/admin/cleanup-database: Completely clears all test data from all collections (users, pending_users, students, incentives, incentive_rules, leaderboard_cache) and uploads directory. 2) POST /api/admin/setup-production-data: Creates clean production users (Admin: super admin/Admin@annaiconnect, Coordinator: arulanantham/Arul@annaiconnect, 3 Agents: agent1-3/agent@123) and courses (B.Ed: ₹6000, MBA: ₹2500, BNYS: ₹20000). System ready for comprehensive backend testing to verify deployment preparation functionality."
+    message: "🚨 AGENT UPLOAD & COORDINATOR DOWNLOAD ISSUE INVESTIGATION - Identified critical problems affecting document workflow: 1) AGENT UPLOAD VISIBILITY: File inputs are hidden with badge-triggered uploads (lines 829-840), making it unclear to agents how to upload documents. 2) DOCUMENT DOWNLOAD ROUTING ERROR: Coordinator download fails because frontend requests ${BACKEND_URL}/uploads/... but Kubernetes ingress rules only route /api/* to backend port 8001. Non-/api routes go to frontend port 3000, causing 'Error downloading document' message. Files exist in backend/uploads and are properly stored but routing is incorrect. Need to: A) Improve agent upload UI visibility, B) Fix document download URL to use /api prefix for proper routing."
   - agent: "main"
     message: "🎨 ANNAI CONNECT LOGO & BRAND UI UPDATE COMPLETED - Successfully implemented comprehensive brand color scheme update matching the new Annai Connect logo. KEY ACHIEVEMENTS: 1) LOGO UPDATE: Replaced old logo with new Annai Connect logo (https://customer-assets.emergentagent.com/job_pdf-receipt-hub/artifacts/y895x7ww_Untitled%20design%20%282%29.png) across login screen and header. 2) BRAND COLORS IMPLEMENTED: Deep Blue (#1B5BA0) for primary buttons, headers, and focus states; Bright Teal (#4ECDC4) for title gradients and user badges; Supporting colors for hover states and accents. 3) UI ELEMENTS UPDATED: Login page blue-to-teal gradient background, header with professional brand gradient, teal gradient title matching 'Connect' branding, all primary buttons with brand blue styling, user role badges with teal gradient, enhanced focus states and accessibility compliance. 4) CSS SYSTEM ENHANCED: Updated CSS variables, added brand-specific button classes (btn-brand-primary, btn-brand-secondary), enhanced form input styling, improved dialog and select elements. 5) FUNCTIONALITY PRESERVED: All existing functionality maintained, PDF receipt generation unchanged as requested, no breaking changes introduced. The application now has a cohesive, professional brand identity that perfectly matches the Annai Connect logo colors."
   - agent: "testing"
