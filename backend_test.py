@@ -6934,6 +6934,618 @@ def main_focused_image_test():
         
         return True
 
+    # BADGE MANAGEMENT SYSTEM TESTS (NEW FEATURE)
+    
+    def test_coordinator_agents_api(self, user_key, expected_status=200):
+        """Test GET /api/coordinator/agents endpoint for badge management"""
+        print(f"\n👥 Testing Coordinator Agents API for Badge Management as {user_key}")
+        print("-" * 65)
+        
+        success, response = self.run_test(
+            f"Get Agents for Badge Management as {user_key}",
+            "GET",
+            "coordinator/agents",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response is a list
+            if not isinstance(response, list):
+                print("❌ Response should be a list of agents")
+                return False
+                
+            print(f"   ✅ Found {len(response)} agents for badge management")
+            
+            # Verify agent structure if agents exist
+            if response:
+                first_agent = response[0]
+                required_fields = ['id', 'username', 'full_name', 'email', 'total_students', 'approved_students', 'badges', 'created_at']
+                for field in required_fields:
+                    if field not in first_agent:
+                        print(f"❌ Missing agent field '{field}' in response")
+                        return False
+                        
+                print(f"   ✅ Sample agent: {first_agent['full_name']} ({first_agent['username']})")
+                print(f"       - Total students: {first_agent['total_students']}")
+                print(f"       - Approved students: {first_agent['approved_students']}")
+                print(f"       - Current badges: {len(first_agent['badges'])}")
+                
+                # Store agent ID for badge assignment tests
+                self.test_data['badge_test_agent_id'] = first_agent['id']
+                self.test_data['badge_test_agent_name'] = first_agent['full_name']
+                
+                # Verify badges structure
+                badges = first_agent['badges']
+                if not isinstance(badges, list):
+                    print("❌ Agent badges should be a list")
+                    return False
+                    
+                if badges:
+                    first_badge = badges[0]
+                    required_badge_fields = ['id', 'type', 'title', 'description', 'color', 'assigned_by', 'assigned_by_name', 'assigned_at', 'active']
+                    for field in required_badge_fields:
+                        if field not in first_badge:
+                            print(f"❌ Missing badge field '{field}' in agent badges")
+                            return False
+                            
+                    print(f"   ✅ Sample badge: {first_badge['title']} - {first_badge['description']}")
+                else:
+                    print("   ✅ Agent has no badges currently assigned")
+        
+        return True
+    
+    def test_badge_templates_api(self, user_key, expected_status=200):
+        """Test GET /api/badge-templates endpoint"""
+        print(f"\n🏆 Testing Badge Templates API as {user_key}")
+        print("-" * 45)
+        
+        success, response = self.run_test(
+            f"Get Badge Templates as {user_key}",
+            "GET",
+            "badge-templates",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response is a list
+            if not isinstance(response, list):
+                print("❌ Response should be a list of badge templates")
+                return False
+                
+            print(f"   ✅ Found {len(response)} badge templates")
+            
+            # Verify template structure
+            if response:
+                first_template = response[0]
+                required_fields = ['type', 'title', 'description', 'color', 'icon']
+                for field in required_fields:
+                    if field not in first_template:
+                        print(f"❌ Missing template field '{field}' in response")
+                        return False
+                        
+                print(f"   ✅ Sample template: {first_template['title']} - {first_template['description']}")
+                print(f"       - Type: {first_template['type']}, Color: {first_template['color']}, Icon: {first_template['icon']}")
+                
+                # Store template data for badge assignment test
+                self.test_data['badge_template'] = first_template
+                
+                # Verify expected templates exist
+                expected_templates = ['super_agent', 'star_agent', 'best_performer', 'rising_star', 'team_player']
+                found_types = [template['type'] for template in response]
+                
+                for expected_type in expected_templates:
+                    if expected_type not in found_types:
+                        print(f"❌ Expected template type '{expected_type}' not found")
+                        return False
+                        
+                print(f"   ✅ All expected template types found: {', '.join(expected_templates)}")
+        
+        return True
+    
+    def test_assign_badge_to_agent(self, user_key, expected_status=200):
+        """Test POST /api/coordinator/agents/{agent_id}/badges endpoint"""
+        print(f"\n🎖️ Testing Badge Assignment to Agent as {user_key}")
+        print("-" * 55)
+        
+        # Check if we have test data
+        agent_id = self.test_data.get('badge_test_agent_id')
+        template = self.test_data.get('badge_template')
+        
+        if not agent_id:
+            print("❌ No agent ID available for badge assignment test")
+            return False
+            
+        if not template:
+            print("❌ No badge template available for assignment test")
+            return False
+        
+        # Prepare badge assignment data
+        badge_data = {
+            'badge_type': template['type'],
+            'badge_title': template['title'],
+            'badge_description': f"Test assignment: {template['description']}",
+            'badge_color': template['color']
+        }
+        
+        success, response = self.run_test(
+            f"Assign Badge to Agent as {user_key}",
+            "POST",
+            f"coordinator/agents/{agent_id}/badges",
+            expected_status,
+            data=badge_data,
+            files={},  # Form data mode
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response structure
+            if 'message' not in response:
+                print("❌ Missing 'message' field in badge assignment response")
+                return False
+                
+            if 'badge' not in response:
+                print("❌ Missing 'badge' field in badge assignment response")
+                return False
+                
+            assigned_badge = response['badge']
+            
+            # Verify assigned badge structure
+            required_badge_fields = ['id', 'type', 'title', 'description', 'color', 'assigned_by', 'assigned_by_name', 'assigned_at', 'active']
+            for field in required_badge_fields:
+                if field not in assigned_badge:
+                    print(f"❌ Missing field '{field}' in assigned badge")
+                    return False
+                    
+            print(f"   ✅ Badge assigned successfully: {assigned_badge['title']}")
+            print(f"       - Type: {assigned_badge['type']}")
+            print(f"       - Description: {assigned_badge['description']}")
+            print(f"       - Assigned by: {assigned_badge['assigned_by_name']}")
+            print(f"       - Badge ID: {assigned_badge['id']}")
+            
+            # Store badge ID for removal test
+            self.test_data['assigned_badge_id'] = assigned_badge['id']
+            
+            # Verify badge data matches input
+            if assigned_badge['type'] != badge_data['badge_type']:
+                print("❌ Badge type mismatch")
+                return False
+                
+            if assigned_badge['title'] != badge_data['badge_title']:
+                print("❌ Badge title mismatch")
+                return False
+                
+            if assigned_badge['color'] != badge_data['badge_color']:
+                print("❌ Badge color mismatch")
+                return False
+                
+            print("   ✅ Badge data matches assignment request")
+        
+        return True
+    
+    def test_remove_badge_from_agent(self, user_key, expected_status=200):
+        """Test DELETE /api/coordinator/agents/{agent_id}/badges/{badge_id} endpoint"""
+        print(f"\n🗑️ Testing Badge Removal from Agent as {user_key}")
+        print("-" * 55)
+        
+        # Check if we have test data
+        agent_id = self.test_data.get('badge_test_agent_id')
+        badge_id = self.test_data.get('assigned_badge_id')
+        
+        if not agent_id:
+            print("❌ No agent ID available for badge removal test")
+            return False
+            
+        if not badge_id:
+            print("❌ No badge ID available for removal test")
+            return False
+        
+        success, response = self.run_test(
+            f"Remove Badge from Agent as {user_key}",
+            "DELETE",
+            f"coordinator/agents/{agent_id}/badges/{badge_id}",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response structure
+            if 'message' not in response:
+                print("❌ Missing 'message' field in badge removal response")
+                return False
+                
+            if 'removed successfully' not in response['message'].lower():
+                print(f"❌ Expected success message, got: {response['message']}")
+                return False
+                
+            print(f"   ✅ Badge removed successfully: {response['message']}")
+        
+        return True
+    
+    def test_agent_profile_includes_badges(self, user_key, expected_status=200):
+        """Test that GET /api/agent/profile includes badges in response"""
+        print(f"\n👤 Testing Agent Profile Includes Badges as {user_key}")
+        print("-" * 55)
+        
+        success, response = self.run_test(
+            f"Get Agent Profile with Badges as {user_key}",
+            "GET",
+            "agent/profile",
+            expected_status,
+            token_user=user_key
+        )
+        
+        if not success:
+            return False
+            
+        if expected_status == 200:
+            # Verify response structure
+            if 'badges' not in response:
+                print("❌ Missing 'badges' field in agent profile response")
+                return False
+                
+            badges = response['badges']
+            if not isinstance(badges, list):
+                print("❌ Agent badges should be a list")
+                return False
+                
+            print(f"   ✅ Agent profile includes badges field with {len(badges)} badges")
+            
+            # Verify badge structure if badges exist
+            if badges:
+                first_badge = badges[0]
+                required_badge_fields = ['id', 'type', 'title', 'description', 'color', 'assigned_by', 'assigned_by_name', 'assigned_at', 'active']
+                for field in required_badge_fields:
+                    if field not in first_badge:
+                        print(f"❌ Missing badge field '{field}' in agent profile badges")
+                        return False
+                        
+                print(f"   ✅ Sample badge in profile: {first_badge['title']} - {first_badge['description']}")
+            else:
+                print("   ✅ Agent has no badges currently (empty list)")
+        
+        return True
+    
+    def test_coordinator_notes_functionality(self, coordinator_user_key, agent_user_key):
+        """Test that coordinator notes functionality still works with student approval process"""
+        print(f"\n📝 Testing Coordinator Notes Functionality Integration")
+        print("-" * 60)
+        
+        # Step 1: Agent creates a student for testing
+        student_data = {
+            "first_name": "BadgeTest",
+            "last_name": "Student",
+            "email": f"badge.test.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "BSc"
+        }
+        
+        success, response = self.run_test(
+            "Create Student for Badge System Integration Test",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        badge_test_student_id = response.get('id')
+        if not badge_test_student_id:
+            print("❌ No student ID returned")
+            return False
+            
+        print(f"   ✅ Student created for badge integration test: {badge_test_student_id}")
+        
+        # Step 2: Coordinator approves with notes (should still work)
+        coordinator_approval_data = {
+            'status': 'approved',
+            'notes': 'Coordinator approval with notes - testing badge system integration'
+        }
+        
+        success, response = self.run_test(
+            "Coordinator Approves Student with Notes",
+            "PUT",
+            f"students/{badge_test_student_id}/status",
+            200,
+            data=coordinator_approval_data,
+            files={},
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Coordinator approval with notes working correctly")
+        
+        # Step 3: Verify student status and notes were saved
+        success, response = self.run_test(
+            "Verify Student Status and Notes After Approval",
+            "GET",
+            f"students/{badge_test_student_id}",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        if response.get('status') != 'coordinator_approved':
+            print(f"❌ Expected status 'coordinator_approved', got '{response.get('status')}'")
+            return False
+            
+        if response.get('coordinator_notes') != coordinator_approval_data['notes']:
+            print("❌ Coordinator notes not saved correctly")
+            return False
+            
+        print("   ✅ Student status and coordinator notes saved correctly")
+        print(f"       - Status: {response.get('status')}")
+        print(f"       - Notes: {response.get('coordinator_notes')}")
+        
+        return True
+    
+    def test_badge_management_access_control(self):
+        """Test access control for badge management endpoints"""
+        print("\n🔒 Testing Badge Management Access Control")
+        print("-" * 45)
+        
+        access_control_success = True
+        
+        # Test coordinator access (should work)
+        if 'coordinator' in self.tokens:
+            print("\n   Testing COORDINATOR access (should work):")
+            if not self.test_coordinator_agents_api('coordinator', 200):
+                access_control_success = False
+            if not self.test_badge_templates_api('coordinator', 200):
+                access_control_success = False
+        
+        # Test admin access (should work)
+        if 'admin' in self.tokens:
+            print("\n   Testing ADMIN access (should work):")
+            if not self.test_coordinator_agents_api('admin', 200):
+                access_control_success = False
+            if not self.test_badge_templates_api('admin', 200):
+                access_control_success = False
+        
+        # Test agent access (should fail with 403)
+        if 'agent1' in self.tokens:
+            print("\n   Testing AGENT access (should fail with 403):")
+            if not self.test_coordinator_agents_api('agent1', 403):
+                access_control_success = False
+            if not self.test_badge_templates_api('agent1', 403):
+                access_control_success = False
+        
+        return access_control_success
+    
+    def test_badge_management_edge_cases(self):
+        """Test edge cases for badge management"""
+        print("\n🔍 Testing Badge Management Edge Cases")
+        print("-" * 45)
+        
+        edge_cases_success = True
+        
+        if 'coordinator' in self.tokens:
+            # Test assigning badge to non-existent agent
+            fake_agent_id = "fake-agent-id-12345"
+            badge_data = {
+                'badge_type': 'test_badge',
+                'badge_title': 'Test Badge',
+                'badge_description': 'Test badge for edge case testing',
+                'badge_color': 'blue'
+            }
+            
+            success, response = self.run_test(
+                "Assign Badge to Non-existent Agent (Should Return 404)",
+                "POST",
+                f"coordinator/agents/{fake_agent_id}/badges",
+                404,
+                data=badge_data,
+                files={},
+                token_user='coordinator'
+            )
+            
+            if not success:
+                edge_cases_success = False
+            else:
+                print("   ✅ Badge assignment to non-existent agent properly returns 404")
+            
+            # Test removing non-existent badge
+            if self.test_data.get('badge_test_agent_id'):
+                fake_badge_id = "fake-badge-id-12345"
+                success, response = self.run_test(
+                    "Remove Non-existent Badge (Should Return 404)",
+                    "DELETE",
+                    f"coordinator/agents/{self.test_data['badge_test_agent_id']}/badges/{fake_badge_id}",
+                    404,
+                    token_user='coordinator'
+                )
+                
+                if not success:
+                    edge_cases_success = False
+                else:
+                    print("   ✅ Non-existent badge removal properly returns 404")
+        
+        return edge_cases_success
+    
+    def test_comprehensive_badge_management_system(self, coordinator_user_key, agent_user_key):
+        """Test complete badge management system functionality"""
+        print("\n🏆 Testing Comprehensive Badge Management System")
+        print("-" * 55)
+        
+        system_success = True
+        
+        # Test 1: Get agents for badge management
+        if not self.test_coordinator_agents_api(coordinator_user_key):
+            system_success = False
+            
+        # Test 2: Get badge templates
+        if not self.test_badge_templates_api(coordinator_user_key):
+            system_success = False
+            
+        # Test 3: Assign badge to agent
+        if not self.test_assign_badge_to_agent(coordinator_user_key):
+            system_success = False
+            
+        # Test 4: Verify agent profile includes badges
+        if not self.test_agent_profile_includes_badges(agent_user_key):
+            system_success = False
+            
+        # Test 5: Remove badge from agent
+        if not self.test_remove_badge_from_agent(coordinator_user_key):
+            system_success = False
+            
+        # Test 6: Test coordinator notes functionality integration
+        if not self.test_coordinator_notes_functionality(coordinator_user_key, agent_user_key):
+            system_success = False
+            
+        # Test 7: Test access control
+        if not self.test_badge_management_access_control():
+            system_success = False
+            
+        # Test 8: Test edge cases
+        if not self.test_badge_management_edge_cases():
+            system_success = False
+        
+        return system_success
+    
+    def run_badge_management_tests(self):
+        """Run comprehensive badge management system tests"""
+        print("🏆 Starting Badge Management System Testing")
+        print("=" * 50)
+        
+        # Login with different user types
+        login_success = True
+        
+        # Try to login as admin
+        admin_credentials = [
+            ("super admin", "Admin@annaiconnect", "admin"),
+            ("admin", "admin123", "admin")
+        ]
+        
+        admin_login_success = False
+        for username, password, user_key in admin_credentials:
+            if self.test_login(username, password, user_key):
+                admin_login_success = True
+                print(f"✅ Successfully logged in as admin: {username}")
+                break
+        
+        if not admin_login_success:
+            print("❌ Failed to login as admin")
+            login_success = False
+        
+        # Try to login as coordinator
+        coordinator_credentials = [
+            ("arulanantham", "Arul@annaiconnect", "coordinator"),
+            ("coordinator", "coord123", "coordinator")
+        ]
+        
+        coordinator_login_success = False
+        for username, password, user_key in coordinator_credentials:
+            if self.test_login(username, password, user_key):
+                coordinator_login_success = True
+                print(f"✅ Successfully logged in as coordinator: {username}")
+                break
+        
+        if not coordinator_login_success:
+            print("❌ Failed to login as coordinator")
+            login_success = False
+        
+        # Try to login as agent
+        agent_credentials = [
+            ("agent1", "Agent@annaiconnect", "agent1"),
+            ("agent", "agent123", "agent1")
+        ]
+        
+        agent_login_success = False
+        for username, password, user_key in agent_credentials:
+            if self.test_login(username, password, user_key):
+                agent_login_success = True
+                print(f"✅ Successfully logged in as agent: {username}")
+                break
+        
+        if not agent_login_success:
+            print("❌ Failed to login as agent")
+            login_success = False
+        
+        if not login_success:
+            print("❌ Failed to login with required user types - cannot proceed with badge management testing")
+            return False
+        
+        # Get user info for all logged in users
+        for user_key in ['admin', 'coordinator', 'agent1']:
+            if user_key in self.tokens:
+                self.test_user_info(user_key)
+        
+        # Run comprehensive badge management tests
+        badge_success = True
+        
+        print("\n🔍 TESTING BADGE MANAGEMENT SYSTEM")
+        print("-" * 40)
+        
+        # Use coordinator for main testing
+        coordinator_key = 'coordinator' if 'coordinator' in self.tokens else 'admin'
+        agent_key = 'agent1' if 'agent1' in self.tokens else None
+        
+        if not agent_key:
+            print("❌ No agent user available for testing")
+            return False
+        
+        if not self.test_comprehensive_badge_management_system(coordinator_key, agent_key):
+            badge_success = False
+        
+        # Print badge management summary
+        self.print_badge_management_summary(badge_success)
+        
+        return badge_success
+    
+    def print_badge_management_summary(self, success):
+        """Print badge management testing summary"""
+        print("\n" + "=" * 70)
+        print("🏆 BADGE MANAGEMENT SYSTEM TESTING SUMMARY")
+        print("=" * 70)
+        
+        if success:
+            print("✅ ALL BADGE MANAGEMENT TESTS PASSED SUCCESSFULLY!")
+            print("\n🎖️ VERIFIED FUNCTIONALITY:")
+            print("   ✅ GET /api/coordinator/agents - Returns agents with badge information")
+            print("   ✅ GET /api/badge-templates - Returns predefined badge templates")
+            print("   ✅ POST /api/coordinator/agents/{agent_id}/badges - Assigns badges to agents")
+            print("   ✅ DELETE /api/coordinator/agents/{agent_id}/badges/{badge_id} - Removes badges")
+            print("   ✅ GET /api/agent/profile - Includes badges in agent profile response")
+            print("   ✅ Coordinator notes functionality - Still works with student approval process")
+            print("   ✅ Access Control - Proper permissions for coordinators/admins only")
+            print("   ✅ Edge Cases - Proper error handling for invalid requests")
+            print("\n🎯 CONCLUSION:")
+            print("   The badge management system is fully functional and ready for production.")
+            print("   Coordinators can assign and remove recognition badges for agent performance.")
+            print("   All backend APIs are working correctly with proper access control.")
+            print("   Integration with existing student approval process is maintained.")
+        else:
+            print("❌ SOME BADGE MANAGEMENT TESTS FAILED")
+            print("\n⚠️ Issues found that need attention:")
+            print("   Check the detailed test output above for specific failures.")
+        
+        print(f"\n📈 Test Statistics:")
+        print(f"   Total Tests Run: {self.tests_run}")
+        print(f"   Tests Passed: {self.tests_passed}")
+        print(f"   Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        print("=" * 70)
+
 if __name__ == "__main__":
     # Run focused leaderboard system testing after frontend enhancements
     tester = AdmissionSystemAPITester()
