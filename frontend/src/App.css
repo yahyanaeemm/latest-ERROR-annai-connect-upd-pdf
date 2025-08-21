@@ -101,11 +101,11 @@ body {
   font-weight: 600;
 }
 
-/* Modern button styles */
+/* Modern button styles - Brand focused */
 .modern-button {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   border: none;
   border-radius: var(--radius);
   color: white;
@@ -114,6 +114,63 @@ body {
   padding: 0.75rem 1.5rem;
   transition: all var(--transition-normal);
   transform: translateZ(0);
+}
+
+/* Brand Primary Button */
+.btn-brand-primary {
+  background: var(--brand-deep-blue);
+  border: 2px solid var(--brand-deep-blue);
+  color: white;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+}
+
+.btn-brand-primary:hover {
+  background: var(--brand-dark-blue);
+  border-color: var(--brand-dark-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(27, 91, 160, 0.3);
+}
+
+/* Brand Secondary Button */
+.btn-brand-secondary {
+  background: var(--brand-bright-teal);
+  border: 2px solid var(--brand-bright-teal);
+  color: white;
+  font-weight: 600;
+  transition: all var(--transition-normal);
+}
+
+.btn-brand-secondary:hover {
+  background: var(--brand-light-teal);
+  border-color: var(--brand-light-teal);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(78, 205, 196, 0.3);
+}
+
+/* Brand Outline Button */
+.btn-brand-outline {
+  background: transparent;
+  border: 2px solid var(--brand-deep-blue);
+  color: var(--brand-deep-blue);
+  font-weight: 600;
+  transition: all var(--transition-normal);
+}
+
+.btn-brand-outline:hover {
+  background: var(--brand-deep-blue);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Enhanced Focus States for Accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--brand-bright-teal);
+  outline-offset: 2px;
+  border-color: var(--brand-deep-blue);
 }
 
 .modern-button::before {
