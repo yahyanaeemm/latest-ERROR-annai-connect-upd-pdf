@@ -724,7 +724,10 @@ const AgentDashboard = () => {
         <h2 className="text-2xl font-bold text-slate-800">Agent Dashboard</h2>
         <div className="flex items-center space-x-4">
           {activeTab === 'dashboard' && (
-            <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => setShowForm(true)} className="btn-brand-primary" style={{
+              backgroundColor: '#1B5BA0',
+              borderColor: '#1B5BA0'
+            }}>
               <Users className="h-4 w-4 mr-2" />
               New Student
             </Button>
