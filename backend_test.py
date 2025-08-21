@@ -6124,9 +6124,54 @@ class AdmissionSystemAPITester:
         return True
 
 def main():
-    print("🚀 Starting Database Cleanup for Fresh Deployment Tests")
-    print("=" * 60)
-def main():
+    """Main test execution for Authentication Header Fix for Image Viewing"""
+    print("🎯 AUTHENTICATION HEADER FIX FOR IMAGE VIEWING - REVIEW TEST")
+    print("=" * 65)
+    
+    tester = AdmissionSystemAPITester()
+    
+    # Test authentication with coordinator credentials as specified
+    print("\n🔐 AUTHENTICATION TESTING")
+    print("-" * 30)
+    
+    # Login with coordinator credentials: arulanantham / Arul@annaiconnect
+    if not tester.test_login("arulanantham", "Arul@annaiconnect", "coordinator"):
+        print("❌ Failed to authenticate coordinator - stopping test")
+        return False
+    
+    print("✅ Coordinator authentication successful")
+    
+    # Run the specific authentication header fix test
+    print("\n🔍 AUTHENTICATION HEADER FIX FOR IMAGE VIEWING TEST")
+    print("-" * 55)
+    
+    auth_header_success = tester.test_document_authentication_header_fix("coordinator")
+    
+    # Final summary
+    print("\n" + "=" * 65)
+    print("📊 AUTHENTICATION HEADER FIX TEST SUMMARY")
+    print("=" * 65)
+    
+    print(f"🎯 Authentication Header Fix Test: {'✅ PASSED' if auth_header_success else '❌ FAILED'}")
+    print(f"📈 Tests Run: {tester.tests_run}")
+    print(f"✅ Tests Passed: {tester.tests_passed}")
+    print(f"❌ Tests Failed: {tester.tests_run - tester.tests_passed}")
+    print(f"📊 Success Rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    if auth_header_success:
+        print("\n🎉 AUTHENTICATION HEADER FIX FOR IMAGE VIEWING - PASSED!")
+        print("   ✅ Document download with coordinator authentication works")
+        print("   ✅ Access control properly denies unauthenticated requests")
+        print("   ✅ Content-Type headers are correct for images")
+        print("   ✅ Content-Disposition: inline header present for images")
+        print("   ✅ CORS headers are properly configured")
+    else:
+        print("\n❌ AUTHENTICATION HEADER FIX FOR IMAGE VIEWING - FAILED!")
+        print("   Please review the backend API endpoint implementation")
+    
+    return auth_header_success
+
+def main_old():
     print("🚀 Starting Database Cleanup for Fresh Deployment Tests")
     print("=" * 60)
     
