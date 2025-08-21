@@ -1041,7 +1041,10 @@ const AgentDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-center p-4 rounded-lg" style={{
+                  backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                  border: '1px solid rgba(78, 205, 196, 0.3)'
+                }}>
                   <div className="text-2xl font-bold text-blue-600">{profileData.performance.total_students}</div>
                   <div className="text-sm text-gray-600">Total Students</div>
                 </div>
