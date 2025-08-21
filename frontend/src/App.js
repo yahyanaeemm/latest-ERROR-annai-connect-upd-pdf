@@ -2212,6 +2212,8 @@ const CoordinatorDashboard = () => {
         isOpen={showSignature}
         onClose={() => setShowSignature(false)}
         onSave={handleSignatureSave}
+        notes={notes}
+        setNotes={setNotes}
       />
 
       {/* Success Notification */}
