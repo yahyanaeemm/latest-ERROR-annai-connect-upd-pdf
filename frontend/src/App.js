@@ -446,6 +446,38 @@ const SimpleLeaderboard = () => {
                 </div>
               ) : leaderboardData?.leaderboard?.length > 0 ? (
                 <>
+                  {/* Data Summary Header */}
+                  <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-blue-700">
+                            {leaderboardData.leaderboard.reduce((sum, agent) => 
+                              sum + (activeTab === 'overall' ? agent.total_admissions : agent.period_admissions), 0
+                            )}
+                          </div>
+                          <div className="text-xs text-blue-600">Total Students</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-green-700">
+                            ₹{leaderboardData.leaderboard.reduce((sum, agent) => 
+                              sum + (activeTab === 'overall' ? agent.total_incentive : agent.period_incentive || 0), 0
+                            ).toLocaleString('en-IN')}
+                          </div>
+                          <div className="text-xs text-green-600">Total Incentives</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-purple-700">{leaderboardData.total_agents}</div>
+                          <div className="text-xs text-purple-600">Active Agents</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 text-green-600">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-medium">Live Rankings</span>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Top 3 Agents */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     {leaderboardData.leaderboard.slice(0, 3).map((agent, index) => (
