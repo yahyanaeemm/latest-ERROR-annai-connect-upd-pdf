@@ -7513,6 +7513,44 @@ def main_focused_image_test():
         
         return badge_success
     
+    def run_document_download_tests(self):
+        """Run comprehensive document download functionality tests"""
+        print("📄 Starting Document Download Functionality Testing")
+        print("=" * 55)
+        
+        # Test authentication for required users
+        print("\n🔐 AUTHENTICATION TESTS")
+        print("-" * 25)
+        
+        login_success = True
+        
+        # Admin login
+        if not self.test_login("super admin", "Admin@annaiconnect", "admin"):
+            login_success = False
+            
+        # Coordinator login  
+        if not self.test_login("arulanantham", "Coord@annaiconnect", "coordinator"):
+            login_success = False
+            
+        # Agent login
+        if not self.test_login("agent1", "Agent1@annaiconnect", "agent1"):
+            login_success = False
+        
+        if not login_success:
+            print("❌ Authentication failed - stopping document download tests")
+            return False
+        
+        # Test document download functionality
+        print("\n📄 DOCUMENT DOWNLOAD FUNCTIONALITY TESTS")
+        print("-" * 45)
+        
+        download_success = True
+        if 'coordinator' in self.tokens and 'admin' in self.tokens and 'agent1' in self.tokens:
+            if not self.test_document_download_functionality('coordinator', 'admin', 'agent1'):
+                download_success = False
+        
+        return download_success
+    
     def print_badge_management_summary(self, success):
         """Print badge management testing summary"""
         print("\n" + "=" * 70)
