@@ -790,6 +790,51 @@ async def get_student_documents(student_id: str, current_user: User = Depends(ge
         "documents": document_info
     }
 
+@api_router.get("/students/{student_id}/documents/{document_type}/download")
+async def download_student_document(
+    student_id: str, 
+    document_type: str, 
+    current_user: User = Depends(get_current_user)
+):
+    """Download a specific student document"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    student_doc = await db.students.find_one({"id": student_id})
+    if not student_doc:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    documents = student_doc.get("documents", {})
+    if document_type not in documents:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    file_path = Path(documents[document_type])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    # Determine content type based on file extension
+    content_type = "application/octet-stream"
+    if file_path.suffix.lower() == ".pdf":
+        content_type = "application/pdf"
+    elif file_path.suffix.lower() in [".jpg", ".jpeg"]:
+        content_type = "image/jpeg"
+    elif file_path.suffix.lower() == ".png":
+        content_type = "image/png"
+    
+    def file_generator():
+        with open(file_path, "rb") as file:
+            yield from file
+    
+    headers = {
+        'Content-Disposition': f'attachment; filename="{file_path.name}"'
+    }
+    
+    return StreamingResponse(
+        file_generator(), 
+        media_type=content_type,
+        headers=headers
+    )
+
 @api_router.get("/students/filter-options")
 async def get_student_filter_options(current_user: User = Depends(get_current_user)):
     """Get available filter options for coordinator dashboard"""
