@@ -7793,6 +7793,337 @@ def main_focused_image_test():
         
         return True
 
+    def test_image_viewing_functionality_for_coordinators(self, admin_user_key, coordinator_user_key, agent_user_key):
+        """Test image viewing functionality for coordinators accessing PNG and JPEG documents"""
+        print("\n🖼️ Testing Image Viewing Functionality for Coordinators")
+        print("-" * 60)
+        
+        # Step 1: Create a test student for image document testing
+        student_data = {
+            "first_name": "ImageTest",
+            "last_name": "Student",
+            "email": f"image.test.{datetime.now().strftime('%H%M%S')}@example.com",
+            "phone": "1234567890",
+            "course": "BSc"
+        }
+        
+        success, response = self.run_test(
+            "Create Student for Image Document Testing",
+            "POST",
+            "students",
+            200,
+            data=student_data,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        image_test_student_id = response.get('id')
+        print(f"   ✅ Created test student for image testing: {image_test_student_id}")
+        
+        # Step 2: Upload PNG document
+        png_content = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\tpHYs\x00\x00\x0b\x13\x00\x00\x0b\x13\x01\x00\x9a\x9c\x18\x00\x00\x00\x0cIDATx\x9cc```\x00\x00\x00\x04\x00\x01\xdd\x8d\xb4\x1c\x00\x00\x00\x00IEND\xaeB`\x82'
+        
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.png', delete=False) as f:
+            f.write(png_content)
+            png_file_path = f.name
+        
+        try:
+            with open(png_file_path, 'rb') as f:
+                files = {'file': ('test_document.png', f, 'image/png')}
+                data = {'document_type': 'photo'}
+                
+                success, response = self.run_test(
+                    "Upload PNG Document",
+                    "POST",
+                    f"students/{image_test_student_id}/upload",
+                    200,
+                    data=data,
+                    files=files,
+                    token_user=agent_user_key
+                )
+        finally:
+            os.unlink(png_file_path)
+            
+        if not success:
+            return False
+            
+        print("   ✅ PNG document uploaded successfully")
+        
+        # Step 3: Upload JPEG document
+        jpeg_content = b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00H\x00H\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342\xff\xc0\x00\x11\x08\x00\x01\x00\x01\x01\x01\x11\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x14\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\xff\xc4\x00\x14\x10\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xda\x00\x0c\x03\x01\x00\x02\x11\x03\x11\x00\x3f\x00\xaa\xff\xd9'
+        
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.jpg', delete=False) as f:
+            f.write(jpeg_content)
+            jpeg_file_path = f.name
+        
+        try:
+            with open(jpeg_file_path, 'rb') as f:
+                files = {'file': ('test_certificate.jpg', f, 'image/jpeg')}
+                data = {'document_type': 'certificate'}
+                
+                success, response = self.run_test(
+                    "Upload JPEG Document",
+                    "POST",
+                    f"students/{image_test_student_id}/upload",
+                    200,
+                    data=data,
+                    files=files,
+                    token_user=agent_user_key
+                )
+        finally:
+            os.unlink(jpeg_file_path)
+            
+        if not success:
+            return False
+            
+        print("   ✅ JPEG document uploaded successfully")
+        
+        # Step 4: Test coordinator access to student documents endpoint
+        success, response = self.run_test(
+            "Coordinator Access to Student Documents",
+            "GET",
+            f"students/{image_test_student_id}/documents",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        documents = response.get('documents', [])
+        if len(documents) < 2:
+            print(f"❌ Expected at least 2 documents, found {len(documents)}")
+            return False
+            
+        print(f"   ✅ Coordinator can access student documents ({len(documents)} documents found)")
+        
+        # Step 5: Test PNG document download with proper headers
+        png_doc = None
+        jpeg_doc = None
+        
+        for doc in documents:
+            if doc.get('type') == 'photo':
+                png_doc = doc
+            elif doc.get('type') == 'certificate':
+                jpeg_doc = doc
+        
+        if not png_doc:
+            print("❌ PNG document not found in documents list")
+            return False
+            
+        if not jpeg_doc:
+            print("❌ JPEG document not found in documents list")
+            return False
+        
+        # Test PNG download endpoint
+        url = f"{self.api_url}/students/{image_test_student_id}/documents/photo/download"
+        headers = {'Authorization': f'Bearer {self.tokens[coordinator_user_key]}'}
+        
+        try:
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code != 200:
+                print(f"❌ PNG download failed with status {response.status_code}")
+                return False
+                
+            # Check Content-Type header for PNG
+            content_type = response.headers.get('Content-Type', '')
+            if content_type != 'image/png':
+                print(f"❌ Expected Content-Type 'image/png', got '{content_type}'")
+                return False
+                
+            # Check Content-Disposition header for inline viewing
+            content_disposition = response.headers.get('Content-Disposition', '')
+            if not content_disposition.startswith('inline'):
+                print(f"❌ Expected Content-Disposition 'inline', got '{content_disposition}'")
+                return False
+                
+            print("   ✅ PNG document download successful with correct headers")
+            print(f"      Content-Type: {content_type}")
+            print(f"      Content-Disposition: {content_disposition}")
+            
+        except Exception as e:
+            print(f"❌ PNG download request failed: {str(e)}")
+            return False
+        
+        # Test JPEG download endpoint
+        url = f"{self.api_url}/students/{image_test_student_id}/documents/certificate/download"
+        
+        try:
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code != 200:
+                print(f"❌ JPEG download failed with status {response.status_code}")
+                return False
+                
+            # Check Content-Type header for JPEG
+            content_type = response.headers.get('Content-Type', '')
+            if content_type != 'image/jpeg':
+                print(f"❌ Expected Content-Type 'image/jpeg', got '{content_type}'")
+                return False
+                
+            # Check Content-Disposition header for inline viewing
+            content_disposition = response.headers.get('Content-Disposition', '')
+            if not content_disposition.startswith('inline'):
+                print(f"❌ Expected Content-Disposition 'inline', got '{content_disposition}'")
+                return False
+                
+            print("   ✅ JPEG document download successful with correct headers")
+            print(f"      Content-Type: {content_type}")
+            print(f"      Content-Disposition: {content_disposition}")
+            
+        except Exception as e:
+            print(f"❌ JPEG download request failed: {str(e)}")
+            return False
+        
+        # Step 6: Test access control - agents should be denied access
+        success, response = self.run_test(
+            "Agent Access to Document Download (Should Fail)",
+            "GET",
+            f"students/{image_test_student_id}/documents/photo/download",
+            403,
+            token_user=agent_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Agent properly denied access to document downloads")
+        
+        # Step 7: Test admin access to image documents
+        url = f"{self.api_url}/students/{image_test_student_id}/documents/photo/download"
+        headers = {'Authorization': f'Bearer {self.tokens[admin_user_key]}'}
+        
+        try:
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code != 200:
+                print(f"❌ Admin PNG download failed with status {response.status_code}")
+                return False
+                
+            print("   ✅ Admin can successfully access PNG documents")
+            
+        except Exception as e:
+            print(f"❌ Admin PNG download request failed: {str(e)}")
+            return False
+        
+        # Step 8: Test non-existent document download
+        success, response = self.run_test(
+            "Download Non-existent Document (Should Fail)",
+            "GET",
+            f"students/{image_test_student_id}/documents/nonexistent/download",
+            404,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Non-existent document download properly returns 404")
+        
+        # Step 9: Test non-existent student document access
+        fake_student_id = "fake-student-id-12345"
+        success, response = self.run_test(
+            "Access Documents for Non-existent Student (Should Fail)",
+            "GET",
+            f"students/{fake_student_id}/documents",
+            404,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            return False
+            
+        print("   ✅ Non-existent student document access properly returns 404")
+        
+        # Step 10: Test PDF document comparison (should have different headers)
+        # Upload a PDF document for comparison
+        pdf_content = b'%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000010 00000 n \n0000000079 00000 n \n0000000173 00000 n \ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n301\n%%EOF'
+        
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.pdf', delete=False) as f:
+            f.write(pdf_content)
+            pdf_file_path = f.name
+        
+        try:
+            with open(pdf_file_path, 'rb') as f:
+                files = {'file': ('test_transcript.pdf', f, 'application/pdf')}
+                data = {'document_type': 'transcript'}
+                
+                success, response = self.run_test(
+                    "Upload PDF Document for Comparison",
+                    "POST",
+                    f"students/{image_test_student_id}/upload",
+                    200,
+                    data=data,
+                    files=files,
+                    token_user=agent_user_key
+                )
+        finally:
+            os.unlink(pdf_file_path)
+            
+        if not success:
+            return False
+        
+        # Test PDF download headers (should be different from images)
+        url = f"{self.api_url}/students/{image_test_student_id}/documents/transcript/download"
+        headers = {'Authorization': f'Bearer {self.tokens[coordinator_user_key]}'}
+        
+        try:
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code != 200:
+                print(f"❌ PDF download failed with status {response.status_code}")
+                return False
+                
+            # Check Content-Type header for PDF
+            content_type = response.headers.get('Content-Type', '')
+            if content_type != 'application/pdf':
+                print(f"❌ Expected Content-Type 'application/pdf', got '{content_type}'")
+                return False
+                
+            # Check Content-Disposition header for PDF (should be attachment, not inline)
+            content_disposition = response.headers.get('Content-Disposition', '')
+            if not content_disposition.startswith('attachment'):
+                print(f"❌ Expected Content-Disposition 'attachment' for PDF, got '{content_disposition}'")
+                return False
+                
+            print("   ✅ PDF document has correct headers (attachment disposition)")
+            print(f"      Content-Type: {content_type}")
+            print(f"      Content-Disposition: {content_disposition}")
+            
+        except Exception as e:
+            print(f"❌ PDF download request failed: {str(e)}")
+            return False
+        
+        # Store test results
+        self.test_data['image_viewing_test_results'] = {
+            'png_upload_working': True,
+            'jpeg_upload_working': True,
+            'coordinator_access_working': True,
+            'png_headers_correct': True,
+            'jpeg_headers_correct': True,
+            'inline_disposition_working': True,
+            'access_control_working': True,
+            'admin_access_working': True,
+            'error_handling_working': True,
+            'pdf_comparison_working': True
+        }
+        
+        print("\n🎯 IMAGE VIEWING FUNCTIONALITY TEST SUMMARY:")
+        print("   ✅ PNG document upload and viewing working")
+        print("   ✅ JPEG document upload and viewing working")
+        print("   ✅ Content-Type headers correctly set for images")
+        print("   ✅ Content-Disposition: inline for browser viewing")
+        print("   ✅ Coordinator authentication and access working")
+        print("   ✅ Admin access to image documents working")
+        print("   ✅ Access control properly denies agent access")
+        print("   ✅ Error handling for non-existent documents/students")
+        print("   ✅ PDF documents have different headers (attachment)")
+        
+        return True
+
     def run_document_download_tests(self):
         """Run comprehensive document download functionality tests"""
         print("📄 Starting Document Download Functionality Testing")
