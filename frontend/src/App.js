@@ -2489,7 +2489,11 @@ const AdminDashboard = () => {
               <CardTitle>Course Management</CardTitle>
               <CardDescription>Manage courses and incentive amounts</CardDescription>
             </div>
-            <Button onClick={() => setShowCourseForm(true)}>
+            <Button onClick={() => setShowCourseForm(true)} className="btn-brand-primary" style={{
+              backgroundColor: '#1B5BA0',
+              borderColor: '#1B5BA0',
+              color: 'white'
+            }}>
               <Plus className="h-4 w-4 mr-2" />
               Add Course
             </Button>
