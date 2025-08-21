@@ -781,7 +781,7 @@ async def get_student_documents(student_id: str, current_user: User = Depends(ge
             "display_name": doc_type.replace('_', ' ').title(),
             "file_name": file_path_obj.name,
             "file_path": file_path,
-            "download_url": f"/uploads/{student_id}/{file_path_obj.name}",
+            "download_url": f"/api/students/{student_id}/documents/{doc_type}/download",
             "exists": file_path_obj.exists()
         })
     
