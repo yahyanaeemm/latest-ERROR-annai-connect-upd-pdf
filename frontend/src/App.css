@@ -641,6 +641,75 @@ textarea:focus-visible {
   transform: scale(1.05);
 }
 
+/* Enhanced Dialog Styling with Brand Colors */
+.dialog-header-brand {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 16px 16px 0 0;
+  border-bottom: 3px solid var(--brand-bright-teal);
+}
+
+.dialog-content-enhanced {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(27, 91, 160, 0.4);
+  border: 3px solid var(--brand-deep-blue);
+  max-width: 600px;
+  width: 95vw;
+}
+
+/* Enhanced Form Elements */
+.form-input-brand {
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius);
+  transition: all var(--transition-normal);
+}
+
+.form-input-brand:focus {
+  border-color: var(--brand-deep-blue);
+  box-shadow: 0 0 0 3px rgba(27, 91, 160, 0.1);
+  outline: none;
+}
+
+/* Enhanced Select Elements */
+.select-trigger-brand {
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius);
+  transition: all var(--transition-normal);
+  background: white;
+}
+
+.select-trigger-brand:focus,
+.select-trigger-brand[data-state="open"] {
+  border-color: var(--brand-deep-blue);
+  box-shadow: 0 0 0 3px rgba(27, 91, 160, 0.1);
+}
+
+/* Select Content Enhancement */
+[data-radix-select-content] {
+  background: white !important;
+  border: 2px solid var(--brand-deep-blue) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 8px 24px rgba(27, 91, 160, 0.2) !important;
+  z-index: 9999 !important;
+  padding: 0.5rem !important;
+}
+
+[data-radix-select-item] {
+  padding: 0.75rem 1rem !important;
+  border-radius: 6px !important;
+  transition: all var(--transition-fast) !important;
+  cursor: pointer !important;
+  color: #374151 !important;
+}
+
+[data-radix-select-item]:hover,
+[data-radix-select-item][data-highlighted] {
+  background: var(--brand-deep-blue) !important;
+  color: white !important;
+}
+
 /* Enhanced Signature Modal Visibility */
 .signature-modal-overlay {
   background: rgba(0, 0, 0, 0.8) !important;
