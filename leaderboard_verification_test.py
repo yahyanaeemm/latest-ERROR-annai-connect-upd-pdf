@@ -76,9 +76,9 @@ class LeaderboardVerificationTester:
         
         # Try different admin credentials
         admin_credentials = [
-            {"username": "super admin", "password": "admin123"},
-            {"username": "admin", "password": "admin123"},
-            {"username": "superadmin", "password": "admin123"}
+            {"username": "super admin", "password": "Admin@annaiconnect"},
+            {"username": "arulanantham", "password": "Arul@annaiconnect"},
+            {"username": "agent1", "password": "agent@123"}
         ]
         
         for creds in admin_credentials:
