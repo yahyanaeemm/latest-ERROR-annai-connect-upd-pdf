@@ -1562,18 +1562,71 @@ const CoordinatorDashboard = () => {
       const isImage = fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/);
       
       if (isImage) {
-        // For images, create blob URL and open in new tab for viewing
+        // For images, create blob URL and show in an embedded modal/window
         const url = window.URL.createObjectURL(new Blob([response.data]));
-        const newWindow = window.open(url, '_blank');
         
-        // Clean up the blob URL after a delay to allow the image to load
-        setTimeout(() => {
+        // Try to open in new tab first
+        const newWindow = window.open('', '_blank');
+        
+        if (newWindow) {
+          // Create a simple HTML page to display the image
+          newWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>${fileName}</title>
+              <style>
+                body { 
+                  margin: 0; 
+                  padding: 20px; 
+                  background: #f0f0f0; 
+                  display: flex; 
+                  justify-content: center; 
+                  align-items: center; 
+                  min-height: 100vh;
+                  font-family: Arial, sans-serif;
+                }
+                img { 
+                  max-width: 90vw; 
+                  max-height: 90vh; 
+                  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                  border-radius: 8px;
+                  background: white;
+                  padding: 10px;
+                }
+                .container {
+                  text-align: center;
+                }
+                h3 {
+                  margin-bottom: 20px;
+                  color: #333;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h3>${fileName}</h3>
+                <img src="${url}" alt="${fileName}" onload="console.log('Image loaded successfully')" onerror="console.error('Error loading image')">
+              </div>
+            </body>
+            </html>
+          `);
+          newWindow.document.close();
+          
+          // Clean up the blob URL after a delay
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 10000);
+        } else {
+          // Fallback: If popup is blocked, download the image
+          alert('Pop-up blocked. The image will be downloaded instead. Please allow pop-ups for better viewing experience.');
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', fileName);
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
           window.URL.revokeObjectURL(url);
-        }, 5000);
-        
-        // Check if new window opened successfully
-        if (!newWindow) {
-          alert('Pop-up blocked. Please allow pop-ups for this site to view images.');
         }
       } else {
         // For PDFs and other files, download as before
@@ -1593,7 +1646,7 @@ const CoordinatorDashboard = () => {
       } else if (error.response?.status === 404) {
         alert('Document not found. The file may have been moved or deleted.');
       } else {
-        alert('Error accessing document. Please try again.');
+        alert('Error accessing document. Please check your connection and try again.');
       }
     }
   };
