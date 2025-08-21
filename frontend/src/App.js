@@ -1553,21 +1553,31 @@ const CoordinatorDashboard = () => {
 
   const downloadDocument = async (downloadUrl, fileName) => {
     try {
-      const response = await axios.get(`${BACKEND_URL}${downloadUrl}`, {
-        responseType: 'blob'
-      });
+      // Check if it's an image file
+      const isImage = fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/);
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      if (isImage) {
+        // For images, open in new tab for viewing
+        const fullUrl = `${BACKEND_URL}${downloadUrl}`;
+        window.open(fullUrl, '_blank');
+      } else {
+        // For PDFs and other files, download as before
+        const response = await axios.get(`${BACKEND_URL}${downloadUrl}`, {
+          responseType: 'blob'
+        });
+        
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      }
     } catch (error) {
-      console.error('Error downloading document:', error);
-      alert('Error downloading document. Please try again.');
+      console.error('Error accessing document:', error);
+      alert('Error accessing document. Please try again.');
     }
   };
 
