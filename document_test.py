@@ -486,7 +486,7 @@ class DocumentAPITester:
         # Login as admin (try different admin credentials)
         admin_login_success = False
         admin_credentials = [
-            ("super admin", "admin@123"),
+            ("super admin", "Admin@annaiconnect"),
             ("admin", "admin@123"),
             ("superadmin", "admin@123")
         ]
