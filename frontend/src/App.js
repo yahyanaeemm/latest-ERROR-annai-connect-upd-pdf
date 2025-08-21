@@ -823,20 +823,32 @@ const AgentDashboard = () => {
                   <TableCell>{student.course}</TableCell>
                   <TableCell>{getStatusBadge(student.status)}</TableCell>
                   <TableCell>
-                    <div className="flex space-x-1">
+                    <div className="flex flex-wrap gap-2">
                       {['tc', 'id_proof', 'marksheet'].map((docType) => (
-                        <label key={docType} className="cursor-pointer">
+                        <div key={docType} className="flex flex-col items-center">
                           <input
                             type="file"
                             className="hidden"
+                            id={`upload-${student.id}-${docType}`}
                             accept=".jpg,.jpeg,.pdf,.png"
                             onChange={(e) => e.target.files[0] && handleFileUpload(student.id, docType, e.target.files[0])}
                           />
-                          <Badge variant={student.documents[docType] ? "default" : "outline"} className="text-xs hover:bg-blue-100">
-                            {docType.replace('_', ' ').toUpperCase()}
-                            {!student.documents[docType] && <Upload className="h-3 w-3 ml-1" />}
-                          </Badge>
-                        </label>
+                          {student.documents[docType] ? (
+                            <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
+                              {docType.replace('_', ' ').toUpperCase()} ✓
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7 px-2 border-blue-300 text-blue-700 hover:bg-blue-50 cursor-pointer"
+                              onClick={() => document.getElementById(`upload-${student.id}-${docType}`).click()}
+                            >
+                              <Upload className="h-3 w-3 mr-1" />
+                              {docType.replace('_', ' ').toUpperCase()}
+                            </Button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </TableCell>
