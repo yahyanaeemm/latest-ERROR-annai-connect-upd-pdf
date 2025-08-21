@@ -1999,8 +1999,19 @@ const CoordinatorDashboard = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => downloadDocument(doc.download_url, doc.file_name)}
+                                className="flex items-center space-x-1"
                               >
-                                <Download className="h-4 w-4" />
+                                {doc.file_name.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/) ? (
+                                  <>
+                                    <Eye className="h-4 w-4" />
+                                    <span className="text-xs">View</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="h-4 w-4" />
+                                    <span className="text-xs">Download</span>
+                                  </>
+                                )}
                               </Button>
                             </>
                           ) : (
