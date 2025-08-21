@@ -1715,7 +1715,7 @@ const CoordinatorDashboard = () => {
   const downloadDocument = async (downloadUrl, fileName) => {
     try {
       // Always fetch the file with proper authentication first
-      const response = await axios.get(`${BACKEND_URL}${downloadUrl}`, {
+      const response = await axios.get(`${API}${downloadUrl}`, {
         responseType: 'blob'
       });
       
