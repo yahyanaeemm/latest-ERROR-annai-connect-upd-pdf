@@ -2411,6 +2411,50 @@ async def deploy_production(current_user: User = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Production deployment failed: {str(e)}")
 
+@api_router.post("/admin/clear-student-data")
+async def clear_student_data(current_user: User = Depends(get_current_user)):
+    """Clear all student data for fresh dashboard while preserving courses and users"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Clear only student-related collections
+        student_collections_to_clear = [
+            "students",           # All student records
+            "incentives",         # Agent incentives related to students
+            "leaderboard_cache"   # Cached leaderboard data based on student admissions
+        ]
+        
+        cleared_data = {}
+        for collection_name in student_collections_to_clear:
+            collection = getattr(db, collection_name)
+            result = await collection.delete_many({})
+            cleared_data[collection_name] = result.deleted_count
+        
+        # Clear student-related upload files (receipts, documents, signatures)
+        upload_dir = Path("uploads")
+        if upload_dir.exists():
+            # Keep the upload directory but clear its contents
+            for file_path in upload_dir.iterdir():
+                if file_path.is_file():
+                    file_path.unlink()
+                elif file_path.is_dir():
+                    shutil.rmtree(file_path)
+        
+        return {
+            "message": "Student data successfully cleared for fresh launch",
+            "cleared_records": cleared_data,
+            "preserved": {
+                "courses": "All course information preserved",
+                "users": "All user accounts preserved",
+                "settings": "All system settings preserved"
+            },
+            "status": "success",
+            "dashboard_state": "Fresh dashboard ready for public launch"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Student data cleanup failed: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
