@@ -1185,7 +1185,10 @@ const AgentDashboard = () => {
                 </div>
               </div>
               <div className="mt-6">
-                <Button onClick={updateProfile} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={updateProfile} className="btn-brand-primary" style={{
+                  backgroundColor: '#1B5BA0',
+                  borderColor: '#1B5BA0'
+                }}>
                   Update Profile
                 </Button>
               </div>
