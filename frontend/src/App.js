@@ -1574,7 +1574,8 @@ const CoordinatorDashboard = () => {
           variant={currentPage === i ? "default" : "outline"}
           size="sm"
           onClick={() => handlePageChange(i)}
-          className={currentPage === i ? "bg-blue-600 text-white" : ""}
+          className={currentPage === i ? "btn-brand-primary" : ""} 
+          style={currentPage === i ? { backgroundColor: '#1B5BA0', color: 'white' } : {}}
         >
           {i}
         </Button>
