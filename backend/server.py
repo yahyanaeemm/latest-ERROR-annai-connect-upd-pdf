@@ -1421,6 +1421,138 @@ async def upload_profile_photo(
     
     return {"message": "Profile photo updated successfully"}
 
+# BADGE MANAGEMENT APIs (for coordinators)
+@api_router.get("/coordinator/agents")
+async def get_agents_for_badge_management(current_user: User = Depends(get_current_user)):
+    """Get list of agents for badge management by coordinators"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Coordinator or Admin access required")
+    
+    # Get all agents with basic info and current badges
+    agents_cursor = db.users.find({"role": "agent"})
+    agents = await agents_cursor.to_list(1000)
+    
+    agent_list = []
+    for agent in agents:
+        # Calculate basic performance metrics
+        agent_id = agent.get("agent_id", agent["id"])
+        total_students = await db.students.count_documents({"agent_id": agent_id})
+        approved_students = await db.students.count_documents({"agent_id": agent_id, "status": "approved"})
+        
+        agent_info = {
+            "id": agent["id"],
+            "username": agent["username"],
+            "full_name": f"{agent.get('first_name', '')} {agent.get('last_name', '')}".strip() or agent["username"],
+            "email": agent["email"],
+            "total_students": total_students,
+            "approved_students": approved_students,
+            "badges": agent.get("badges", []),
+            "created_at": agent.get("created_at")
+        }
+        agent_list.append(agent_info)
+    
+    return agent_list
+
+@api_router.post("/coordinator/agents/{agent_id}/badges")
+async def assign_badge_to_agent(
+    agent_id: str,
+    badge_type: str = Form(...),
+    badge_title: str = Form(...),
+    badge_description: str = Form(...),
+    badge_color: str = Form("blue"),
+    current_user: User = Depends(get_current_user)
+):
+    """Assign a badge to an agent (coordinator only)"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Coordinator or Admin access required")
+    
+    # Check if agent exists
+    agent = await db.users.find_one({"id": agent_id, "role": "agent"})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Create badge object
+    new_badge = {
+        "id": str(uuid.uuid4()),
+        "type": badge_type,
+        "title": badge_title,
+        "description": badge_description,
+        "color": badge_color,
+        "assigned_by": current_user.id,
+        "assigned_by_name": f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.username,
+        "assigned_at": datetime.utcnow(),
+        "active": True
+    }
+    
+    # Get current badges and add new one
+    current_badges = agent.get("badges", [])
+    current_badges.append(new_badge)
+    
+    # Update agent with new badge
+    result = await db.users.update_one(
+        {"id": agent_id},
+        {"$set": {"badges": current_badges}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Failed to update agent")
+    
+    return {"message": f"Badge '{badge_title}' assigned successfully to agent", "badge": new_badge}
+
+@api_router.delete("/coordinator/agents/{agent_id}/badges/{badge_id}")
+async def remove_badge_from_agent(
+    agent_id: str,
+    badge_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Remove a badge from an agent (coordinator only)"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Coordinator or Admin access required")
+    
+    # Get agent
+    agent = await db.users.find_one({"id": agent_id, "role": "agent"})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Remove badge from list
+    current_badges = agent.get("badges", [])
+    updated_badges = [badge for badge in current_badges if badge.get("id") != badge_id]
+    
+    if len(updated_badges) == len(current_badges):
+        raise HTTPException(status_code=404, detail="Badge not found")
+    
+    # Update agent
+    result = await db.users.update_one(
+        {"id": agent_id},
+        {"$set": {"badges": updated_badges}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Failed to update agent")
+    
+    return {"message": "Badge removed successfully"}
+
+@api_router.get("/badge-templates")
+async def get_badge_templates(current_user: User = Depends(get_current_user)):
+    """Get predefined badge templates for coordinators"""
+    if current_user.role not in ["coordinator", "admin"]:
+        raise HTTPException(status_code=403, detail="Coordinator or Admin access required")
+    
+    templates = [
+        {"type": "super_agent", "title": "Super Agent", "description": "Outstanding performance across all metrics", "color": "gold", "icon": "👑"},
+        {"type": "star_agent", "title": "Star Agent", "description": "Exceptional student recruitment and approval rate", "color": "yellow", "icon": "⭐"},
+        {"type": "best_performer", "title": "Best Performer", "description": "Top performer of the month/quarter", "color": "blue", "icon": "🏆"},
+        {"type": "rising_star", "title": "Rising Star", "description": "Showing rapid improvement and growth", "color": "green", "icon": "🌟"},
+        {"type": "team_player", "title": "Team Player", "description": "Excellent collaboration and team spirit", "color": "purple", "icon": "🤝"},
+        {"type": "mentor", "title": "Mentor", "description": "Helping and guiding other agents", "color": "orange", "icon": "👨‍🏫"},
+        {"type": "innovator", "title": "Innovator", "description": "Creative approaches and new ideas", "color": "teal", "icon": "💡"},
+        {"type": "consistent", "title": "Consistent Performer", "description": "Steady and reliable performance", "color": "indigo", "icon": "📈"},
+        {"type": "quality_master", "title": "Quality Master", "description": "High approval rate and quality submissions", "color": "emerald", "icon": "✅"},
+        {"type": "speed_demon", "title": "Speed Demon", "description": "Fast and efficient student processing", "color": "red", "icon": "⚡"}
+    ]
+    
+    return templates
+
 # Admin Final Approval Process
 @api_router.get("/admin/pending-approvals")
 async def get_pending_admin_approvals(current_user: User = Depends(get_current_user)):
