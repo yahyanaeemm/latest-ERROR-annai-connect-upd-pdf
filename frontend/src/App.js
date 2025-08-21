@@ -3029,7 +3029,11 @@ const AdminDashboard = () => {
               }}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button type="submit" className="btn-brand-primary" style={{
+                backgroundColor: '#1B5BA0',
+                borderColor: '#1B5BA0',
+                color: 'white'
+              }}>
                 {editingCourse ? 'Update Course' : 'Create Course'}
               </Button>
             </div>
