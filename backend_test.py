@@ -6450,6 +6450,155 @@ def main_focused_image_test():
         print("❌ Please review failures before production deployment")
         return 1
 
+    def test_image_viewing_authentication_fix_verification(self, coordinator_user_key):
+        """Final verification test for Complete Image Viewing Authentication Fix"""
+        print("\n🔍 FINAL VERIFICATION: Complete Image Viewing Authentication Fix")
+        print("-" * 65)
+        
+        # Test 1: Authentication Test - Login as coordinator and verify access
+        success, response = self.run_test(
+            "Coordinator Authentication Verification",
+            "GET",
+            "me",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            print("❌ Coordinator authentication failed")
+            return False
+            
+        if response.get('role') != 'coordinator':
+            print(f"❌ Expected coordinator role, got {response.get('role')}")
+            return False
+            
+        print(f"   ✅ Coordinator authenticated: {response.get('username')}")
+        
+        # Test 2: Image Document Test - Test specific student document endpoint
+        student_id = "cac25fc9-a0a1-4991-9e55-bb676df1f2ae"
+        success, response = self.run_test(
+            "Image Document Download Test (id_proof)",
+            "GET",
+            f"students/{student_id}/documents/id_proof/download",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            print("❌ Image document download failed")
+            return False
+            
+        print("   ✅ Image document (id_proof) download successful")
+        
+        # Test 3: PDF Document Test - Test PDF document endpoint
+        success, response = self.run_test(
+            "PDF Document Download Test (tc)",
+            "GET",
+            f"students/{student_id}/documents/tc/download",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            print("❌ PDF document download failed")
+            return False
+            
+        print("   ✅ PDF document (tc) download successful")
+        
+        # Test 4: Access Control - Verify authentication is required
+        # Test without authentication token
+        success, response = self.run_test(
+            "Document Access Without Authentication (Should Fail)",
+            "GET",
+            f"students/{student_id}/documents/id_proof/download",
+            403  # Should fail with 403 Forbidden
+        )
+        
+        if not success:
+            print("❌ Access control test failed - unauthenticated access should be denied")
+            return False
+            
+        print("   ✅ Access control working - unauthenticated requests properly denied")
+        
+        # Test 5: Agent access control (agents should not have access to document viewing)
+        if 'agent1' in self.tokens:
+            success, response = self.run_test(
+                "Agent Access to Document Download (Should Fail)",
+                "GET",
+                f"students/{student_id}/documents/id_proof/download",
+                403,
+                token_user='agent1'
+            )
+            
+            if not success:
+                print("❌ Agent access control failed")
+                return False
+                
+            print("   ✅ Agent access properly denied (403 status)")
+        
+        # Test 6: Verify document endpoints are working for coordinators
+        success, response = self.run_test(
+            "Get Student Documents List",
+            "GET",
+            f"students/{student_id}/documents",
+            200,
+            token_user=coordinator_user_key
+        )
+        
+        if not success:
+            print("❌ Student documents list failed")
+            return False
+            
+        documents = response.get('documents', [])
+        print(f"   ✅ Found {len(documents)} documents for student")
+        
+        # Verify document structure
+        for doc in documents:
+            if not all(key in doc for key in ['type', 'download_url', 'exists']):
+                print("❌ Document structure missing required fields")
+                return False
+                
+        print("   ✅ Document structure validation passed")
+        
+        return True
+
 if __name__ == "__main__":
-    # Run authentication header fix test as requested in review
-    main()
+    # Run the specific verification test requested in the review
+    tester = AdmissionSystemAPITester()
+    
+    print("🚀 Starting Final Verification Tests for Image Viewing Authentication Fix")
+    print("=" * 80)
+    
+    # Login coordinator user with specific credentials from review request
+    login_success = tester.test_login("arulanantham", "Arul@annaiconnect", "coordinator")
+    
+    if not login_success:
+        print("❌ Coordinator login failed")
+        sys.exit(1)
+    
+    # Also login agent for access control testing
+    if not tester.test_login("agent1", "agent123", "agent1"):
+        print("⚠️ Agent login failed - access control test will be limited")
+    
+    # Run the specific verification test
+    verification_passed = tester.test_image_viewing_authentication_fix_verification("coordinator")
+    
+    # Print final summary
+    print("\n" + "="*80)
+    print("🎯 FINAL VERIFICATION SUMMARY")
+    print("="*80)
+    print(f"Total tests run: {tester.tests_run}")
+    print(f"Tests passed: {tester.tests_passed}")
+    print(f"Tests failed: {tester.tests_run - tester.tests_passed}")
+    print(f"Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    if verification_passed:
+        print("🎉 IMAGE VIEWING AUTHENTICATION FIX VERIFICATION PASSED!")
+        print("✅ Backend is working properly after frontend changes")
+        print("✅ Authentication is still required for document access")
+        print("✅ Image and PDF document downloads working correctly")
+        print("✅ Access control properly implemented")
+        sys.exit(0)
+    else:
+        print("❌ Image viewing authentication fix verification failed")
+        sys.exit(1)
