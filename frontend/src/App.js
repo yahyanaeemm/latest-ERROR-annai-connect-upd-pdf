@@ -936,7 +936,10 @@ const AgentDashboard = () => {
               <Button type="button" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50" onClick={() => setShowForm(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Create Student</Button>
+              <Button type="submit" className="btn-brand-primary" style={{
+                backgroundColor: '#1B5BA0',
+                borderColor: '#1B5BA0'
+              }}>Create Student</Button>
             </div>
           </form>
         </DialogContent>
