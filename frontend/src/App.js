@@ -894,7 +894,10 @@ const AgentDashboard = () => {
                   id="last_name"
                   value={formData.last_name}
                   onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                  className="bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="form-input-brand bg-white text-gray-900 border-gray-300"
+                  style={{
+                    '--focus-border-color': '#1B5BA0'
+                  }}
                   required
                 />
               </div>
