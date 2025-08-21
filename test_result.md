@@ -59,6 +59,8 @@
 ## agent_communication:
 ##     -agent: "main"  # or "testing" or "user"
 ##     -message: "Communication message between agents"
+##     -agent: "main"
+##     -message: "🚨 USER ISSUE REPORTED: Leaderboard dashboard appears static and not linked with agent student count and incentive data. Need to investigate if this is a frontend display issue or data synchronization problem. Backend testing shows leaderboard APIs working correctly and returning dynamic data from database."
 
 # Protocol Guidelines for Main agent
 #
