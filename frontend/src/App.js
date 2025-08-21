@@ -1508,6 +1508,7 @@ const CoordinatorDashboard = () => {
   // UI state
   const [showFilters, setShowFilters] = useState(false);
   const [selectedView, setSelectedView] = useState('list'); // 'list' or 'details'
+  const [activeTab, setActiveTab] = useState('students'); // 'students' or 'badges'
   const [successNotification, setSuccessNotification] = useState(null);
 
   // Success notification function
