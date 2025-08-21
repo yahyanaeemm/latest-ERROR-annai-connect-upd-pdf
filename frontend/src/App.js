@@ -1331,7 +1331,7 @@ const AgentDashboard = () => {
 };
 
 // Signature Component
-const SignatureModal = ({ isOpen, onClose, onSave }) => {
+const SignatureModal = ({ isOpen, onClose, onSave, notes, setNotes }) => {
   const sigCanvas = useRef({});
   const [signatureType, setSignatureType] = useState('draw');
   const [uploadedImage, setUploadedImage] = useState(null);
