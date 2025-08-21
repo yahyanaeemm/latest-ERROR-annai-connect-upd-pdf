@@ -363,17 +363,23 @@ const SimpleLeaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overall');
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const fetchLeaderboard = async (type = 'overall') => {
     setLoading(true);
     try {
       const response = await axios.get(`${API}/leaderboard/${type}`);
       setLeaderboardData(response.data);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchLeaderboard(activeTab);
   };
 
   useEffect(() => {
