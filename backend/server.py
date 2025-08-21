@@ -812,21 +812,28 @@ async def download_student_document(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found on disk")
     
-    # Determine content type based on file extension
+    # Determine content type and disposition based on file extension
     content_type = "application/octet-stream"
+    disposition = "attachment"  # Default for downloads
+    
     if file_path.suffix.lower() == ".pdf":
         content_type = "application/pdf"
+        disposition = "attachment"  # PDFs download as files
     elif file_path.suffix.lower() in [".jpg", ".jpeg"]:
         content_type = "image/jpeg"
+        disposition = "inline"  # Images display in browser
     elif file_path.suffix.lower() == ".png":
         content_type = "image/png"
+        disposition = "inline"  # Images display in browser
     
     def file_generator():
         with open(file_path, "rb") as file:
             yield from file
     
     headers = {
-        'Content-Disposition': f'attachment; filename="{file_path.name}"'
+        'Content-Disposition': f'{disposition}; filename="{file_path.name}"',
+        'Cache-Control': 'public, max-age=3600',  # Cache images for better performance
+        'Access-Control-Allow-Origin': '*'  # Allow cross-origin requests for images
     }
     
     return StreamingResponse(
