@@ -1716,10 +1716,7 @@ const CoordinatorDashboard = () => {
     try {
       // Always fetch the file with proper authentication first
       const response = await axios.get(`${API}${downloadUrl}`, {
-        responseType: 'blob',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        responseType: 'blob'
       });
       
       // Check if it's an image file
