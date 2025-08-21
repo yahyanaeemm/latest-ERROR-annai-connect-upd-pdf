@@ -9,7 +9,7 @@ from datetime import datetime
 
 def test_error_handling():
     """Test error handling and edge cases"""
-    base_url = "https://pdf-receipt-hub.preview.emergentagent.com"
+    base_url = "https://pdf-receipt-pro.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔍 PRODUCTION DEPLOYMENT ERROR HANDLING TEST")

@@ -6,7 +6,7 @@ import asyncio
 import aiohttp
 import json
 
-BASE_URL = "https://pdf-receipt-hub.preview.emergentagent.com"
+BASE_URL = "https://pdf-receipt-pro.preview.emergentagent.com"
 
 async def test_complete_workflow():
     async with aiohttp.ClientSession() as session:
