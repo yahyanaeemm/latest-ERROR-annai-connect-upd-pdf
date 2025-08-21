@@ -326,7 +326,62 @@ textarea:focus-visible {
   transition: all 0.3s ease;
 }
 
-/* Dashboard specific styles */
+/* Brand Badge Styles */
+.badge-brand-teal {
+  background: var(--gradient-secondary);
+  color: var(--brand-dark-blue);
+  font-weight: 600;
+  border: 2px solid var(--brand-bright-teal);
+  box-shadow: 0 4px 8px rgba(78, 205, 196, 0.3);
+}
+
+.badge-brand-blue {
+  background: var(--brand-deep-blue);
+  color: white;
+  font-weight: 600;
+  border: 2px solid var(--brand-dark-blue);
+  box-shadow: 0 4px 8px rgba(27, 91, 160, 0.3);
+}
+
+/* Enhanced File Upload Button */
+.upload-button-brand {
+  background: var(--gradient-primary);
+  border: 2px solid var(--brand-deep-blue);
+  color: white;
+  font-weight: 600;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.upload-button-brand:hover {
+  background: var(--brand-dark-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(27, 91, 160, 0.3);
+}
+
+/* Loading Spinner - Brand Blue */
+.spinner-brand {
+  border: 3px solid rgba(27, 91, 160, 0.3);
+  border-top: 3px solid var(--brand-deep-blue);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Signature Canvas Enhancement */
+.signature-canvas-brand {
+  border: 3px solid var(--brand-deep-blue);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 8px rgba(27, 91, 160, 0.2);
+}
 .dashboard-card {
   background: white;
   border-radius: 12px;
