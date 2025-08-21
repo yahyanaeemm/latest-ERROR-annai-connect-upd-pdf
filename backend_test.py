@@ -2899,10 +2899,22 @@ class AdmissionSystemAPITester:
         print("🏆 Starting Focused Leaderboard System Testing After Frontend Enhancements")
         print("=" * 70)
         
-        # Login with admin user for comprehensive testing
-        login_success = self.test_login("super admin", "admin123", "admin")
+        # Try different admin credentials
+        admin_credentials = [
+            ("super admin", "admin123", "admin"),
+            ("admin", "admin123", "admin"),
+            ("arulanantham", "Arul@annaiconnect", "admin")
+        ]
+        
+        login_success = False
+        for username, password, user_key in admin_credentials:
+            if self.test_login(username, password, user_key):
+                login_success = True
+                print(f"✅ Successfully logged in as {username}")
+                break
+        
         if not login_success:
-            print("❌ Failed to login as admin - cannot proceed with leaderboard testing")
+            print("❌ Failed to login with any admin credentials - cannot proceed with leaderboard testing")
             return False
         
         # Get user info
