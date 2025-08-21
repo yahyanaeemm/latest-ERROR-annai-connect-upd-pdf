@@ -6908,42 +6908,28 @@ def main_focused_image_test():
         return True
 
 if __name__ == "__main__":
-    # Run the specific verification test requested in the review
+    # Run focused leaderboard system testing after frontend enhancements
     tester = AdmissionSystemAPITester()
-    
-    print("🚀 Starting Final Verification Tests for Image Viewing Authentication Fix")
-    print("=" * 80)
-    
-    # Login coordinator user with specific credentials from review request
-    login_success = tester.test_login("arulanantham", "Arul@annaiconnect", "coordinator")
-    
-    if not login_success:
-        print("❌ Coordinator login failed")
-        sys.exit(1)
-    
-    # Also login agent for access control testing
-    if not tester.test_login("agent1", "agent123", "agent1"):
-        print("⚠️ Agent login failed - access control test will be limited")
-    
-    # Run the specific verification test
-    verification_passed = tester.test_image_viewing_authentication_fix_verification("coordinator")
+    leaderboard_success = tester.run_leaderboard_focused_tests()
     
     # Print final summary
     print("\n" + "="*80)
-    print("🎯 FINAL VERIFICATION SUMMARY")
+    print("🎯 FINAL LEADERBOARD TESTING SUMMARY")
     print("="*80)
     print(f"Total tests run: {tester.tests_run}")
     print(f"Tests passed: {tester.tests_passed}")
     print(f"Tests failed: {tester.tests_run - tester.tests_passed}")
     print(f"Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
     
-    if verification_passed:
-        print("🎉 IMAGE VIEWING AUTHENTICATION FIX VERIFICATION PASSED!")
-        print("✅ Backend is working properly after frontend changes")
-        print("✅ Authentication is still required for document access")
-        print("✅ Image and PDF document downloads working correctly")
-        print("✅ Access control properly implemented")
+    if leaderboard_success:
+        print("🎉 LEADERBOARD SYSTEM TESTING PASSED!")
+        print("✅ All leaderboard APIs working correctly after frontend enhancements")
+        print("✅ Data consistency verified - leaderboard shows dynamic data")
+        print("✅ Response structure validated for all endpoints")
+        print("✅ Ranking and sorting logic working properly")
+        print("✅ System ready for production with live data updates")
         sys.exit(0)
     else:
-        print("❌ Image viewing authentication fix verification failed")
+        print("❌ Leaderboard system testing failed")
+        sys.exit(1)
         sys.exit(1)
