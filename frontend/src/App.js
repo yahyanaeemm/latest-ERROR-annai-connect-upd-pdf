@@ -994,14 +994,18 @@ const AgentDashboard = () => {
                     accept="image/*" 
                     className="hidden" 
                     id="photo-upload"
+                    ref={(input) => { this.photoUploadRef = input; }}
                     onChange={(e) => e.target.files[0] && uploadProfilePhoto(e.target.files[0])}
                   />
-                  <label htmlFor="photo-upload" className="cursor-pointer">
-                    <Button variant="outline" size="sm">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Photo
-                    </Button>
-                  </label>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => document.getElementById('photo-upload').click()}
+                    className="cursor-pointer"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Photo
+                  </Button>
                 </div>
 
                 {/* Basic Info */}
