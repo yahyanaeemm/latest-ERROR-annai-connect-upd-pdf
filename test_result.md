@@ -659,10 +659,12 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Document Viewing Functionality for Coordinators"
+  stuck_tasks:
+    - "Document download for JPEG/PNG returns 500 due to non-ASCII filename in Content-Disposition"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "high_first"  # or "sequential" or "stuck_first"
 
   - task: "Agent Document Upload Visibility & Coordinator Document Download Fix"
     implemented: true
