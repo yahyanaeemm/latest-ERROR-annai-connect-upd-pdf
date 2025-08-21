@@ -151,7 +151,7 @@ const LoginForm = () => {
           {/* New Annai Connect Logo */}
           <div className="flex justify-center mb-4">
             <img 
-              src="https://customer-assets.emergentagent.com/job_approval-workflow-1/artifacts/q4cxb6mb_ANNAI%20%281%29.png"
+              src="https://customer-assets.emergentagent.com/job_pdf-receipt-hub/artifacts/y895x7ww_Untitled%20design%20%282%29.png"
               alt="Annai Connect Logo" 
               className="h-20 w-auto object-contain drop-shadow-lg"
             />
