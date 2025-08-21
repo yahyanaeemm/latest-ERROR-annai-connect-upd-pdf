@@ -390,11 +390,43 @@ const SimpleLeaderboard = () => {
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <div className="flex items-center space-x-3">
-            <Trophy className="h-8 w-8 text-yellow-500" />
-            <div>
-              <CardTitle className="text-2xl font-bold text-blue-600">Agent Leaderboard</CardTitle>
-              <CardDescription>Performance rankings and achievements</CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Trophy className="h-8 w-8 text-yellow-500" />
+              <div>
+                <CardTitle className="text-2xl font-bold text-blue-600">Agent Leaderboard</CardTitle>
+                <CardDescription>Performance rankings and achievements</CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              {lastUpdated && (
+                <div className="text-xs text-gray-500 text-right">
+                  <div className="flex items-center space-x-1">
+                    <Activity className="h-3 w-3 text-green-500" />
+                    <span>Live Data</span>
+                  </div>
+                  <div>Updated: {lastUpdated.toLocaleTimeString()}</div>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={loading}
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Activity className="h-4 w-4 mr-2" />
+                    Refresh
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </CardHeader>
