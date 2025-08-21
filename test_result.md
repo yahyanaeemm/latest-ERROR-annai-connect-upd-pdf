@@ -194,6 +194,17 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ COMPREHENSIVE DATABASE CLEANUP AND FRESH DEPLOYMENT TESTING COMPLETED SUCCESSFULLY! All 26/26 tests passed. VERIFIED FUNCTIONALITY: 1) DATABASE CLEANUP: ✅ Admin deploy-production endpoint accessible and working, ✅ Database completely cleaned (0 admissions remaining), ✅ Upload directories cleared successfully, ✅ All test data removed properly. 2) PRODUCTION SETUP: ✅ All 5 production users created and can login (super admin, arulanantham, agent1, agent2, agent3), ✅ All 3 production courses set up correctly (B.Ed: ₹6000, MBA: ₹2500, BNYS: ₹20000), ✅ Production users have proper roles and permissions. 3) SYSTEM FUNCTIONALITY: ✅ Complete 3-tier approval workflow working with production users, ✅ AGI token generation working (AGI25080001, AGI25080002), ✅ PDF receipt generation working with production data, ✅ Coordinator and admin approvals functional, ✅ Incentive system working correctly. 4) ACCESS CONTROL: ✅ Non-admin users properly denied access to deploy-production endpoint (403 status), ✅ Production users have appropriate permissions. 5) CLEAN STATE VERIFICATION: ✅ System ready for production deployment, ✅ No test data remaining, ✅ All core functionality verified working. The system is completely ready for fresh production deployment!"
+  - task: "Student Data Cleanup for Public Launch"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented targeted student data cleanup endpoint POST /api/admin/clear-student-data for preparing app for public launch. This endpoint specifically clears only student-related collections (students, incentives, leaderboard_cache) and upload files while preserving courses and user accounts. Includes proper admin authentication, detailed response showing cleared vs preserved data, and maintains operational integrity. Perfect for fresh dashboard state while keeping all course information and user access intact."
   - task: "E-Signature API endpoints"
     implemented: true
     working: true
