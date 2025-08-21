@@ -162,7 +162,7 @@ class StudentDataCleanupTester:
         if not success:
             return False
             
-        print("   ✅ Unauthenticated access properly denied (401)")
+        print("   ✅ Unauthenticated access properly denied (403)")
         
         return True
     
