@@ -1469,6 +1469,18 @@ const CoordinatorDashboard = () => {
   const [showSignature, setShowSignature] = useState(false);
   const [actionType, setActionType] = useState('');
   const [notes, setNotes] = useState('');
+  
+  // Badge management state
+  const [agents, setAgents] = useState([]);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState(null);
+  const [badgeTemplates, setBadgeTemplates] = useState([]);
+  const [selectedBadgeTemplate, setSelectedBadgeTemplate] = useState(null);
+  const [customBadge, setCustomBadge] = useState({
+    title: '',
+    description: '',
+    color: 'blue'
+  });
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
