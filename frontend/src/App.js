@@ -2311,6 +2311,213 @@ const CoordinatorDashboard = () => {
           </div>
         )
       )}
+        </>
+      )}
+
+      {activeTab === 'badges' && (
+        <div className="space-y-6">
+          {/* Badge Management Content */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-xl font-bold text-slate-800">Agent Badge Management</CardTitle>
+                  <CardDescription>Assign recognition badges to agents for their performance</CardDescription>
+                </div>
+                <Button
+                  onClick={() => setShowBadgeModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white"
+                >
+                  <Award className="h-4 w-4 mr-2" />
+                  Assign Badge
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {agents.map((agent) => (
+                  <Card key={agent.id} className="border shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold">
+                          {agent.full_name.charAt(0)}
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-semibold">{agent.full_name}</CardTitle>
+                          <p className="text-xs text-gray-500">@{agent.username}</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                        <div className="text-center p-2 bg-blue-50 rounded">
+                          <div className="font-bold text-blue-700">{agent.total_students}</div>
+                          <div className="text-blue-600">Total Students</div>
+                        </div>
+                        <div className="text-center p-2 bg-green-50 rounded">
+                          <div className="font-bold text-green-700">{agent.approved_students}</div>
+                          <div className="text-green-600">Approved</div>
+                        </div>
+                      </div>
+                      
+                      {/* Agent Badges */}
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-gray-700">Badges:</div>
+                        {agent.badges && agent.badges.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {agent.badges.map((badge) => (
+                              <div
+                                key={badge.id}
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${badge.color}-100 text-${badge.color}-800 border border-${badge.color}-200`}
+                                title={badge.description}
+                              >
+                                <span className="mr-1">{badge.icon || '🏆'}</span>
+                                {badge.title}
+                                <button
+                                  onClick={() => removeBadge(agent.id, badge.id)}
+                                  className="ml-1 text-red-500 hover:text-red-700"
+                                  title="Remove badge"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 italic">No badges assigned</div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Badge Assignment Modal */}
+      <Dialog open={showBadgeModal} onOpenChange={setShowBadgeModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Assign Badge to Agent</DialogTitle>
+            <DialogDescription>
+              Select an agent and choose a badge to assign as recognition for their performance
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Agent Selection */}
+            <div>
+              <Label className="text-sm font-medium">Select Agent</Label>
+              <Select 
+                value={selectedAgent?.id || ''} 
+                onValueChange={(value) => setSelectedAgent(agents.find(a => a.id === value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an agent..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.full_name} (@{agent.username})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Badge Template Selection */}
+            <div>
+              <Label className="text-sm font-medium">Badge Template</Label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                {badgeTemplates.map((template) => (
+                  <Card 
+                    key={template.type}
+                    className={`cursor-pointer border-2 transition-all ${
+                      selectedBadgeTemplate?.type === template.type
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => {
+                      setSelectedBadgeTemplate(template);
+                      setCustomBadge({ title: '', description: '', color: 'blue' });
+                    }}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg">{template.icon}</span>
+                        <div>
+                          <div className="font-medium text-sm">{template.title}</div>
+                          <div className="text-xs text-gray-500">{template.description}</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Badge Option */}
+            <div>
+              <Label className="text-sm font-medium">Or Create Custom Badge</Label>
+              <div className="space-y-3 p-3 border rounded-lg">
+                <Input
+                  placeholder="Badge Title"
+                  value={customBadge.title}
+                  onChange={(e) => {
+                    setCustomBadge({ ...customBadge, title: e.target.value });
+                    setSelectedBadgeTemplate(null);
+                  }}
+                />
+                <Textarea
+                  placeholder="Badge Description"
+                  value={customBadge.description}
+                  onChange={(e) => {
+                    setCustomBadge({ ...customBadge, description: e.target.value });
+                    setSelectedBadgeTemplate(null);
+                  }}
+                  className="min-h-[60px] resize-none"
+                />
+                <Select
+                  value={customBadge.color}
+                  onValueChange={(value) => {
+                    setCustomBadge({ ...customBadge, color: value });
+                    setSelectedBadgeTemplate(null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="blue">Blue</SelectItem>
+                    <SelectItem value="green">Green</SelectItem>
+                    <SelectItem value="yellow">Yellow</SelectItem>
+                    <SelectItem value="red">Red</SelectItem>
+                    <SelectItem value="purple">Purple</SelectItem>
+                    <SelectItem value="indigo">Indigo</SelectItem>
+                    <SelectItem value="pink">Pink</SelectItem>
+                    <SelectItem value="gray">Gray</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button variant="outline" onClick={() => setShowBadgeModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={assignBadge}
+              disabled={!selectedAgent || (!selectedBadgeTemplate && !customBadge.title)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Assign Badge
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <SignatureModal
         isOpen={showSignature}
