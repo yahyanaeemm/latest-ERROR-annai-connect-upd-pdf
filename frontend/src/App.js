@@ -2657,11 +2657,18 @@ const CoordinatorDashboard = () => {
             </Button>
             <Button 
               onClick={() => {
-                // Download option in modal
+                // Download option in modal - ensure we have a blob fallback
                 const link = document.createElement('a');
-                // Clone the blob URL into a new object URL to avoid revoking the one used by <img>
-                const tempLinkUrl = imageModal.imageUrl;
-                link.href = tempLinkUrl;
+                if (imageModal.imageUrl) {
+                  link.href = imageModal.imageUrl;
+                } else if (imageModal.blob) {
+                  const tmp = window.URL.createObjectURL(imageModal.blob);
+                  link.href = tmp;
+                  setTimeout(() => window.URL.revokeObjectURL(tmp), 10000);
+                } else {
+                  // As a final fallback, hit the absolute URL
+                  link.href = `${BACKEND_URL}${selectedStudent && studentDocuments ? studentDocuments.documents.find(d => d.file_name === imageModal.fileName)?.download_url : ''}`;
+                }
                 link.setAttribute('download', imageModal.fileName);
                 document.body.appendChild(link);
                 link.click();
