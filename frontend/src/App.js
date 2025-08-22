@@ -1733,8 +1733,16 @@ const CoordinatorDashboard = () => {
         if (!blob.type || !contentType.startsWith('image/')) {
           blob = new Blob([blob], { type: guessedType });
         }
-        const url = window.URL.createObjectURL(blob);
-        setImageModal({ isOpen: true, imageUrl: url, fileName });
+        // Convert to Data URL for maximum browser compatibility (fixes Safari/Blob URL decode issues for some JPGs)
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result; // e.g., data:image/jpeg;base64,...
+          setImageModal({ isOpen: true, imageUrl: dataUrl, fileName });
+        };
+        reader.onerror = () => {
+          alert('Error loading image. Please try again.');
+        };
+        reader.readAsDataURL(blob);
       } else {
         // For PDFs and other files, download as before
         const blob = new Blob([response.data], { 
