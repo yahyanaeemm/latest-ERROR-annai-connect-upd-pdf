@@ -1743,6 +1743,14 @@ const CoordinatorDashboard = () => {
           alert('Error loading image. Please try again.');
         };
         reader.readAsDataURL(blob);
+        // As a safety net, also attempt to open the absolute URL in a new tab if image fails to load
+        setTimeout(() => {
+          if (!imageModal.isOpen) {
+            const absoluteUrl = `${BACKEND_URL}${downloadUrl}`;
+            window.open(absoluteUrl, '_blank', 'noopener');
+          }
+        }, 300);
+
       } else {
         // For PDFs and other files, download as before
         const blob = new Blob([response.data], { 
