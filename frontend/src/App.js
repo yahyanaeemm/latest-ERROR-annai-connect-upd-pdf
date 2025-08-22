@@ -1710,7 +1710,7 @@ const CoordinatorDashboard = () => {
   };
 
   // Add state for image modal
-  const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '', fileName: '' });
+  const [imageModal, setImageModal] = useState({ isOpen: false, imageUrl: '', fileName: '', urlType: 'none', status: 'idle' });
 
   const downloadDocument = async (downloadUrl, fileName) => {
     try {
