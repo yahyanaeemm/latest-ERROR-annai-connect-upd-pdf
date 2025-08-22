@@ -1724,10 +1724,15 @@ const CoordinatorDashboard = () => {
       
       if (isImage) {
         // For images, show in inline modal first (most reliable)
-        // Create blob URL with correct response data handling
-        const blob = new Blob([response.data], { 
-          type: response.headers['content-type'] || 'image/jpeg' 
-        });
+        // Prefer using the blob returned by axios directly
+        const contentType = (response.headers['content-type'] || '').toLowerCase();
+        const lowerName = (fileName || '').toLowerCase();
+        const guessedType = lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+        let blob = response.data instanceof Blob ? response.data : new Blob([response.data]);
+        // If server sent a generic/incorrect type, ensure it's an image type for browser decoding
+        if (!blob.type || !contentType.startsWith('image/')) {
+          blob = new Blob([blob], { type: guessedType });
+        }
         const url = window.URL.createObjectURL(blob);
         setImageModal({ isOpen: true, imageUrl: url, fileName });
       } else {
