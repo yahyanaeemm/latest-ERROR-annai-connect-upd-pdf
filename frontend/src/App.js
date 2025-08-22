@@ -2618,7 +2618,9 @@ const CoordinatorDashboard = () => {
               onClick={() => {
                 // Download option in modal
                 const link = document.createElement('a');
-                link.href = imageModal.imageUrl;
+                // Clone the blob URL into a new object URL to avoid revoking the one used by <img>
+                const tempLinkUrl = imageModal.imageUrl;
+                link.href = tempLinkUrl;
                 link.setAttribute('download', imageModal.fileName);
                 document.body.appendChild(link);
                 link.click();
