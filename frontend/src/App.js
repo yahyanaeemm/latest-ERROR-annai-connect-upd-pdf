@@ -2592,6 +2592,12 @@ const CoordinatorDashboard = () => {
               onClick={() => setShowBadgeModal(false)}
               className="border-2 border-gray-300 text-gray-700 hover:bg-gray-100"
             >
+          {imageModal.status === 'fail' && (
+            <div className="w-full text-center text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3">
+              Preview not supported for this JPG in the inline viewer. You can still download the file below.
+            </div>
+          )}
+
               Cancel
             </Button>
             <Button 
