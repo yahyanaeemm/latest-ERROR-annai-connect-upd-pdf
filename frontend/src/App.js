@@ -1723,34 +1723,53 @@ const CoordinatorDashboard = () => {
       const isImage = fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/);
       
       if (isImage) {
-        // For images, show in inline modal first (most reliable)
-        // Prefer using the blob returned by axios directly
+        // STAGED LOADER for robust JPG viewing
         const contentType = (response.headers['content-type'] || '').toLowerCase();
         const lowerName = (fileName || '').toLowerCase();
         const guessedType = lowerName.endsWith('.png') ? 'image/png' : 'image/jpeg';
         let blob = response.data instanceof Blob ? response.data : new Blob([response.data]);
-        // If server sent a generic/incorrect type, ensure it's an image type for browser decoding
         if (!blob.type || !contentType.startsWith('image/')) {
           blob = new Blob([blob], { type: guessedType });
         }
-        // Convert to Data URL for maximum browser compatibility (fixes Safari/Blob URL decode issues for some JPGs)
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result; // e.g., data:image/jpeg;base64,...
-          setImageModal({ isOpen: true, imageUrl: dataUrl, fileName });
-        };
-        reader.onerror = () => {
-          alert('Error loading image. Please try again.');
-        };
-        reader.readAsDataURL(blob);
-        // As a safety net, also attempt to open the absolute URL in a new tab if image fails to load
-        setTimeout(() => {
-          if (!imageModal.isOpen) {
-            const absoluteUrl = `${BACKEND_URL}${downloadUrl}`;
-            window.open(absoluteUrl, '_blank', 'noopener');
-          }
-        }, 300);
 
+        // Stage A: Try Object URL with preflight decode
+        try {
+          const objectUrl = window.URL.createObjectURL(blob);
+          await new Promise((resolve, reject) => {
+            const testImg = new Image();
+            testImg.onload = () => resolve(true);
+            testImg.onerror = () => reject(new Error('objectURL-decode-failed'));
+            testImg.src = objectUrl;
+          });
+          setImageModal({ isOpen: true, imageUrl: objectUrl, fileName, urlType: 'object', status: 'ok', blob });
+          return;
+        } catch (e) {
+          // continue to Stage B
+        }
+
+        // Stage B: Data URL conversion and decode check
+        try {
+          const reader = new FileReader();
+          const dataUrl = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('dataURL-read-failed'));
+            reader.readAsDataURL(blob);
+          });
+
+          await new Promise((resolve, reject) => {
+            const testImg = new Image();
+            testImg.onload = () => resolve(true);
+            testImg.onerror = () => reject(new Error('dataURL-decode-failed'));
+            testImg.src = dataUrl;
+          });
+
+          setImageModal({ isOpen: true, imageUrl: dataUrl, fileName, urlType: 'data', status: 'ok', blob });
+          return;
+        } catch (e2) {
+          // Stage C: Graceful inline error state in modal (no new tab), keep download working
+          setImageModal({ isOpen: true, imageUrl: '', fileName, urlType: 'none', status: 'fail', blob });
+          return;
+        }
       } else {
         // For PDFs and other files, download as before
         const blob = new Blob([response.data], { 
